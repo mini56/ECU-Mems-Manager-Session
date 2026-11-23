@@ -1,9 +1,9 @@
 # Exclusively the DLL verification workflow. No Session build, Setup or MAJ
-# workflow is changed by this file. Test revision: independent Session200 Setup install + uninstall smoke.
+# workflow is changed by this file. Test revision: independent Session205 Setup install + uninstall smoke.
 # The application is built only in a
-# disposable worktree pinned to the real Session 200 commit.
-name: DLL MEMS Manager x64 - validation isolee Session 200
-run-name: Test DLL / Session 200 / ${{ github.sha }}
+# disposable worktree pinned to the real Session 205 commit.
+name: DLL MEMS Manager x64 - validation isolee Session 205
+run-name: Test DLL / Session 205 / ${{ github.sha }}
 on:
   # An edit to THIS workflow starts ONE CI validation on dll-manager.
   # Ordinary program development on the Session branch never triggers it.
@@ -17,14 +17,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: dll-session200-isolated-validation
+  group: dll-session205-isolated-validation
   cancel-in-progress: true
 
 jobs:
-  session200_dll_validation:
-    name: Compiler la DLL et verifier la liaison avec Session 200
+  session205_dll_validation:
+    name: Compiler la DLL et verifier la liaison avec Session 205
     runs-on: windows-2022
-    timeout-minutes: 110
+    timeout-minutes: 120
     steps:
       - name: Recuperer uniquement la branche DLL
         uses: actions/checkout@v4
@@ -32,12 +32,12 @@ jobs:
           fetch-depth: 1
           persist-credentials: true
 
-      - name: S'assurer que la copie de Session 200 est accessible en lecture seule
+      - name: S'assurer que la copie de Session 205 est accessible en lecture seule
         shell: pwsh
         run: |
-          git fetch --no-tags --depth=1 origin 3737dffa3e30e0b9167bda34fa661958b757cd28
-          if ($LASTEXITCODE -ne 0) { throw 'Cannot fetch Session 200 read-only reference' }
-          # The SHA fetch above already verifies that Session 200 is accessible.
+          git fetch --no-tags --depth=1 origin b5cd9b61bbaed6251f17559885481b1bd03f4380
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot fetch Session 205 read-only reference' }
+          # The SHA fetch above already verifies that Session 205 is accessible.
           # Avoid PowerShell interpreting Git's ^{commit} suffix.
 
       - name: Python pour les controles binaires
@@ -45,7 +45,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Installer Qt 5.15.2 MSVC x64 pour compiler la copie jetable de Session 200
+      - name: Installer Qt 5.15.2 MSVC x64 pour compiler la copie jetable de Session 205
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -62,17 +62,17 @@ jobs:
           choco install innosetup -y --no-progress --limit-output
           if ($LASTEXITCODE -ne 0) { throw 'Inno Setup compiler installation failed' }
 
-      - name: Verifier DLL et vraie Session 200 puis installer/desinstaller le Setup independant
+      - name: Verifier DLL et vraie Session 205 puis installer/desinstaller le Setup independant
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
-          & '.\librosco-x64\verify_session200_windows.ps1' -QtPrefix 'C:/Qt/5.15.2/msvc2019_64' -SetupSmoke
-          if ($LASTEXITCODE -ne 0) { throw 'Session 200 isolated DLL Setup compatibility validation failed' }
+          & '.\librosco-x64\verify_session205_windows.ps1' -QtPrefix 'C:/Qt/5.15.2/msvc2019_64' -SetupSmoke
+          if ($LASTEXITCODE -ne 0) { throw 'Session 205 isolated DLL Setup compatibility validation failed' }
 
       - name: Resultat de verification
         shell: pwsh
         run: |
-          Write-Host 'CI_SESSION200_DLL_CHECK_FINISHED: independent Setup built, installed and removed ONLY on hosted runner; NO release, NO ECU, NO Session source modifications'
+          Write-Host 'CI_SESSION205_DLL_CHECK_FINISHED: independent Setup built, installed and removed ONLY on hosted runner; NO release, NO ECU, NO Session source modifications'
           Write-Host 'DLL compatibility for installed programs and physical ECUs requires separate runtime validation.'
