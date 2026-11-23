@@ -19,6 +19,8 @@ add_library(rosco SHARED
     protocol_catalogue.c
     lucas5as_codec.c
     lucas5as_session.c
+    mems19_wakeup_codec.c
+    mems19_wakeup.c
     mems_manager_x64.def
 )
 
@@ -78,3 +80,13 @@ add_test(NAME dll_lucas5as_protocol_selftest COMMAND dll_lucas5as_protocol_selft
 
 add_executable(dll_lucas5as_session_selftest lucas5as_session_selftest.c lucas5as_codec.c)
 add_test(NAME dll_lucas5as_session_selftest COMMAND dll_lucas5as_session_selftest)
+
+# New independent MEMS 1.9 physical ISO9141 wake and same-handle D0 ID.
+# The C codec test loads the DLL. The Win32 mock test compiles the same
+# wake source with intercepted COM and clock functions; NO real ECU/COM.
+add_executable(dll_mems19_wakeup_codec_selftest mems19_wakeup_codec_selftest.c)
+target_link_libraries(dll_mems19_wakeup_codec_selftest PRIVATE rosco)
+add_test(NAME dll_mems19_wakeup_codec_selftest COMMAND dll_mems19_wakeup_codec_selftest)
+
+add_executable(dll_mems19_wakeup_selftest mems19_wakeup_selftest.c mems19_wakeup_codec.c)
+add_test(NAME dll_mems19_wakeup_selftest COMMAND dll_mems19_wakeup_selftest)
