@@ -17,6 +17,8 @@ add_library(rosco SHARED
     family.c
     transient_injection.c
     protocol_catalogue.c
+    lucas5as_codec.c
+    lucas5as_session.c
     mems_manager_x64.def
 )
 
@@ -66,3 +68,13 @@ add_test(NAME serial_protocol_selftest COMMAND serial_protocol_selftest)
 # Protocol-only C tests never open COM ports or talk to real ECUs.
 add_executable(protocol_catalogue_selftest protocol_catalogue_selftest.c protocol_catalogue.c)
 add_test(NAME protocol_catalogue_selftest COMMAND protocol_catalogue_selftest)
+
+# Additional independent Lucas 5AS C ABI. The protocol vector test links
+# the real DLL; the transport selftest compiles the real source against
+# fake Win32 serial/clock calls, so it CANNOT open any physical ECU/COM.
+add_executable(lucas5as_protocol_selftest lucas5as_protocol_selftest.c)
+target_link_libraries(lucas5as_protocol_selftest PRIVATE rosco)
+add_test(NAME lucas5as_protocol_selftest COMMAND lucas5as_protocol_selftest)
+
+add_executable(lucas5as_session_selftest lucas5as_session_selftest.c lucas5as_codec.c)
+add_test(NAME lucas5as_session_selftest COMMAND lucas5as_session_selftest)
