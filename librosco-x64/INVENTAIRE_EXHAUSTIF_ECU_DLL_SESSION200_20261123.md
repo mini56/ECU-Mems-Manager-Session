@@ -27,6 +27,8 @@
 | Champs bruts `uk*` historiques encore sans interprétation certaine | **16** | Emplacements connus ; sens métier à rechercher |
 | Fonctions annoncées « 194 » dans les échanges antérieurs | **NON JUSTIFIÉ COMME NOMBRE D'EXPORTS** | 194 mélangeait fonctions, modules, futures capacités, UI et documentation ; **aucune liste de 194 signatures ECU vérifiées ne figure dans le corpus lu** |
 
+**Matrice machine exploitable** : [`MATRICE_91_EXPORTS_ET_CONTRAT_SESSION200_20261123.csv`](MATRICE_91_EXPORTS_ET_CONTRAT_SESSION200_20261123.csv) contient 91 lignes d'exports et 1 déclaration de Session 200 non exportée, avec groupe, fichier source, statut et contrôle CI. Elle sert de base pour suivre les nouveaux ordinaux sans perdre l'ABI.
+
 La comparaison correcte consiste donc à **lister les opérations techniques une à une**, y compris celles restées dans Manager et celles présentes seulement dans la recherche. **Ni « 91 » ni « 194 » ne mesurent à eux seuls la couverture fonctionnelle.**
 
 ## 2. Matrice des écarts : l'essentiel à transférer ou à développer
