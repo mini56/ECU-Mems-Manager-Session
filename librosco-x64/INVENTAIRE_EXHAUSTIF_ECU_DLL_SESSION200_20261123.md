@@ -31,6 +31,28 @@
 
 La comparaison correcte consiste donc à **lister les opérations techniques une à une**, y compris celles restées dans Manager et celles présentes seulement dans la recherche. **Ni « 91 » ni « 194 » ne mesurent à eux seuls la couverture fonctionnelle.**
 
+## 1 bis. Nombre concret de fonctions à ajouter dans la DLL
+
+**Chiffrage de planification établi le 23/11/2026 : 84 nouveaux points d'entrée ECU proposés**, en plus des **91 exports existants**, soit **175 exports projetés si chaque fonction proposée reste une API publique distincte**.
+
+La liste complète des **84 noms, rôles, familles et preuves source** est enregistrée ici : **[CHIFFRAGE_84_FONCTIONS_DLL_SESSION200_20261123.md](CHIFFRAGE_84_FONCTIONS_DLL_SESSION200_20261123.md)**.
+
+| Famille / composant | Nouveaux points d'entrée proposés |
+|---|---:|
+| Transport, identification automatique des câbles, sessions et journal | 15 |
+| ROSCO 1.2/1.3/1.6 | 9 |
+| MEMS 1.9 | 6 |
+| MEMS 2J | 12 |
+| MEMS 3 | 10 |
+| RC5 / Airbag | 7 |
+| Lucas 5AS | 11 |
+| RAM, injection, modes diagnostics, ROM et firmware | 14 |
+| **Total à ajouter (proposition)** | **84** |
+
+**81 propositions sont fondées sur des comportements identifiés dans le programme Session 200** et **3 sur des fonctions de lecture/vérification ROM encore documentaires, donc à implémenter réellement**. Ce chiffrage est un **choix explicite de découpage d'API**, non une quantité de 84 fonctions existantes cachées dans le code ou 84 fonctions validées sur ECU réel. Certains nouveaux points d'entrée peuvent se révéler redondants avec les 91 exports après revue détaillée des signatures. Le chiffre sera alors révisé, modifications justifiées.
+
+**Non comprises dans les 84** : commandes exploratoires 2J, écritures ROM/EEPROM, jumelage 5AS, 10AS/8AS/Pektron et autres protocoles encore insuffisamment caractérisés. Ces pistes restent dans l'inventaire mais leur **nombre d'implémentations et d'exports n'est pas déterminable à partir des sources actuelles**. Il serait incorrect d'annoncer un chiffre final exhaustif pour ces capacités inconnues.
+
 ## 2. Matrice des écarts : l'essentiel à transférer ou à développer
 
 | ID | Famille / fonction ECU | DLL aujourd'hui | SESSION 200 / recherche | État réel et travail |
