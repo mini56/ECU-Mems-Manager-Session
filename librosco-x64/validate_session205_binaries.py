@@ -25,8 +25,8 @@ def check(new_path, manager_path, definition_path):
     dll = PE(new_path)
     app = PE(manager_path)
     expected = read_definition(definition_path)
-    if len(expected) != 100:
-        raise AssertionError(f"DLL definition must declare 100 exports, got {len(expected)}")
+    if len(expected) != 105:
+        raise AssertionError(f"DLL definition must declare 105 exports, got {len(expected)}")
     # Original 91 names/ordinals must remain byte-exact in order.
     # Static guard validates the historical list; PE guard protects it again
     # when loading the Session 205 executable.
@@ -34,9 +34,23 @@ def check(new_path, manager_path, definition_path):
         raise AssertionError("Last historical ordinal changed")
     if expected[91] != ("mems_manager_lucas5as_slow_bit_high", 92):
         raise AssertionError("Lucas5AS first new ordinal must be 92")
+    # Preserve the ABI already validated with the published Session 205.
+    # First 91 historical, next nine Lucas 5AS are immutable.
+    expected_new_names = [
+        "mems_manager_mems19_slow_bit_high",
+        "mems_manager_mems19_key_complement",
+        "mems_manager_mems19_has_address_confirmation",
+        "mems_manager_mems19_wakeup",
+        "mems_manager_mems19_connect_identify",
+    ]
+    if expected[100:] != [
+        (name, ordinal) for ordinal, name
+        in enumerate(expected_new_names, start=101)
+    ]:
+        raise AssertionError("MEMS1.9 new symbols/ordinals must be 101..105")
     if len(set(name for name, _ in expected)) != len(expected):
         raise AssertionError("Duplicate symbol in .def")
-    if [ordinal for _, ordinal in expected] != list(range(1, 101)):
+    if [ordinal for _, ordinal in expected] != list(range(1, 106)):
         raise AssertionError("Non-sequential / changed DLL export ordinals")
     if dll.machine != 0x8664 or app.machine != 0x8664:
         raise AssertionError("Both the built DLL and real Session 205 executable must be AMD64")
