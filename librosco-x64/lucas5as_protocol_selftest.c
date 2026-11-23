@@ -27,13 +27,14 @@ int main(void)
     mems_manager_lucas5as_status status;
     mems_manager_lucas5as_status prev;
     int i;
+    bool unused = false;
 
     for (i=0;i<10;++i) {
         bool level = !slow[i];
         CHECK(mems_manager_lucas5as_slow_bit_high(i,&level));
         CHECK(level==slow[i]);
     }
-    CHECK(!mems_manager_lucas5as_slow_bit_high(-1,(bool*)&slow[0]));
+    CHECK(!mems_manager_lucas5as_slow_bit_high(-1,&unused));
     CHECK(!mems_manager_lucas5as_slow_bit_high(10,(bool*)&slow[0]));
     CHECK(!mems_manager_lucas5as_slow_bit_high(0,NULL));
 
