@@ -632,14 +632,6 @@ void MainWindow::setupWidgets()
   connect(m_ui->m_IACPlusButton, SIGNAL(clicked()), this, SLOT(on_m_IACPlusButton_clicked()));
   connect(m_ui->m_AllActuatorsOffButton, SIGNAL(clicked()), this, SLOT(on_m_AllActuatorsOffButton_clicked()));
 
-  connect(m_ui->m_fuel_trim_plusButton, SIGNAL(clicked()), this, SLOT(on_m_fuel_trim_plusButton_clicked()));
-  connect(m_ui->m_fuel_trim_minusButton, SIGNAL(clicked()), this, SLOT(on_m_fuel_trim_minusButton_clicked()));
-  connect(m_ui->m_idle_decay_plusButton, SIGNAL(clicked()), this, SLOT(on_m_idle_decay_plusButton_clicked()));
-  connect(m_ui->m_idle_decay_minusButton, SIGNAL(clicked()), this, SLOT(on_m_idle_decay_minusButton_clicked()));
-  connect(m_ui->m_idle_speed_plusButton, SIGNAL(clicked()), this, SLOT(on_m_idle_speed_plusButton_clicked()));
-  connect(m_ui->m_idle_speed_minusButton, SIGNAL(clicked()), this, SLOT(on_m_idle_speed_minusButton_clicked()));
-  connect(m_ui->m_ignition_advance_plusButton, SIGNAL(clicked()), this, SLOT(on_m_ignition_advance_plusButton_clicked()));
-  connect(m_ui->m_ignition_advance_minusButton, SIGNAL(clicked()), this, SLOT(on_m_ignition_advance_minusButton_clicked()));
 
   // set the LED colors
   m_ui->m_commsGoodLed->setOnColor1(QColor(102, 255, 102));
