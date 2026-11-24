@@ -190,6 +190,7 @@ jobs:
           assert options.count('QComboBox::down-arrow{image:url(:/icons/options_combo_chevron.png);')==2
           assert options.count('QComboBox::drop-down{border:none;width:24px;')==2
           assert '<file>options_combo_chevron.png</file>' in qrc
+          # SHA-256 du PNG original : ne jamais modifier cette valeur lors d'un changement de numero de SESSION.
           arrow=Path('options_combo_chevron.png').read_bytes()
           assert hashlib.sha256(arrow).hexdigest()=='1ac07e9c0b1223f8c6286259e3e3b29b2058181715cd3914cea92519b3d672e1', 'INVALID_OPTIONS_COMBO_PNG'
 
