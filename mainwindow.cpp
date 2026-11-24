@@ -17,6 +17,8 @@
 #include <QCryptographicHash>
 #include <QGraphicsOpacityEffect>
 #include "mainwindow.h"
+#include "mems16na_presentation.h"
+#include <QSizePolicy>
 #include "overviewramlive.h"
 #include "injectionramtestui.h"
 #include "nativewindowstyle.h"
@@ -1100,6 +1102,7 @@ void MainWindow::onDataReady()
         ? QStringLiteral("MEMS 3") : QStringLiteral("MEMS 2J");
     const QVariantMap values=m_mems->mems2jValues();
     const QStringList faults=m_mems->mems2jFaults();
+    restoreNaPages();
     m_summaryTab->update2JData(values,family);
     if (m_diagnosticPanel) m_diagnosticPanel->update2JData(values,faults,family);
     if (values.contains(QStringLiteral("rpm")))
@@ -1126,6 +1129,15 @@ void MainWindow::onDataReady()
   }
   Mems16Na::SessionEvidence naEvidence;
   mems_data* data = m_mems->getData(&naEvidence);
+  const bool naIdentified=naEvidence.identifiedProfile()!=nullptr;
+  if(!naIdentified)restoreNaPages();
+  if(naIdentified!=m_naFaultHistoryActive) {
+    m_prevFaultMaskValid=false;
+    m_naFaultHistoryActive=naIdentified;
+  }
+  const quint8 fault0=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc0).faultBits:data->dtc0;
+  const quint8 fault1=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc1).faultBits:data->dtc1;
+  const quint8 fault2=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc2).faultBits:data->dtc2;
   m_summaryTab->updateData(data,&naEvidence);
   if (m_diagnosticPanel) m_diagnosticPanel->updateData(data);
   int corrected_iac = (data->iac_position > IAC_MAXIMUM) ? IAC_MAXIMUM : data->iac_position;
@@ -1166,40 +1178,40 @@ void MainWindow::onDataReady()
  m_ui->m_ignition_advance->setValue(ignitionAdvanceDeg);
  m_ui->m_waterTempGauge->setValue(convertTemperature(data->coolant_temp));
  m_ui->m_airTempGauge->setValue(convertTemperature(data->intake_air_temp));
- m_ui->m_faultLedCTS->setChecked((data->dtc0 & 0x01) != 0);
- m_ui->m_faultLedATS->setChecked((data->dtc0 & 0x02) != 0);
- m_ui->m_faultLed03->setChecked((data->dtc0 & 0x04) != 0);
- m_ui->m_faultLed04->setChecked((data->dtc0 & 0x08) != 0);
- m_ui->m_faultLed05->setChecked((data->dtc0 & 0x10) != 0);
- m_ui->m_faultLedFTS->setChecked((data->dtc0 & 0x20) != 0);
- m_ui->m_faultLed07->setChecked((data->dtc0 & 0x40) != 0);
- m_ui->m_faultLed08->setChecked((data->dtc0 & 0x80) != 0);
- m_ui->m_faultLed09->setChecked((data->dtc1 & 0x01) != 0);
- m_ui->m_faultLedFuelPump->setChecked((data->dtc1 & 0x02) != 0);
- m_ui->m_faultLedFuelPumpSupply->setChecked((data->dtc1 & 0x04) != 0);
- m_ui->m_faultLed12->setChecked((data->dtc1 & 0x08) != 0);
- m_ui->m_faultLedPurge->setChecked((data->dtc1 & 0x10) != 0);
- m_ui->m_faultLedMap->setChecked((data->dtc1 & 0x20) != 0);
- m_ui->m_faultLed15->setChecked((data->dtc1 & 0x40) != 0);
- m_ui->m_faultLedTps->setChecked((data->dtc1 & 0x80) != 0);
- m_ui->m_faultLedTpsSupply->setChecked((data->dtc2 & 0x01) != 0);
- m_ui->m_faultLed18->setChecked((data->dtc2 & 0x02) != 0);
- m_ui->m_faultLedLambdaCircuit->setChecked((data->dtc2 & 0x04) != 0);
- m_ui->m_faultLedLambdaSupply->setChecked((data->dtc2 & 0x08) != 0);
- m_ui->m_faultLed21->setChecked((data->dtc2 & 0x10) != 0);
- m_ui->m_faultLed22->setChecked((data->dtc2 & 0x20) != 0);
- m_ui->m_faultLed23->setChecked((data->dtc2 & 0x40) != 0);
- m_ui->m_faultLed24->setChecked((data->dtc2 & 0x80) != 0);
+ m_ui->m_faultLedCTS->setChecked((fault0 & 0x01) != 0);
+ m_ui->m_faultLedATS->setChecked((fault0 & 0x02) != 0);
+ m_ui->m_faultLed03->setChecked((fault0 & 0x04) != 0);
+ m_ui->m_faultLed04->setChecked((fault0 & 0x08) != 0);
+ m_ui->m_faultLed05->setChecked((fault0 & 0x10) != 0);
+ m_ui->m_faultLedFTS->setChecked((fault0 & 0x20) != 0);
+ m_ui->m_faultLed07->setChecked((fault0 & 0x40) != 0);
+ m_ui->m_faultLed08->setChecked((fault0 & 0x80) != 0);
+ m_ui->m_faultLed09->setChecked((fault1 & 0x01) != 0);
+ m_ui->m_faultLedFuelPump->setChecked((fault1 & 0x02) != 0);
+ m_ui->m_faultLedFuelPumpSupply->setChecked((fault1 & 0x04) != 0);
+ m_ui->m_faultLed12->setChecked((fault1 & 0x08) != 0);
+ m_ui->m_faultLedPurge->setChecked((fault1 & 0x10) != 0);
+ m_ui->m_faultLedMap->setChecked((fault1 & 0x20) != 0);
+ m_ui->m_faultLed15->setChecked((fault1 & 0x40) != 0);
+ m_ui->m_faultLedTps->setChecked((fault1 & 0x80) != 0);
+ m_ui->m_faultLedTpsSupply->setChecked((fault2 & 0x01) != 0);
+ m_ui->m_faultLed18->setChecked((fault2 & 0x02) != 0);
+ m_ui->m_faultLedLambdaCircuit->setChecked((fault2 & 0x04) != 0);
+ m_ui->m_faultLedLambdaSupply->setChecked((fault2 & 0x08) != 0);
+ m_ui->m_faultLed21->setChecked((fault2 & 0x10) != 0);
+ m_ui->m_faultLed22->setChecked((fault2 & 0x20) != 0);
+ m_ui->m_faultLed23->setChecked((fault2 & 0x40) != 0);
+ m_ui->m_faultLed24->setChecked((fault2 & 0x80) != 0);
 
   // Alerte (son + clignotement) si un NOUVEAU code défaut apparaît en direct
-  quint32 currentFaultMask = (quint32)data->dtc0 | ((quint32)data->dtc1 << 8) | ((quint32)data->dtc2 << 16);
-  if (m_prevFaultMaskValid && (currentFaultMask & ~m_prevFaultMask) != 0)
+  quint32 currentFaultMask = (quint32)fault0 | ((quint32)fault1 << 8) | ((quint32)fault2 << 16);
+  if ((!naIdentified || naEvidence.ready()) && m_prevFaultMaskValid && (currentFaultMask & ~m_prevFaultMask) != 0)
   {
     QApplication::beep();
     QApplication::alert(this, 3000);
   }
   m_prevFaultMask = currentFaultMask;
-  m_prevFaultMaskValid = true;
+  m_prevFaultMaskValid = !naIdentified || naEvidence.ready();
 
  m_ui->m_RPMSensor->setChecked((data->uk3) != 0);
  m_ui->m_LambdaSensor->setChecked((data->lambda_sensor_status) != 1);
@@ -1219,7 +1231,7 @@ void MainWindow::onDataReady()
 	{
 		emit IACMinOnce();
 	}
-    if (((data->dtc0)!= 0) || ((data->dtc1)!= 0) || ((data->dtc2)!= 0))
+    if (currentFaultMask != 0)
     {
       m_ui->m_engine_error->setChecked(true);
     }
@@ -1511,6 +1523,7 @@ void MainWindow::onDataReady()
  m_ui->m_80_1A->setText(QString::number(data->uk4));
  m_ui->m_80_1B->setText(QString::number(data->uk5));
 
+  if(naIdentified)showNaPages(naEvidence);
   m_logger->logData();
 }
 
@@ -1745,6 +1758,7 @@ void MainWindow::onConnect()
  */
 void MainWindow::onDisconnect()
 {
+  restoreNaPages();
   if(m_summaryTab)m_summaryTab->clearNaPresentation();
   EcuCommunicationLog::finish();
   m_ui->m_saveAdjustmentsButton->setEnabled(false);
@@ -2543,4 +2557,144 @@ void MainWindow::onProtocolResponse(quint8 command, QByteArray response)
 
   m_protocolOutput->append(line);
   m_protocolOutput->ensureCursorVisible();
+}
+
+
+void MainWindow::rememberNaLabel(QLabel *label)
+{
+  if(!label || m_naOriginalLabels.contains(label))return;
+  m_naOriginalLabels.insert(label,QStringList()<<label->text()<<label->toolTip());
+  m_naOriginalMargins.insert(label,label->contentsMargins());
+}
+
+void MainWindow::restoreNaPages()
+{
+  for(auto it=m_naOriginalLabels.constBegin();it!=m_naOriginalLabels.constEnd();++it) {
+    QLabel *label=it.key();
+    label->setText(it.value().value(0));
+    label->setToolTip(it.value().value(1));
+    label->setContentsMargins(m_naOriginalMargins.value(label));
+  }
+  m_naOriginalLabels.clear();
+  m_naOriginalMargins.clear();
+  for(QLabel *label:m_naExtraValues) { label->clear(); label->hide(); }
+  m_naFaultHistoryActive=false;
+}
+
+void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na)
+{
+  using namespace Mems16Na;
+  const Profile *p=na.identifiedProfile();
+  if(!p)return;
+  const auto m=na.measurements();
+  // Existing grid, no added rows. New calculated cells are visible only in NA.
+  auto extra=[&](QLabel *raw,QGridLayout *grid)->QLabel*{
+    if(m_naExtraValues.contains(raw)) {
+      QLabel *result=m_naExtraValues.value(raw); result->show(); return result;
+    }
+    const int index=grid->indexOf(raw);
+    if(index<0)return nullptr;
+    int row=0,col=0,rs=0,cs=0;
+    grid->getItemPosition(index,&row,&col,&rs,&cs);
+    if(grid->itemAtPosition(row,3))return nullptr;
+    QLabel *result=new QLabel(raw->parentWidget());
+    result->setObjectName(raw->objectName()+QStringLiteral("_naCalculated"));
+    result->setFont(raw->font());
+    result->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
+    grid->addWidget(result,row,3);
+    m_naExtraValues.insert(raw,result);
+    result->show();
+    return result;
+  };
+  auto cell=[&](QLabel *name,QLabel *raw,QLabel *result,const QString &title,
+                const QString &received,const QString &calculated,const QString &help=QString()){
+    rememberNaLabel(name);
+    // Raw/result text is restored by the historical poll; save the original
+    // raw label tooltip for the one legacy combined word.
+    if(!title.isEmpty())name->setText(title);
+    raw->setText(received);
+    if(result)result->setText(calculated);
+    // Full text remains accessible through the existing permanent bubble.
+    // No extra row or global scroll for multiple simultaneous faults.
+    if(!help.isEmpty() || !result)
+      name->setToolTip(calculated+(help.isEmpty()?QString():QStringLiteral("\n\n")+help));
+  };
+  auto row=[&](QLabel *name,QLabel *raw,QLabel *result,int key,
+               const Value &v,const QString &calc,const QString &help=QString()){
+    cell(name,raw,result,I18n::text(key),rawText(v),calc,help);
+  };
+  row(m_ui->label_80x04,m_ui->m_80_04,m_ui->r_80_04,29046,m.ambient,numeric(m.ambient,0,QStringLiteral(" °C")));
+  row(m_ui->label_80x06,m_ui->m_80_06,m_ui->r_80_06,29047,m.fuel,numeric(m.fuel,0,QStringLiteral(" °C")));
+  row(m_ui->label_80x09,m_ui->m_80_09,m_ui->r_80_09,29027,m.throttleVoltage,numeric(m.throttleVoltage,2,QStringLiteral(" V")));
+  row(m_ui->label_80x0B,m_ui->m_80_0B,m_ui->r_80_0B,29022,m.pn,
+      m.pn.availability==Availability::Available?(m.pn.calculated?QStringLiteral("P/N"):I18n::text(29035)):statusText(m.pn),I18n::text(29045));
+  row(m_ui->label_80x0C,m_ui->m_80_0C,m_ui->r_80_0C,29023,m.ac,state(m.ac,29036,29037),I18n::text(29045));
+  row(m_ui->label_80x0F,m_ui->m_80_0F,extra(m_ui->m_80_0F,m_ui->HF_table_2),29024,m.idleAmplitude,idleCorrection(m));
+  row(m_ui->label_80x10,m_ui->m_80_10,m_ui->r_80_10,29025,m.idleHot,steps(m.idleHot));
+  row(m_ui->label_80x11,m_ui->m_80_11,extra(m_ui->m_80_11,m_ui->HF_table_2),29026,m.learnVoltage,numeric(m.learnVoltage,1,QStringLiteral(" V")));
+  row(m_ui->label_80x1B,m_ui->m_80_1B,extra(m_ui->m_80_1B,m_ui->HF_table_2),29028,m.ignitionOff,state(m.ignitionOff,29038,29039),I18n::text(29045));
+  row(m_ui->label_0x02,m_ui->m_7D_02,m_ui->r_7D_02,6627,m.throttleAngle,numeric(m.throttleAngle,1,QStringLiteral(" °")));
+  row(m_ui->label_0x0B,m_ui->m_7D_0B,m_ui->r_7D_0B,29029,m.injectionTime,numeric(m.injectionTime,0,QStringLiteral(" µs")),I18n::text(29044));
+  row(m_ui->label_0x0F,m_ui->m_7D_0F,m_ui->r_7D_0F,29030,m.idleBase,steps(m.idleBase));
+  rememberNaLabel(m_ui->m_7D_15);
+  m_ui->m_7D_15->setToolTip(QString());
+  row(m_ui->label_0x15,m_ui->m_7D_15,extra(m_ui->m_7D_15,m_ui->HF_table),29031,m.idleError,numeric(m.idleError,0,QStringLiteral(" RPM")),I18n::text(29043));
+  QLabel *names[]={m_ui->label_0x17,m_ui->label_0x19,m_ui->label_0x1B,m_ui->label_0x1D};
+  QLabel *loNames[]={m_ui->label_0x18,m_ui->label_0x1A,m_ui->label_0x1C,m_ui->label_0x1E};
+  QLabel *hiRaw[]={m_ui->m_7D_17,m_ui->m_7D_19,m_ui->m_7D_1B,m_ui->m_7D_1D};
+  QLabel *loRaw[]={m_ui->m_7D_18,m_ui->m_7D_1A,m_ui->m_7D_1C,m_ui->m_7D_1E};
+  QString refHelp=I18n::text(29041);
+  if(p->repeatedThrottleReference)refHelp+=QStringLiteral("\n")+I18n::text(29042);
+  for(int i=0;i<4;++i) {
+    const Value &v=m.throttleReference[i];
+    const QString hi=v.availability==Availability::Missing?QStringLiteral("--"):QString::number(v.raw>>8);
+    const QString lo=v.availability==Availability::Missing?QStringLiteral("--"):QString::number(v.raw&255);
+    cell(names[i],hiRaw[i],extra(hiRaw[i],m_ui->HF_table),I18n::text(29032).arg(i+1),hi,numeric(v,2,QStringLiteral(" TPS")),refHelp);
+    rememberNaLabel(loNames[i]);
+    loNames[i]->setText(I18n::text(29032).arg(i+1)+QStringLiteral(" (LSB)"));
+    loRaw[i]->setText(lo);
+  }
+  row(m_ui->label_0x1F,m_ui->m_7D_1F,extra(m_ui->m_7D_1F,m_ui->HF_table),29033,m.learnCount,numeric(m.learnCount,0));
+  struct DtcRow {QLabel *name,*raw,*result;Group group;};
+  const DtcRow groups[]={
+    {m_ui->label_80x0D,m_ui->m_80_0D,m_ui->r_80_0D,Group::Dtc0},
+    {m_ui->label_80x0E,m_ui->m_80_0E,m_ui->r_80_0E,Group::Dtc1},
+    {m_ui->label_0x05,m_ui->m_7D_05,m_ui->r_7D_05,Group::Dtc2},
+    {m_ui->label_0x0E,m_ui->m_7D_0E,m_ui->r_7D_0E,Group::Dtc3},
+    {m_ui->label_0x11,m_ui->m_7D_11,m_ui->r_7D_11,Group::Dtc4},
+    {m_ui->label_0x16,m_ui->m_7D_16,m_ui->r_7D_16,Group::Dtc5},
+    {m_ui->label_0x10,m_ui->m_7D_10,m_ui->r_7D_10,Group::Indirect7D10}};
+  for(const auto &r:groups) {
+    const auto d=na.dtc(r.group);
+    cell(r.name,r.raw,r.result,QString(),rawDtc(d),dtcText(p,r.group,d),dtcHelp(p,r.group));
+  }
+  // The existing Errors page has one label/LED per bit. Keep its geometry
+  // but replace the legacy meanings only for the confirmed NA profile.
+  QLabel *faultLabels[]={
+    m_ui->m_faultCode01Label,m_ui->m_faultCode02Label,m_ui->m_faultCode03Label,m_ui->m_faultCode04Label,
+    m_ui->m_faultCode05Label,m_ui->m_faultCode06Label,m_ui->m_faultCode07Label,m_ui->m_faultCode08Label,
+    m_ui->m_faultCode09Label,m_ui->m_faultCode10Label,m_ui->m_faultCode11Label,m_ui->m_faultCode12Label,
+    m_ui->m_faultCode13Label,m_ui->m_faultCode14Label,m_ui->m_faultCode15Label,m_ui->m_faultCode16Label,
+    m_ui->m_faultCode17Label,m_ui->m_faultCode18Label,m_ui->m_faultCode19Label,m_ui->m_faultCode20Label,
+    m_ui->m_faultCode21Label,m_ui->m_faultCode22Label,m_ui->m_faultCode23Label,m_ui->m_faultCode24Label};
+  const Group faultGroups[]={Group::Dtc0,Group::Dtc1,Group::Dtc2};
+  for(int g=0;g<3;++g) {
+    const auto group=faultGroups[g];
+    const auto def=definition(p,group);
+    const auto d=na.dtc(group);
+    for(int i=0;i<8;++i) {
+      const unsigned mask=1u<<i;
+      QLabel *label=faultLabels[g*8+i];
+      rememberNaLabel(label);
+      const bool supported=((def.faultMask|def.stateMask)&mask)!=0;
+      const QString name=supported?describe(circuit(p,group,mask),mask):
+        maskText(mask)+QStringLiteral(" : ")+I18n::text((d.unknownBits&mask)?29004:29001);
+      QString detail=name;
+      if(d.availability==Availability::Missing)detail+=QStringLiteral("\n")+I18n::text(29048);
+      else if(def.stateMask&mask)detail+=QStringLiteral("\n")+I18n::text((d.stateBits&mask)?29038:29039);
+      else if(def.faultMask&mask)detail+=QStringLiteral("\n")+I18n::text((d.faultBits&mask)?circuitKey(circuit(p,group,mask)):29003);
+      label->setText(name);
+      label->setToolTip(detail+QStringLiteral("\n")+I18n::text(29021));
+    }
+  }
 }

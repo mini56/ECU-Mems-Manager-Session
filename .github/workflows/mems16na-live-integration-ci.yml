@@ -13,6 +13,7 @@ on:
       - 'summarytab.cpp'
       - 'summarytab.h'
       - 'mainwindow.cpp'
+      - 'mainwindow.h'
       - 'tools/mems16na_live_trace_selftest.cpp'
       - 'tools/test_mems16na_translation_catalog.py'
       - 'translations/*/*_mems16na.json'

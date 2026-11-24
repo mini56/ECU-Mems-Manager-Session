@@ -12,6 +12,8 @@
 #include <QByteArray>
 #include <QTextEdit>
 #include <QLabel>
+#include <QMargins>
+#include <QStringList>
 
 #include <analogwidgets/manometer.h>
 #include <analogwidgets/manometer100.h>
@@ -187,6 +189,13 @@ private:
 
     quint32 m_prevFaultMask;
     bool m_prevFaultMaskValid;
+    QHash<QLabel*, QStringList> m_naOriginalLabels;
+    QHash<QLabel*, QMargins> m_naOriginalMargins;
+    QHash<QLabel*, QLabel*> m_naExtraValues;
+    bool m_naFaultHistoryActive = false;
+    void showNaPages(const Mems16Na::SessionEvidence &na);
+    void restoreNaPages();
+    void rememberNaLabel(QLabel *label);
 
     const float mapGaugeMaxPsi = 16.0f;
     const float mapGaugeMaxKPa = 160.0f;

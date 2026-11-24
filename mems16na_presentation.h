@@ -44,6 +44,7 @@ inline QString dtcHelp(const Profile *p,Group g) {
 inline QString dtcText(const Profile *p,Group g,const DtcResult &d) {
     if(d.availability==Availability::Missing)return I18n::text(29048);
     if(d.availability==Availability::NotUsed)return I18n::text(29001);
+    if(d.availability==Availability::Unverified && !d.unknownBits)return I18n::text(29002);
     QStringList lines;
     if(d.noFault())lines<<I18n::text(29003);
     for(unsigned mask=1;mask<=128;mask<<=1)

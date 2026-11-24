@@ -1,0 +1,7 @@
+# Suivi V0.48 — Lot 2B2 : Toutes les données et Erreurs
+Base a5f0ead178bcc231afff287c83b2b11c12330ead. Lot 2B1 : run 45469286130, tests et compilation Windows verts.
+
+- Raccordement de la page Toutes les données au même snapshot et décodeur que Toutes les mesures. Les octets reçus 7D/17–1E restent dans leurs huit cellules; les quatre mots TPS sont calculés dans les cellules de résultat hautes. 7D/14–15 : mot brut dans Reçu, écart dans Calculé. Ajout de cellules de résultat dans les emplacements vides des grilles existantes, sans nouvelle ligne. Noms/infobulles historiques restaurés lorsque profil NA non identifié ou déconnexion.
+- Sept groupes DTC : aide par profil sur le libellé, même sans défaut; détail complet accessible dans la bulle en cas de texte long. Les huit bits par groupe restent distingués sur Erreurs. Masques de défaut du décodeur appliqués aux LED, à la sonnerie et à l'indicateur général; 40 DTC2 est un état et non une panne, bit non identifié conservé en information. Réinitialisation de l'historique à la transition de profil, pas de commande ECU.
+- Les traductions 2B1 sont réutilisées (aucune nouvelle clé); LSB est le sigle technique de l'octet faible. Les autres générations conservent l'ancien flux. DLL, commande ECU, logger, réglages inchangés.
+- Pas de publication ni de Setup. CI privée Windows 207, validation visuelle à effectuer (notamment longueur des libellés et bulles), Diagnostic automatique et journaux/Analyse à traiter. D1 toujours reçu uniquement via mécanisme existant. Aucun test véhicule nouveau.
