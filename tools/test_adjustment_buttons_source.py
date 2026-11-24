@@ -21,6 +21,7 @@ command_map = {
     "ignition_advance_minus":("MEMS_IgnitionAdvanceMinus","0x94"),
 }
 assert "m_ui->setupUi(this);" in w
+worker_flat = re.sub(r"\s+", "", m)
 assert "private slots:" in h
 for name,(constant,hexval) in command_map.items():
     widget="m_"+name+"Button"
@@ -32,7 +33,7 @@ for name,(constant,hexval) in command_map.items():
     assert "connect(this, SIGNAL("+name+"()), m_mems, SLOT("+slot+"()))" in w, name
     assert m.count("void MEMSInterface::"+slot+"()")==1, name
     assert re.search(r"\b"+constant+r"\s*=\s*"+hexval,cmd), name
-    assert "guardedMemsTestActuator("+constant+", NULL)" in m, name
+    assert "guardedMemsTestActuator("+constant+",NULL)" in worker_flat, name
     assert not re.search(r"connect\s*\(\s*m_ui->"+widget+r"\s*,\s*SIGNAL\s*\(\s*clicked",w), name
 assert "saveTimeouts.ReadTotalTimeoutConstant = 700;" in m
 assert "SAVE81_ACK_00_DUREE_TRANSACTION_MS=%1" in m
