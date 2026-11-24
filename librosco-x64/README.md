@@ -1,3 +1,7 @@
+## Lot traçage legacy et délais — 149 exports sources, CI à confirmer
+
+[Journal technique](JOURNAL_DEVELOPPEMENT_DLL_TRACE_TIMEOUTS_SESSION205_20261124.md). Dernière validation verte : 133 exports, run 45389288786. Manager 205 inchangé.
+
 ## Lot opérations auto-session — 147 exports sources, CI à confirmer
 
 [Journal des opérations et du traçage](JOURNAL_DEVELOPPEMENT_DLL_AUTO_IO_SESSION205_20261124.md). Aucun changement de Manager 205. Le tracé legacy et délais configurables restent à faire.

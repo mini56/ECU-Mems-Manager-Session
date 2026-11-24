@@ -25,8 +25,8 @@ def check(new_path, manager_path, definition_path):
     dll = PE(new_path)
     app = PE(manager_path)
     expected = read_definition(definition_path)
-    if len(expected) != 147:
-        raise AssertionError(f"DLL definition must declare 147 exports, got {len(expected)}")
+    if len(expected) != 149:
+        raise AssertionError(f"DLL definition must declare 149 exports, got {len(expected)}")
     # Original 91 names/ordinals must remain byte-exact in order.
     # Static guard validates the historical list; PE guard protects it again
     # when loading the Session 205 executable.
@@ -115,11 +115,17 @@ def check(new_path, manager_path, definition_path):
         "mems_manager_auto_read_faults",
         "mems_manager_auto_keepalive",
     ]
-    if expected[138:] != [(name, ordinal) for ordinal, name in enumerate(auto_io_names, start=139)]:
+    if expected[138:147] != [(name, ordinal) for ordinal, name in enumerate(auto_io_names, start=139)]:
         raise AssertionError("Auto I/O symbols/ordinals must be 139..147")
+    timeout_names = [
+        "mems_manager_set_session_timeouts",
+        "mems_manager_get_session_timeouts",
+    ]
+    if expected[147:] != [(name, ordinal) for ordinal, name in enumerate(timeout_names, start=148)]:
+        raise AssertionError("Timeout symbols/ordinals must be 148..149")
     if len(set(name for name, _ in expected)) != len(expected):
         raise AssertionError("Duplicate symbol in .def")
-    if [ordinal for _, ordinal in expected] != list(range(1, 148)):
+    if [ordinal for _, ordinal in expected] != list(range(1, 150)):
         raise AssertionError("Non-sequential / changed DLL export ordinals")
     if dll.machine != 0x8664 or app.machine != 0x8664:
         raise AssertionError("Both the built DLL and real Session 205 executable must be AMD64")

@@ -4,6 +4,7 @@
  * algorithm and MEMS 3-specific codecs in protocol_catalogue are reused.
  */
 #include "mems3_session.h"
+#include "session_timeouts_internal.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -12,6 +13,7 @@
 
 struct mems_manager_mems3_session {
     HANDLE port;
+    uint32_t response_override_ms;
     bool ready;
     mems_manager_mems3_cancel_fn cancelled;
     mems_manager_mems3_trace_fn trace;
@@ -246,7 +248,7 @@ static bool exchange_frame(mems_manager_mems3_session *s,
     if (!transmit(s,frame,frame_n))
         return false;
     return receive_expected(s,positive,positive_n,service,
-                            timeout_ms,payload,capacity,got);
+                            s->response_override_ms?s->response_override_ms:timeout_ms,payload,capacity,got);
 }
 static bool exchange(mems_manager_mems3_session *s,
                      const uint8_t *service_payload,size_t payload_n,
@@ -501,4 +503,15 @@ void mems_manager_mems3_close(mems_manager_mems3_session *s)
         s->port=INVALID_HANDLE_VALUE;
     }
     free(s);
+}
+
+/* Internal session timeout access; only generic exports are public. */
+bool mems_internal_3_get_timeouts(const mems_manager_mems3_session *s,mems_manager_session_timeouts *out)
+{
+    return s&&s->ready&&mems_internal_port_get_timeouts(s->port,out,s->response_override_ms);
+}
+bool mems_internal_3_set_timeouts(mems_manager_mems3_session *s,const mems_manager_session_timeouts *in)
+{
+    if(!s||!s->ready||!in||!mems_internal_port_set_timeouts(s->port,in))return false;
+    s->response_override_ms=in->response_ms;return true;
 }

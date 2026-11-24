@@ -2,6 +2,7 @@
 #define MEMS_MANAGER_AUTO_CONNECT_H
 #include "serial_adapters.h"
 #include "protocol_catalogue.h"
+#include "session_timeouts.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,7 +45,8 @@ typedef struct mems_manager_auto_identity {
 /* Enumerate and try the four engine protocols in Session 205 order.
  * On failure *out_session is NULL and every attempted port is released.
  * Never auto-probes RC5 or Lucas 5AS, never clears DTC, never tunes ECU.
- * Byte trace currently covers native 2J/3; legacy trace to be added separately.
+ * Byte trace covers auto-session engine protocols, including legacy wake bytes.
+ * Electrical BREAK transitions are not byte events.
  * Legacy blocking calls can only check cancellation between operations. */
 ROSCO_API bool mems_manager_auto_connect(const char *preferred_device,
     mems_manager_auto_session **out_session,mems_manager_auto_cancel_fn cancelled,
@@ -105,13 +107,22 @@ typedef struct mems_manager_trace_event {
 } mems_manager_trace_event;
 /* Consume oldest retained TX/RX event. Bounded FIFO drops oldest on overflow;
  * sequence and dropped_total expose gaps. Failed probe events retain their
- * own family/port. Native 2J/3 byte callbacks only; legacy trace not yet
- * available. Caller persists events to file; DLL writes no log files.
+ * own family/port. All engine protocols through this auto-session API.
+ * Caller persists events to file; DLL writes no log files.
  * Clear discards queued events and resets loss counter, not sequence.
  */
 ROSCO_API bool mems_manager_get_next_trace_event(mems_manager_auto_session *s,
     mems_manager_trace_event *out);
 ROSCO_API void mems_manager_clear_trace(mems_manager_auto_session *s);
+/* Configures only the already-connected port/session, owner thread only.
+ * No handshake timing changes and no changes to legacy Manager APIs.
+ * Driver may reject unsupported Win32 values. 2J/3 response override is
+ * per request, not a hard bound on OS I/O. Legacy response_ms must be 0.
+ * Preserve defaults by reading settings before changing individual fields. */
+ROSCO_API bool mems_manager_set_session_timeouts(mems_manager_auto_session *s,
+    const mems_manager_session_timeouts *timeouts);
+ROSCO_API bool mems_manager_get_session_timeouts(mems_manager_auto_session *s,
+    mems_manager_session_timeouts *timeouts);
 #ifdef __cplusplus
 }
 #endif

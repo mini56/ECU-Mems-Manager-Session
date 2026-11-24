@@ -166,3 +166,7 @@ EXPORTS
     mems_manager_auto_read_measurement @145
     mems_manager_auto_read_faults @146
     mems_manager_auto_keepalive @147
+
+; Session timeout configuration, additive only.
+    mems_manager_set_session_timeouts @148
+    mems_manager_get_session_timeouts @149

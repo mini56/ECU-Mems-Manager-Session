@@ -5,6 +5,8 @@
 #include "mems19_wakeup.h"
 #include "mems2j_session.h"
 #include "mems3_session.h"
+#include "legacy_trace.h"
+#include "session_timeouts_internal.h"
 #include <stdlib.h>
 #include <string.h>
 struct mems_manager_auto_session {
@@ -66,12 +68,14 @@ static bool try_protocol(mems_manager_auto_session *s,
     const mems_manager_serial_adapter *a,mems_manager_auto_family family)
 {
     bool ok=false,echo=false;uint8_t id[4]={0};
+    mems_internal_trace_scope scope;
     if(cancelled_now(s))return false;
     s->probe_family=(uint32_t)family;
     memcpy(s->probe_port,a->port,sizeof(s->probe_port));
     if(family==MEMS_MANAGER_AUTO_ROSCO_1X||family==MEMS_MANAGER_AUTO_19){
         memset(&s->legacy,0,sizeof(s->legacy));
         mems_init(&s->legacy);s->legacy_initialized=true;
+        mems_internal_trace_begin(&scope,&s->legacy,native_trace,s);
         if(s->legacy.mutex){
             if(family==MEMS_MANAGER_AUTO_ROSCO_1X){
                 /* Opening COM alone is never a successful ECU connection. */
@@ -82,6 +86,7 @@ static bool try_protocol(mems_manager_auto_session *s,
                     id,&echo,NULL,native_cancel,s);
             }
         }
+        mems_internal_trace_end(&scope);
     }else if(family==MEMS_MANAGER_AUTO_2J){
         ok=mems_manager_mems2j_connect(a->device_path,&s->j2,
             native_cancel,native_trace,s,NULL);
@@ -160,7 +165,7 @@ uint32_t mems_manager_get_session_capabilities(const mems_manager_auto_session *
     switch(mems_manager_get_session_family(s)){
     case MEMS_MANAGER_AUTO_ROSCO_1X:case MEMS_MANAGER_AUTO_19:
         return MEMS_MANAGER_AUTO_CAP_LEGACY_READ|MEMS_MANAGER_AUTO_CAP_DTC|
-            MEMS_MANAGER_AUTO_CAP_KEEPALIVE;
+            MEMS_MANAGER_AUTO_CAP_KEEPALIVE|MEMS_MANAGER_AUTO_CAP_WIRE_TRACE;
     case MEMS_MANAGER_AUTO_2J:case MEMS_MANAGER_AUTO_3:
         return MEMS_MANAGER_AUTO_CAP_FRAMED_READ|MEMS_MANAGER_AUTO_CAP_DTC|
             MEMS_MANAGER_AUTO_CAP_KEEPALIVE|MEMS_MANAGER_AUTO_CAP_WIRE_TRACE;
@@ -241,12 +246,14 @@ void mems_manager_clear_trace(mems_manager_auto_session *s)
 {if(s){s->trace_head=s->trace_count=0;s->trace_dropped=0;}}
 bool mems_manager_auto_read_legacy(mems_manager_auto_session *s,mems_data *data)
 {
-    mems_data tmp;bool ok;ULONGLONG start;
+    mems_data tmp;bool ok;ULONGLONG start;mems_internal_trace_scope scope;
     if(!begin_operation(s,s&&s->legacy_initialized,data!=NULL))return false;
     start=GetTickCount64();
+    mems_internal_trace_begin(&scope,&s->legacy,native_trace,s);
     ok=s->identity.family==MEMS_MANAGER_AUTO_19?
         mems_read_kline19(&s->legacy,&tmp,s->identity.local_echo!=0):
         mems_read(&s->legacy,&tmp);
+    mems_internal_trace_end(&scope);
     if(!finish_operation(s,ok,false,start))return false;
     *data=tmp;return true;
 }
@@ -276,13 +283,35 @@ bool mems_manager_auto_read_faults(mems_manager_auto_session *s,uint8_t *raw,siz
 }
 bool mems_manager_auto_keepalive(mems_manager_auto_session *s)
 {
-    bool ok,native;ULONGLONG start;
+    bool ok,native;ULONGLONG start;mems_internal_trace_scope scope;
     if(!begin_operation(s,s&&(s->legacy_initialized||s->j2||s->m3),true))return false;
     start=GetTickCount64();native=s->j2||s->m3;
     if(s->j2)ok=mems_manager_mems2j_keepalive(s->j2);
     else if(s->m3)ok=mems_manager_mems3_keepalive(s->m3);
-    else if(s->identity.family==MEMS_MANAGER_AUTO_19)
-        ok=mems_command_kline19(&s->legacy,MEMS_Heartbeat,s->identity.local_echo!=0,NULL);
-    else ok=mems_heartbeat(&s->legacy);
+    else {
+        mems_internal_trace_begin(&scope,&s->legacy,native_trace,s);
+        if(s->identity.family==MEMS_MANAGER_AUTO_19)
+            ok=mems_command_kline19(&s->legacy,MEMS_Heartbeat,s->identity.local_echo!=0,NULL);
+        else ok=mems_heartbeat(&s->legacy);
+        mems_internal_trace_end(&scope);
+    }
     return finish_operation(s,ok,native,start);
+}
+
+bool mems_manager_get_session_timeouts(mems_manager_auto_session *s,mems_manager_session_timeouts *out)
+{
+    if(!s||!out||InterlockedCompareExchange(&s->operation_state,0,0)!=0)return false;
+    if(s->j2)return mems_internal_2j_get_timeouts(s->j2,out);
+    if(s->m3)return mems_internal_3_get_timeouts(s->m3,out);
+    return s->legacy_initialized&&mems_internal_port_get_timeouts(s->legacy.sd,out,0);
+}
+bool mems_manager_set_session_timeouts(mems_manager_auto_session *s,const mems_manager_session_timeouts *in)
+{
+    if(!s||!in||InterlockedCompareExchange(&s->operation_state,0,0)!=0)return false;
+    /* Prevent accidentally configuring indefinitely blocking all-zero Win32
+     * read timeouts on the worker. Keep read polling and cancellation bounded. */
+    if(!in->read_constant_ms&&!in->read_multiplier_ms&&!in->read_interval_ms)return false;
+    if(s->j2)return mems_internal_2j_set_timeouts(s->j2,in);
+    if(s->m3)return mems_internal_3_set_timeouts(s->m3,in);
+    return s->legacy_initialized&&!in->response_ms&&mems_internal_port_set_timeouts(s->legacy.sd,in);
 }

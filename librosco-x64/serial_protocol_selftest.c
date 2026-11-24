@@ -169,6 +169,13 @@ typedef struct {
     uint8_t command;
 } operation_plain;
 
+static uint8_t trace_tx[64],trace_rx[128];static size_t trace_tx_n,trace_rx_n;
+static void observe_trace(void *user,int direction,uint64_t tick,const uint8_t *p,size_t n)
+{
+    (void)user;(void)tick;
+    if(direction==1&&trace_tx_n+n<=sizeof(trace_tx)){memcpy(trace_tx+trace_tx_n,p,n);trace_tx_n+=n;}
+    if(direction==2&&trace_rx_n+n<=sizeof(trace_rx)){memcpy(trace_rx+trace_rx_n,p,n);trace_rx_n+=n;}
+}
 int main(void)
 {
     mems_info info;
@@ -233,6 +240,19 @@ int main(void)
         CHECK(g.receive_index == g.receive_count);
     }
 
+    mock_reset();
+    {
+        mems_internal_trace_scope scope;mems_info other=info;
+        other.sd=(HANDLE)(uintptr_t)999;
+        mems_internal_trace_begin(&scope,&info,observe_trace,NULL);
+        mems_internal_trace_bytes(other.sd,1,0,(const uint8_t*)"X",1);
+        CHECK(mems_init_link(&info,id));
+        CHECK(trace_tx_n==g.sent_count&&memcmp(trace_tx,g.sent,trace_tx_n)==0);
+        CHECK(trace_rx_n==g.receive_count&&memcmp(trace_rx,g.receive,trace_rx_n)==0);
+        mems_internal_trace_end(&scope);
+        size_t old=trace_tx_n;
+        CHECK(mems_heartbeat(&info));CHECK(trace_tx_n==old);
+    }
     mock_reset();
     CHECK(mems_init_link(&info, id));
     CHECK(g.sent_count == 4 && g.sent[0] == 0xCA && g.sent[1] == 0x75

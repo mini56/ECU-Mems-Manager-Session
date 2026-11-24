@@ -14,6 +14,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 add_library(rosco SHARED
     setup.c
     protocol.c
+    legacy_trace.c
     family.c
     transient_injection.c
     protocol_catalogue.c
@@ -71,7 +72,7 @@ add_test(NAME manager_dll_contract_selftest COMMAND manager_dll_contract_selftes
 
 # Simulated transport regression uses protocol.c unchanged with fake Win32
 # I/O solely inside this offline test executable. No real COM access possible.
-add_executable(serial_protocol_selftest serial_protocol_selftest.c)
+add_executable(serial_protocol_selftest serial_protocol_selftest.c legacy_trace.c)
 add_test(NAME serial_protocol_selftest COMMAND serial_protocol_selftest)
 
 # Protocol-only C tests never open COM ports or talk to real ECUs.
@@ -95,7 +96,7 @@ add_executable(dll_mems19_wakeup_codec_selftest mems19_wakeup_codec_selftest.c)
 target_link_libraries(dll_mems19_wakeup_codec_selftest PRIVATE rosco)
 add_test(NAME dll_mems19_wakeup_codec_selftest COMMAND dll_mems19_wakeup_codec_selftest)
 
-add_executable(dll_mems19_wakeup_selftest mems19_wakeup_selftest.c mems19_wakeup_codec.c)
+add_executable(dll_mems19_wakeup_selftest mems19_wakeup_selftest.c mems19_wakeup_codec.c legacy_trace.c)
 add_test(NAME dll_mems19_wakeup_selftest COMMAND dll_mems19_wakeup_selftest)
 
 # Native MEMS 2J K-Line authenticated diagnostic session. The transport
@@ -118,5 +119,5 @@ target_link_libraries(dll_serial_adapters_selftest PRIVATE setupapi cfgmgr32 adv
 add_test(NAME dll_serial_adapters_selftest COMMAND dll_serial_adapters_selftest)
 
 # Engine auto-dispatch regression; all protocol and enumeration calls mocked.
-add_executable(dll_auto_connect_selftest auto_connect_selftest.c)
+add_executable(dll_auto_connect_selftest auto_connect_selftest.c legacy_trace.c)
 add_test(NAME dll_auto_connect_selftest COMMAND dll_auto_connect_selftest)

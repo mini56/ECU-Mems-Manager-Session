@@ -115,6 +115,30 @@ static bool cancel(void *user){(void)user;return g.cancel_after&&g.n>=g.cancel_a
 #define mems_manager_mems3_keepalive fake3_keep
 #define mems_manager_mems2j_last_transaction fake2_last
 #define mems_manager_mems3_last_transaction fake3_last
+static COMMTIMEOUTS fake_timeouts={100,0,100,0,400};
+static uint32_t fake_response_timeout;
+static BOOL WINAPI fake_get_timeouts(HANDLE h,LPCOMMTIMEOUTS p){(void)h;*p=fake_timeouts;return TRUE;}
+static BOOL WINAPI fake_set_timeouts(HANDLE h,LPCOMMTIMEOUTS p){(void)h;fake_timeouts=*p;return TRUE;}
+static bool fake_native_get(mems_manager_session_timeouts *p){
+    p->read_interval_ms=fake_timeouts.ReadIntervalTimeout;p->read_multiplier_ms=fake_timeouts.ReadTotalTimeoutMultiplier;
+    p->read_constant_ms=fake_timeouts.ReadTotalTimeoutConstant;p->write_multiplier_ms=fake_timeouts.WriteTotalTimeoutMultiplier;
+    p->write_constant_ms=fake_timeouts.WriteTotalTimeoutConstant;p->response_ms=fake_response_timeout;return true;
+}
+static bool fake_native_set(const mems_manager_session_timeouts *p){
+    fake_timeouts.ReadIntervalTimeout=p->read_interval_ms;fake_timeouts.ReadTotalTimeoutMultiplier=p->read_multiplier_ms;
+    fake_timeouts.ReadTotalTimeoutConstant=p->read_constant_ms;fake_timeouts.WriteTotalTimeoutMultiplier=p->write_multiplier_ms;
+    fake_timeouts.WriteTotalTimeoutConstant=p->write_constant_ms;fake_response_timeout=p->response_ms;return true;
+}
+static bool fake2_get(const mems_manager_mems2j_session *s,mems_manager_session_timeouts *p){(void)s;return fake_native_get(p);}
+static bool fake2_set(mems_manager_mems2j_session *s,const mems_manager_session_timeouts *p){(void)s;return fake_native_set(p);}
+static bool fake3_get(const mems_manager_mems3_session *s,mems_manager_session_timeouts *p){(void)s;return fake_native_get(p);}
+static bool fake3_set(mems_manager_mems3_session *s,const mems_manager_session_timeouts *p){(void)s;return fake_native_set(p);}
+#define GetCommTimeouts fake_get_timeouts
+#define SetCommTimeouts fake_set_timeouts
+#define mems_internal_2j_get_timeouts fake2_get
+#define mems_internal_2j_set_timeouts fake2_set
+#define mems_internal_3_get_timeouts fake3_get
+#define mems_internal_3_set_timeouts fake3_set
 #include "auto_connect.c"
 int main(void){
     mems_manager_auto_session *s=NULL;mems_manager_auto_identity id;mems_manager_auto_result r;
@@ -154,6 +178,14 @@ int main(void){
         reset();g.success_family=1;g.success_port=1;
         CHECK(mems_manager_auto_connect(NULL,&s,cancel,NULL,NULL,&r));
         active=s;CHECK(!mems_manager_cancel_current(s));
+        {
+            mems_manager_session_timeouts tm,back;
+            CHECK(mems_manager_get_session_timeouts(s,&tm)&&tm.read_constant_ms==100&&tm.response_ms==0);
+            tm.read_constant_ms=150;
+            CHECK(mems_manager_set_session_timeouts(s,&tm));
+            CHECK(mems_manager_get_session_timeouts(s,&back)&&back.read_constant_ms==150);
+            tm.response_ms=600;CHECK(!mems_manager_set_session_timeouts(s,&tm));
+        }
         CHECK(!mems_manager_get_transport_error(s,&error));
         CHECK(mems_manager_auto_read_legacy(s,&data)&&data.engine_rpm==1234);
         CHECK(mems_manager_get_response_timing(s,&duration));
@@ -168,6 +200,14 @@ int main(void){
         mems_manager_disconnect_auto(s);s=NULL;
         reset();g.kline=true;g.success_family=20;g.success_port=1;
         CHECK(mems_manager_auto_connect(NULL,&s,cancel,NULL,NULL,&r));active=s;
+        {
+            mems_manager_session_timeouts tm,back;
+            CHECK(mems_manager_get_session_timeouts(s,&tm));
+            tm.response_ms=700;
+            CHECK(mems_manager_set_session_timeouts(s,&tm));
+            CHECK(mems_manager_get_session_timeouts(s,&back)&&back.response_ms==700);
+            tm.response_ms=0;CHECK(mems_manager_set_session_timeouts(s,&tm));
+        }
         CHECK(mems_manager_auto_read_measurement(s,9,raw,sizeof(raw),&n,&metrics)&&n==4&&raw[1]==9&&metrics.id==9);
         CHECK(mems_manager_auto_read_faults(s,raw,sizeof(raw),&n)&&raw[1]==0x19);
         CHECK(mems_manager_auto_keepalive(s));

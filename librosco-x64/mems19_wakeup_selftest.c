@@ -170,6 +170,13 @@ static void check_bits(void)
     CHECK(g.break_cells==10);
     for(i=0;i<10;++i)CHECK(g.bit_levels[i]==expected[i]);
 }
+static unsigned wake_tx,wake_rx;static uint8_t wake_ack;
+static void observe_wake(void *user,int dir,uint64_t tick,const uint8_t *p,size_t n)
+{
+    (void)user;(void)tick;
+    if(dir==1){wake_tx+=(unsigned)n;wake_ack=p[0];}
+    if(dir==2)wake_rx+=(unsigned)n;
+}
 int main(void)
 {
     mems_info info;
@@ -182,7 +189,13 @@ int main(void)
 
     reset_fake();
     g.echo=true;
-    CHECK(mems_manager_mems19_wakeup(&info,&echo,&status,NULL,NULL));
+    {
+        mems_internal_trace_scope scope;
+        mems_internal_trace_begin(&scope,&info,observe_wake,NULL);
+        CHECK(mems_manager_mems19_wakeup(&info,&echo,&status,NULL,NULL));
+        mems_internal_trace_end(&scope);
+        CHECK(wake_tx==1&&wake_ack==0x7C&&wake_rx>=4);
+    }
     CHECK(status==MEMS_MANAGER_MEMS19_WAKE_OK && echo);
     CHECK(g.tick>=4050 && g.tick<5000);
     CHECK(g.purge_calls==1 && g.nsent==1 && g.sent[0]==0x7C);

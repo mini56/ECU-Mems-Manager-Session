@@ -12,3 +12,7 @@ Source fonctionnelle : serialadapterdetector.h et serialdevenumerator.cpp de Man
 Tests : normalisation, classification, VID/PID FTDI, déduplication, ordre et port préféré, énumération native en lecture seule sur runner sans câble imposé. CI attendue 12 CTest, 133 exports exacts, 15 imports Manager, 16 pages et Setup de test indépendant. Résultat CI non encore constaté. Aucune détection physique de câble/ECU revendiquée.
 
 Découpage : ce lot couvre T01–T03 de l'inventaire. T04 et suivants (auto-connexion, propriété session, annulation, trace et erreurs) restent à faire. Le prochain lot doit respecter l'ordre de tentatives de memsinterface_dispatch.cpp et ne jamais inventer un sous-type ECU à partir du câble.
+
+## Validation finale
+
+Run [45389288786](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45389288786) vert : 12/12 CTest, 133 exports, 15 imports, 16 pages, Setup isolé installé et désinstallé. Aucun ECU physique.

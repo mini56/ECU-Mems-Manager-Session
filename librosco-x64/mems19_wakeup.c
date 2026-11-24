@@ -1,4 +1,5 @@
 #include "mems19_wakeup.h"
+#include "legacy_trace.h"
 #include <string.h>
 
 /* Physical 5-baud ISO 9141 wake extracted from Session 205
@@ -54,6 +55,7 @@ static bool receive_sync_keys(HANDLE handle, uint8_t* inverted_key,
         if (!ReadFile(handle, &byte, 1u, &got, NULL))
             return false;
         if (got == 1u) {
+            mems_internal_trace_bytes(handle,2,(uint64_t)GetTickCount64(),&byte,1);
             if (length == sizeof(stream)) {
                 memmove(stream, stream + 1, sizeof(stream) - 1u);
                 --length;
@@ -86,6 +88,7 @@ static bool receive_address_confirmation(HANDLE handle, uint8_t key_ack,
         if (!ReadFile(handle, &byte, 1u, &got, NULL))
             return false;
         if (got == 1u) {
+            mems_internal_trace_bytes(handle,2,(uint64_t)GetTickCount64(),&byte,1);
             if (length == sizeof(stream)) {
                 memmove(stream, stream + 1, sizeof(stream) - 1u);
                 --length;
@@ -186,6 +189,7 @@ bool mems_manager_mems19_wakeup(
         status = MEMS_MANAGER_MEMS19_WAKE_ACK_FAILED;
         goto fail;
     }
+    mems_internal_trace_bytes(handle,1,(uint64_t)GetTickCount64(),&complemented_key,1);
     if (!receive_address_confirmation(handle, complemented_key, &echo,
                                       callback, data)) {
         status = cancelled_now(callback, data)

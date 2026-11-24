@@ -177,6 +177,11 @@ expected_auto_io = [
     "mems_manager_auto_keepalive",
 ]
 
+expected_timeouts = [
+    "mems_manager_set_session_timeouts",
+    "mems_manager_get_session_timeouts",
+]
+
 exports = []
 in_exports = False
 for raw in definition.splitlines():
@@ -189,9 +194,9 @@ for raw in definition.splitlines():
     if in_exports:
         exports.append(line.split()[0])
 
-if exports != expected_exports + expected_extensions + expected_families + expected_injection + expected_protocol_catalogue + expected_lucas5as + expected_mems19_wakeup + expected_mems2j_session + expected_mems3_session + expected_rc5_session + expected_adapters + expected_auto_session + expected_auto_io:
+if exports != expected_exports + expected_extensions + expected_families + expected_injection + expected_protocol_catalogue + expected_lucas5as + expected_mems19_wakeup + expected_mems2j_session + expected_mems3_session + expected_rc5_session + expected_adapters + expected_auto_session + expected_auto_io + expected_timeouts:
     raise SystemExit(f"FAIL: changed ABI or missing family/injection/codec exports: {exports}")
-if len(set(exports)) != 147:
+if len(set(exports)) != 149:
     raise SystemExit("FAIL: duplicate or missing symbols in ROSCO DLL")
 
 required_protocol_guards = [
@@ -237,7 +242,7 @@ for name, value in required_commands.items():
     if not re.search(pattern, header):
         raise SystemExit(f"FAIL historical command changed/missing: {name}={value}")
 
-print("OK: 91 original + 9 Lucas 5AS + 5 MEMS1.9 + 9 native MEMS2J + 9 native MEMS3 + 7 native RC5 + 3 native adapter APIs + 5 auto session APIs + 9 auto I/O APIs = 147 exports")
+print("OK: 91 original + 9 Lucas 5AS + 5 MEMS1.9 + 9 native MEMS2J + 9 native MEMS3 + 7 native RC5 + 3 native adapter APIs + 5 auto session APIs + 9 auto I/O APIs + 2 timeout APIs = 149 exports")
 assert "mems_reset_ECU_leopold @54" in definition
 print("OK: Manager reset ECU=FA and adjustments=0F, explicit LeopoldG ECU=AF")
 assert exports[54:65] == expected_families
@@ -251,6 +256,7 @@ assert exports[123:130] == expected_rc5_session
 assert exports[130:133] == expected_adapters
 assert exports[133:138] == expected_auto_session
 assert exports[138:147] == expected_auto_io
+assert exports[147:149] == expected_timeouts
 catalogue_header = (root / "protocol_catalogue.h").read_text(encoding="utf-8")
 catalogue_source = (root / "protocol_catalogue.c").read_text(encoding="utf-8")
 for name in expected_protocol_catalogue:
@@ -404,7 +410,11 @@ for forbidden in ("mems_manager_rc5_","mems_manager_lucas5as_","clear_faults(","
         raise SystemExit(f"FAIL engine auto-connect unexpected operation: {forbidden}")
 if '#include "auto_connect.c"' not in auto_test:
     raise SystemExit("FAIL auto dispatcher regression must exercise production source")
-print("OK: native automatic engine dispatch and offline fallback regression")
+if "legacy_trace.c" not in cmake or "mems_internal_trace_bytes(" not in protocol or "mems_internal_trace_bytes(" not in mems19_source:
+    raise SystemExit("FAIL legacy trace hooks missing")
+if "response_override_ms" not in mems2j_source or "response_override_ms" not in mems3_source:
+    raise SystemExit("FAIL native response override missing")
+print("OK: native automatic engine dispatch, legacy wire trace and per-session timeouts")
 
 
 

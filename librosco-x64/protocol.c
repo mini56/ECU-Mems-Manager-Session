@@ -1,4 +1,5 @@
 #include "rosco.h"
+#include "legacy_trace.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -16,6 +17,7 @@ int16_t mems_read_serial(mems_info* info, uint8_t* buffer, uint16_t quantity)
         const DWORD remaining = (DWORD)(quantity - total);
         if (ReadFile(info->sd, buffer + total, remaining, &got, NULL) != TRUE || got == 0)
             break;
+        mems_internal_trace_bytes(info->sd,2,(uint64_t)GetTickCount64(),buffer+total,got);
         total = (uint16_t)(total + (uint16_t)got);
     }
 
@@ -32,9 +34,12 @@ int16_t mems_write_serial(mems_info* info, uint8_t* buffer, uint16_t quantity)
     if (!info || !buffer || quantity == 0 || !mems_is_connected(info))
         return -1;
 
-    if (WriteFile(info->sd, buffer, (DWORD)quantity, &written, NULL) == TRUE &&
-        written == (DWORD)quantity)
-        return (int16_t)written;
+    if (WriteFile(info->sd, buffer, (DWORD)quantity, &written, NULL) == TRUE)
+    {
+        if (written && written <= quantity)
+            mems_internal_trace_bytes(info->sd,1,(uint64_t)GetTickCount64(),buffer,written);
+        if (written == (DWORD)quantity) return (int16_t)written;
+    }
 
     return -1;
 }
