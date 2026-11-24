@@ -129,6 +129,7 @@ jobs:
         run: |
           $ErrorActionPreference='Stop'
           $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
+          $env:QT_QPA_PLATFORM='offscreen'
           cmake -S tools/mems16na_analysis_test -B build-na-analysis -A x64 -DCMAKE_PREFIX_PATH='C:/Qt/5.15.2/msvc2019_64'
           if($LASTEXITCODE -ne 0){throw 'NA_ANALYSIS_CONFIG_FAILED'}
           cmake --build build-na-analysis --config Release --parallel
