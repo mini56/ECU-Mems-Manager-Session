@@ -17,3 +17,7 @@ Les exports 1–114 sont préservés. Neuf nouveaux exports 115–123 :
 Transport Win32 9600 8E1, réveil encadré 1A 9A / 5A 9A, session 10 A0, seed/key 27 (seed zéro : pas de clé), ping 3E/7E. Trames B8 13 F7 LEN PAYLOAD XOR ; réponses avec adresse ECU variable. Lecture mesures 21 XX et cycle DTC + 00/06/0A/0B/21 ; DTC 18 00 00 00 / 58, effacement explicite 14 00 00 / 54 00 00. Aucun effacement automatique. Traces TX/RX, réponses négatives, pending, timeout, annulation. Codecs MEMS3 existants réutilisés, aucune dépendance Qt. Sources de référence : mems3protocol.h de Session 205 et protocol_catalogue.c.
 
 Test Win32 simulé avec réponses XOR indépendantes, écho fragmenté/complet ou brut, seed zéro, erreurs, DTC et fermeture. Validation CI prévue : compilation DLL, 10 CTest, 123 exports exacts, 15 imports Manager, 16 pages, Setup isolé. **Résultat CI non encore constaté ; aucun test sur ECU physique.**
+
+## Validation CI — premier passage
+
+Run [45358305771](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45358305771) : arrêt avant compilation dans validate_protocol_guards.py, liste statique restée à 114. Correction additive : contrôle des 123 noms, déclaration/implémentation des neuf exports MEMS3, CMake et protocole ; conservation de tous les contrôles précédents. Nouvelle validation isolée requise.

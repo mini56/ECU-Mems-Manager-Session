@@ -1,5 +1,5 @@
 # Exclusively the DLL verification workflow. No Session build, Setup or MAJ
-# workflow is changed by this file. Test revision: independent Session205 Setup install + uninstall smoke.
+# workflow is changed by this file. Test revision: MEMS3 static ABI guard + independent Session205 Setup install + uninstall smoke.
 # The application is built only in a
 # disposable worktree pinned to the real Session 205 commit.
 name: DLL MEMS Manager x64 - validation Session 205 / MEMS3

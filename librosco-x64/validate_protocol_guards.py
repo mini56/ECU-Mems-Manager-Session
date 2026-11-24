@@ -129,6 +129,18 @@ expected_mems2j_session = [
     "mems_manager_mems2j_close",
 ]
 
+expected_mems3_session = [
+    "mems_manager_mems3_connect",
+    "mems_manager_mems3_read_measurement",
+    "mems_manager_mems3_read_faults",
+    "mems_manager_mems3_clear_faults",
+    "mems_manager_mems3_keepalive",
+    "mems_manager_mems3_read_cycle",
+    "mems_manager_mems3_last_transaction",
+    "mems_manager_mems3_is_open",
+    "mems_manager_mems3_close",
+]
+
 exports = []
 in_exports = False
 for raw in definition.splitlines():
@@ -141,9 +153,9 @@ for raw in definition.splitlines():
     if in_exports:
         exports.append(line.split()[0])
 
-if exports != expected_exports + expected_extensions + expected_families + expected_injection + expected_protocol_catalogue + expected_lucas5as + expected_mems19_wakeup + expected_mems2j_session:
+if exports != expected_exports + expected_extensions + expected_families + expected_injection + expected_protocol_catalogue + expected_lucas5as + expected_mems19_wakeup + expected_mems2j_session + expected_mems3_session:
     raise SystemExit(f"FAIL: changed ABI or missing family/injection/codec exports: {exports}")
-if len(set(exports)) != 114:
+if len(set(exports)) != 123:
     raise SystemExit("FAIL: duplicate or missing symbols in ROSCO DLL")
 
 required_protocol_guards = [
@@ -189,7 +201,7 @@ for name, value in required_commands.items():
     if not re.search(pattern, header):
         raise SystemExit(f"FAIL historical command changed/missing: {name}={value}")
 
-print("OK: 91 original + 9 Lucas 5AS + 5 MEMS1.9 + 9 native MEMS2J = 114 exports")
+print("OK: 91 original + 9 Lucas 5AS + 5 MEMS1.9 + 9 native MEMS2J + 9 native MEMS3 = 123 exports")
 assert "mems_reset_ECU_leopold @54" in definition
 print("OK: Manager reset ECU=FA and adjustments=0F, explicit LeopoldG ECU=AF")
 assert exports[54:65] == expected_families
@@ -198,6 +210,7 @@ assert exports[71:91] == expected_protocol_catalogue
 assert exports[91:100] == expected_lucas5as
 assert exports[100:105] == expected_mems19_wakeup
 assert exports[105:114] == expected_mems2j_session
+assert exports[114:123] == expected_mems3_session
 catalogue_header = (root / "protocol_catalogue.h").read_text(encoding="utf-8")
 catalogue_source = (root / "protocol_catalogue.c").read_text(encoding="utf-8")
 for name in expected_protocol_catalogue:
@@ -274,6 +287,28 @@ for forbidden in ("#include <Qt", "#include <QSerialPort"):
 if '31 CB + 15x00' not in mems2j_source or '0x81,0x13,0xF7,0x81,0x0C' not in mems2j_source:
     raise SystemExit("FAIL MEMS2J wake/clear provenance missing")
 print("OK: nine native MEMS2J session APIs, offline serial test and zero Qt dependency")
+
+mems3_header=(root / "mems3_session.h").read_text(encoding="utf-8")
+mems3_source=(root / "mems3_session.c").read_text(encoding="utf-8")
+mems3_test=(root / "mems3_session_selftest.c").read_text(encoding="utf-8")
+for name in expected_mems3_session:
+    if not re.search(rf"\b{re.escape(name)}\s*\(",mems3_header):
+        raise SystemExit(f"FAIL MEMS3 C ABI declaration missing: {name}")
+    if not re.search(rf"\b{re.escape(name)}\s*\(",mems3_source):
+        raise SystemExit(f"FAIL MEMS3 compiled implementation missing: {name}")
+for required in ("mems3_session.c", "dll_mems3_session_selftest", "mems3_session_selftest.c"):
+    if required not in cmake:
+        raise SystemExit(f"FAIL MEMS3 CMake missing: {required}")
+for forbidden in ("#include <Qt", "#include <QSerialPort", "mems2j_frame_encode(", "mems2j_frame_decode("):
+    if forbidden in mems3_header or forbidden in mems3_source:
+        raise SystemExit(f"FAIL MEMS3 unexpected dependency: {forbidden}")
+for required in ("dcb.BaudRate = 9600", "dcb.Parity = EVENPARITY", "mems3_frame_encode(", "mems3_frame_decode(", "0x1A,0x9A", "0x14,0,0", "0x54,0,0"):
+    if required not in mems3_source:
+        raise SystemExit(f"FAIL MEMS3 protocol guard missing: {required}")
+if '#include "mems3_session.c"' not in mems3_test:
+    raise SystemExit("FAIL MEMS3 offline test must exercise production source")
+print("OK: nine native MEMS3 session APIs, offline serial test and zero Qt dependency")
+
 
 
 print("OK: family and AANMP002 modules exported and compiled within DLL only")

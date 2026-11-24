@@ -322,12 +322,11 @@ int main(void)
     CHECK(result==MEMS_MANAGER_3_OK && neg==0 && timing<=350);
     CHECK(mems_manager_mems3_read_cycle(s,collect_cycle,NULL,&success));
     CHECK(success==6 && g.callback_results==6 && g.callback_positive==6);
-    CHECK(g.callback_raw_only==1); /* first 'extra' = 0x00 */
+    CHECK(g.callback_raw_only==1); /* measurement ID 0x00 */
     mems_manager_mems3_close(s);s=NULL;
     CHECK(g.closes==1);
 
-    /* No echo is a legitimate cable mode; sensor 09 may be rejected
-     * during optional Connect probe without invalidating the session. */
+    /* Raw wake echo and zero seed are legitimate MEMS 3 variants. */
     reset_fake();
     g.echo=false; g.raw_echo=true; g.zero_seed=true;
     CHECK(mems_manager_mems3_connect("COM99",&s,NULL,collect_trace,NULL,&result));
