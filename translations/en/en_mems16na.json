@@ -47,5 +47,12 @@
   "29045": "States are interpreted only when their polarity is confirmed for this firmware.",
   "29046": "Ambient temperature",
   "29047": "Fuel temperature",
-  "29048": "Frame unavailable or not validated"
+  "29048": "Frame unavailable or not validated",
+  "29049": "Identified firmware",
+  "29050": "Naturally aspirated MEMS 1.6 — interpretation based on identified firmware.",
+  "29051": "Stored fault",
+  "29052": "Diagnostics: unvalidated data",
+  "29053": "Lambda fault indicator (7D/09): %1",
+  "29054": "Informational reading; no validated fault threshold for this interpretation.",
+  "29055": "Short-term fuel correction"
 }

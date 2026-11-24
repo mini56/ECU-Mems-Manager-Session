@@ -47,5 +47,12 @@
   "29045": "Gli stati sono interpretati solo se la polarità è confermata per questo firmware.",
   "29046": "Temperatura ambiente",
   "29047": "Temperatura carburante",
-  "29048": "Trama non disponibile o non convalidata"
+  "29048": "Trama non disponibile o non convalidata",
+  "29049": "Firmware identificato",
+  "29050": "MEMS 1.6 aspirato — interpretazione secondo il firmware identificato.",
+  "29051": "Guasto memorizzato",
+  "29052": "Diagnosi: dati non convalidati",
+  "29053": "Indicatore guasto lambda (7D/09): %1",
+  "29054": "Misura informativa; nessuna soglia di guasto convalidata per questa interpretazione.",
+  "29055": "Correzione carburante a breve termine"
 }

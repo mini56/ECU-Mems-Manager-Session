@@ -47,5 +47,12 @@
   "29045": "Zustände werden nur bei bestätigter Polarität dieser Firmware interpretiert.",
   "29046": "Umgebungstemperatur",
   "29047": "Kraftstofftemperatur",
-  "29048": "Frame nicht verfügbar oder nicht validiert"
+  "29048": "Frame nicht verfügbar oder nicht validiert",
+  "29049": "Identifizierte Firmware",
+  "29050": "MEMS 1.6 Saugmotor — Interpretation gemäß identifizierter Firmware.",
+  "29051": "Gespeicherter Fehler",
+  "29052": "Diagnose: Daten nicht validiert",
+  "29053": "Lambda-Fehlerindikator (7D/09): %1",
+  "29054": "Informative Messung; kein validierter Fehlergrenzwert für diese Interpretation.",
+  "29055": "Kurzzeit-Kraftstoffkorrektur"
 }

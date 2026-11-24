@@ -47,5 +47,12 @@
   "29045": "Les états sont interprétés seulement si leur polarité est confirmée pour ce firmware.",
   "29046": "Température ambiante",
   "29047": "Température carburant",
-  "29048": "Trame non disponible ou non validée"
+  "29048": "Trame non disponible ou non validée",
+  "29049": "Firmware identifié",
+  "29050": "MEMS 1.6 atmosphérique — interprétation selon le firmware identifié.",
+  "29051": "Défaut mémorisé",
+  "29052": "Diagnostic : données non validées",
+  "29053": "Indicateur de défaut lambda (7D/09) : %1",
+  "29054": "Mesure informative ; aucun seuil de défaut validé pour cette interprétation.",
+  "29055": "Correction carburant à court terme"
 }

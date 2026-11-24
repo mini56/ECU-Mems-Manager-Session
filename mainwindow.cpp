@@ -1139,7 +1139,7 @@ void MainWindow::onDataReady()
   const quint8 fault1=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc1).faultBits:data->dtc1;
   const quint8 fault2=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc2).faultBits:data->dtc2;
   m_summaryTab->updateData(data,&naEvidence);
-  if (m_diagnosticPanel) m_diagnosticPanel->updateData(data);
+  if (m_diagnosticPanel) m_diagnosticPanel->updateData(data,&naEvidence);
   int corrected_iac = (data->iac_position > IAC_MAXIMUM) ? IAC_MAXIMUM : data->iac_position;
   const double ignitionAdvanceDeg = static_cast<double>(data->ignition_advance) * 0.5 - 24.0;
   const double ignitionAdjustmentDeg = (static_cast<int>(data->ignition_advance2) - 48) * 0.5;
@@ -1760,6 +1760,7 @@ void MainWindow::onDisconnect()
 {
   restoreNaPages();
   if(m_summaryTab)m_summaryTab->clearNaPresentation();
+  if(m_diagnosticPanel)m_diagnosticPanel->endNaSession();
   EcuCommunicationLog::finish();
   m_ui->m_saveAdjustmentsButton->setEnabled(false);
   setProperty("ecuConnectInProgress", false);

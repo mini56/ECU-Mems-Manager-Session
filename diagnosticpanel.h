@@ -6,6 +6,7 @@
 #include <QStringList>
 #include <QVariantMap>
 #include "rosco.h"
+#include "mems16na_session_evidence.h"
 
 class QLabel;
 class QPushButton;
@@ -17,7 +18,8 @@ class DiagnosticPanel : public QWidget
     Q_OBJECT
 public:
     explicit DiagnosticPanel(QWidget *parent = nullptr);
-    void updateData(const mems_data *data);
+    void updateData(const mems_data *data, const Mems16Na::SessionEvidence *na = nullptr);
+    void endNaSession();
     void update2JData(const QVariantMap &values, const QStringList &faults,
                       const QString &family = QStringLiteral("MEMS 2J"));
     void setEcuId(const QByteArray &id);
@@ -42,6 +44,10 @@ private:
     QPushButton *m_clear;
     QPushButton *m_export;
     Snapshot m_reference;
+    Snapshot m_naReference;
+    Mems16Na::SessionEvidence m_naEvidence;
+    void rebuildNa(const mems_data &d);
+    QString buildNaReport() const;
     mems_data m_last{};
     bool m_haveData = false;
     bool m_showing2J = false;

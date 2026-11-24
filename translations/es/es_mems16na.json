@@ -47,5 +47,12 @@
   "29045": "Los estados solo se interpretan si su polaridad está confirmada para este firmware.",
   "29046": "Temperatura ambiente",
   "29047": "Temperatura combustible",
-  "29048": "Trama no disponible o no validada"
+  "29048": "Trama no disponible o no validada",
+  "29049": "Firmware identificado",
+  "29050": "MEMS 1.6 atmosférico — interpretación según el firmware identificado.",
+  "29051": "Avería memorizada",
+  "29052": "Diagnóstico: datos no validados",
+  "29053": "Indicador de avería lambda (7D/09): %1",
+  "29054": "Medición informativa; sin umbral de avería validado para esta interpretación.",
+  "29055": "Corrección de combustible a corto plazo"
 }

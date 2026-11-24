@@ -16,6 +16,7 @@
 #include <QTableWidgetItem>
 #include <QVBoxLayout>
 #include "i18n.h"
+#include "mems16na_presentation.h"
 #define tr I18n::text
 
 namespace {
@@ -90,19 +91,35 @@ QString DiagnosticPanel::hexByte(quint8 v)
 
 void DiagnosticPanel::setEcuId(const QByteArray &id)
 {
+    if(m_naEvidence.identifiedProfile())endNaSession();
     m_ecuId = id;
     if (m_haveData)
         rebuild(m_last);
 }
 
-void DiagnosticPanel::updateData(const mems_data *data)
+void DiagnosticPanel::updateData(const mems_data *data,const Mems16Na::SessionEvidence *na)
 {
-    if (!data)
-        return;
+    if (!data)return;
+    const auto *profile=na?na->identifiedProfile():nullptr;
+    if(m_naEvidence.identifiedProfile()!=profile)m_naReference=Snapshot();
+    if(profile)m_naEvidence=*na;
+    else m_naEvidence.reset();
     m_showing2J=false;
     m_last = *data;
     m_haveData = true;
     rebuild(m_last);
+}
+
+void DiagnosticPanel::endNaSession()
+{
+    if(!m_naEvidence.identifiedProfile())return;
+    m_naEvidence.reset();
+    m_naReference=Snapshot();
+    m_haveData=false;
+    m_checks->setRowCount(0);
+    m_status->setText(I18n::text(6803));
+    m_score->setText(I18n::text(6804));
+    m_report->clear();
 }
 
 void DiagnosticPanel::addCheck(const QString &name, const QString &value,
@@ -121,6 +138,7 @@ void DiagnosticPanel::addCheck(const QString &name, const QString &value,
 
 void DiagnosticPanel::rebuild(const mems_data &d)
 {
+    if(m_naEvidence.identifiedProfile()) { rebuildNa(d); return; }
     m_checks->setRowCount(0);
     int issues = 0;
     int warnings = 0;
@@ -279,9 +297,14 @@ void DiagnosticPanel::captureReference()
         QMessageBox::information(this, I18n::text(6876) /* EN: Diagnostics */, I18n::text(6877) /* EN: No ECU data available. */);
         return;
     }
-    m_reference.valid = true;
-    m_reference.data = m_last;
-    m_reference.timestamp = QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss");
+    if(m_naEvidence.identifiedProfile() && !m_naEvidence.ready()) {
+        QMessageBox::information(this,I18n::text(6876),I18n::text(29048));
+        return;
+    }
+    Snapshot &reference=m_naEvidence.identifiedProfile()?m_naReference:m_reference;
+    reference.valid = true;
+    reference.data = m_last;
+    reference.timestamp = QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss");
     rebuild(m_last);
 }
 
@@ -294,7 +317,8 @@ void DiagnosticPanel::clearReference()
         update2JData(m_mems2jValues,m_mems2jFaults,m_structuredEcuName);
         return;
     }
-    m_reference = Snapshot();
+    if(m_naEvidence.identifiedProfile())m_naReference=Snapshot();
+    else m_reference = Snapshot();
     if (m_haveData) rebuild(m_last);
 }
 
@@ -321,6 +345,7 @@ QString DiagnosticPanel::buildReport() const
         return report.join(QLatin1Char('\n'));
     }
 
+    if(m_naEvidence.identifiedProfile())return buildNaReport();
     const mems_data &d = m_last;
     QString text;
     text += I18n::text(6879) /* EN: ECU MEMS MANAGER - DIAGNOSTIC REPORT  */;
@@ -367,6 +392,7 @@ void DiagnosticPanel::exportReport()
 void DiagnosticPanel::update2JData(const QVariantMap &values, const QStringList &faults,
                                    const QString &family)
 {
+    endNaSession();
     m_showing2J=true;
     m_structuredEcuName=family;
     m_haveData=true;
@@ -408,4 +434,125 @@ void DiagnosticPanel::update2JData(const QVariantMap &values, const QStringList 
         addCheck(QStringLiteral("Référence"),m_2jReferenceTime,
                  QStringLiteral("Information"),QStringLiteral("Capture MEMS 2J enregistrée"));
     m_report->setPlainText(buildReport());
+}
+
+void DiagnosticPanel::rebuildNa(const mems_data &d)
+{
+    using namespace Mems16Na;
+    const auto *p=m_naEvidence.identifiedProfile();
+    if(!p)return;
+    m_checks->setRowCount(0);
+    int issues=0,warnings=0;
+    const QString info=I18n::text(6841);
+    const QString notEvaluated=I18n::text(6849);
+    auto add=[&](const QString &name,const QString &value,const QString &state,const QString &advice) {
+        addCheck(name,value,state,advice);
+        const int row=m_checks->rowCount()-1;
+        for(int col=0;col<4;++col) {
+            auto *item=m_checks->item(row,col);
+            // Respect the active palette and retain the complete multi-fault detail.
+            item->setData(Qt::ForegroundRole,QVariant());
+            item->setToolTip(name+QStringLiteral("\n")+value+QStringLiteral("\n")+state+QStringLiteral("\n")+advice);
+        }
+    };
+    add(I18n::text(29049),QString::fromLatin1(p->firmware),info,I18n::text(29050));
+    const Group groups[]={Group::Dtc0,Group::Dtc1,Group::Dtc2,Group::Dtc3,Group::Dtc4,Group::Dtc5,Group::Indirect7D10};
+    for(int i=0;i<7;++i) {
+        const auto r=m_naEvidence.dtc(groups[i]);
+        for(unsigned bit=1;bit<=128;bit<<=1) {
+            if(r.faultBits&bit)++issues;
+            if(r.unknownBits&bit)++warnings;
+        }
+        const QString name=i<6?QStringLiteral("DTC %1").arg(i):QStringLiteral("7D/10");
+        const QString state=r.availability==Availability::Missing?notEvaluated:
+            r.faultBits?I18n::text(29051):r.unknownBits||r.availability==Availability::Unverified?I18n::text(29002):
+            r.availability==Availability::NotUsed?info:r.stateBits?info:I18n::text(6816);
+        add(name,rawDtc(r),state,dtcText(p,groups[i],r)+QStringLiteral("\n")+dtcHelp(p,groups[i]));
+    }
+    if(!m_naEvidence.ready()) {
+        m_score->setText(I18n::text(29052));
+        m_status->setText(I18n::text(29048));
+        m_report->setPlainText(buildNaReport());
+        return;
+    }
+    const auto m=m_naEvidence.measurements();
+    // Retain the existing independent consistency checks. No threshold from
+    // the old dimensionless correction or the old idle-error formula is reused.
+    const double battery=d.battery_voltage/10.0;
+    const bool batteryOk=battery>=11.5&&battery<=15.2;
+    add(I18n::text(6819),I18n::text(6820).arg(battery,0,'f',1),stateFor(batteryOk,true),
+        battery<11.5?I18n::text(6821):battery>15.2?I18n::text(6822):I18n::text(6823));
+    if(!batteryOk)++warnings;
+    const bool coolantOk=d.coolant_temp>0&&d.coolant_temp<250;
+    add(I18n::text(6824),QString::number(d.coolant_temp),stateFor(coolantOk,true),I18n::text(coolantOk?6825:6826));
+    if(!coolantOk)++issues;
+    const bool rpmOk=d.engine_rpm<=8000;
+    add(I18n::text(6827),I18n::text(6828).arg(d.engine_rpm),stateFor(rpmOk,true),I18n::text(rpmOk?6829:6830));
+    if(!rpmOk)++issues;
+    const bool mapOk=d.map_kpa<=160;
+    add(I18n::text(6831),I18n::text(6832).arg(d.map_kpa),stateFor(mapOk,true),I18n::text(mapOk?6833:6834));
+    if(!mapOk)++issues;
+    const auto dtc1=m_naEvidence.dtc(Group::Dtc1),dtc2=m_naEvidence.dtc(Group::Dtc2);
+    add(I18n::text(29027),numeric(m.throttleVoltage,2,QStringLiteral(" V")),
+        (dtc1.faultBits&0x80)?I18n::text(29051):info,
+        (dtc1.faultBits&0x80)?describe(Circuit::ThrottlePot,0x80):I18n::text(6837));
+    QString lambda=I18n::text(d.closed_loop?6843:6844);
+    if(m.lambdaFault.availability==Availability::Available)
+        lambda+=QStringLiteral(" ; ")+I18n::text(29053).arg(I18n::text(m.lambdaFault.calculated?29038:29039));
+    else lambda+=QStringLiteral(" ; ")+I18n::text(29002);
+    if((dtc2.faultBits&4)&&circuit(p,Group::Dtc2,4)==Circuit::LambdaHeater)
+        lambda+=QStringLiteral(" ; ")+describe(Circuit::LambdaHeater,4);
+    add(I18n::text(6838),numeric(m.lambdaMv,0,QStringLiteral(" mV")),info,lambda);
+    add(I18n::text(29029),numeric(m.injectionTime,0,QStringLiteral(" µs")),notEvaluated,
+        I18n::text(29044)+QStringLiteral(" ")+I18n::text(29054));
+    add(I18n::text(29031),numeric(m.idleError,0,QStringLiteral(" RPM")),notEvaluated,
+        I18n::text(29043)+QStringLiteral(" ")+I18n::text(29054));
+    add(I18n::text(29025),steps(m.idleHot),info,I18n::text(29054));
+    add(I18n::text(29030),steps(m.idleBase),info,I18n::text(29054));
+    add(I18n::text(29046),numeric(m.ambient,0,QStringLiteral(" °C")),info,I18n::text(29054));
+    add(I18n::text(29047),numeric(m.fuel,0,QStringLiteral(" °C")),info,I18n::text(29054));
+    const double coilTime=static_cast<double>(d.coil_time)*0.002;
+    QString coilState,coilAdvice;
+    if(d.engine_rpm==0) {coilState=notEvaluated;coilAdvice=I18n::text(18122);}
+    else if(battery<13.5||battery>14.5) {coilState=notEvaluated;coilAdvice=I18n::text(6850);}
+    else if(coilTime>=2.0&&coilTime<=3.5) {coilState=I18n::text(6851);coilAdvice=I18n::text(6852);}
+    else if(coilTime>4.0) {coilState=I18n::text(6853);coilAdvice=I18n::text(6854);++issues;}
+    else {coilState=I18n::text(6855);coilAdvice=I18n::text(coilTime>3.5?18121:6856);++warnings;}
+    add(I18n::text(6857),I18n::text(6858).arg(coilTime,0,'f',2).arg(battery,0,'f',1),coilState,coilAdvice);
+    // Existing short-term correction retained as an indicative check only on
+    // standard transmission profiles; the three alternate encodings are not
+    // generalized. No new long-term µs threshold is invented.
+    if(!p->alternateTransmission) {
+        const int shortTrim=int(d.short_term_fuel_trim)-100;
+        const bool watch=qAbs(shortTrim)>20;
+        add(I18n::text(29055),QString::number(shortTrim)+QStringLiteral(" %"),stateFor(!watch,true),
+            I18n::text(watch?6847:6848));
+        if(watch)++warnings;
+    } else add(I18n::text(29055),QString::number(d.short_term_fuel_trim),notEvaluated,I18n::text(29002));
+    if(m_naReference.valid) {
+        add(I18n::text(6867),I18n::text(6868).arg(int(d.engine_rpm)-int(m_naReference.data.engine_rpm))
+            .arg(int(d.map_kpa)-int(m_naReference.data.map_kpa))
+            .arg(int(d.throttle_pot)-int(m_naReference.data.throttle_pot)),info,I18n::text(6870).arg(m_naReference.timestamp));
+    }
+    const QString level=issues?I18n::text(6873):warnings?I18n::text(6872):I18n::text(6871);
+    m_score->setText(I18n::text(6874).arg(level).arg(issues).arg(warnings));
+    m_status->setText(I18n::text(6875).arg(QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss"))).arg(2*issues+warnings));
+    m_report->setPlainText(buildNaReport());
+}
+
+QString DiagnosticPanel::buildNaReport() const
+{
+    QStringList lines;
+    lines<<I18n::text(6879).trimmed()
+         <<I18n::text(6880).arg(QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss"))).trimmed();
+    if(!m_ecuId.isEmpty())lines<<I18n::text(6881).arg(QString::fromLatin1(m_ecuId.toHex(' ').toUpper())).trimmed();
+    // Export exactly the same decoded and qualified values as the live table.
+    for(int row=0;row<m_checks->rowCount();++row) {
+        QStringList fields;
+        for(int col=0;col<4;++col)fields<<m_checks->item(row,col)->text();
+        lines<<fields.join(QStringLiteral(" | "));
+    }
+    if(m_naReference.valid)lines<<I18n::text(6889).arg(m_naReference.timestamp).trimmed();
+    lines<<I18n::text(6890).trimmed();
+    return lines.join(QLatin1Char('\n'));
 }
