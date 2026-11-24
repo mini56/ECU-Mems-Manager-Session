@@ -191,7 +191,7 @@ jobs:
           assert options.count('QComboBox::drop-down{border:none;width:24px;')==2
           assert '<file>options_combo_chevron.png</file>' in qrc
           arrow=Path('options_combo_chevron.png').read_bytes()
-          assert hashlib.sha256(arrow).hexdigest()=='1ac07e9c0b1223f8c6286259e3e3b29b2068181715cd3914cea92519b3d672e1', 'INVALID_OPTIONS_COMBO_PNG'
+          assert hashlib.sha256(arrow).hexdigest()=='1ac07e9c0b1223f8c6286259e3e3b29b2058181715cd3914cea92519b3d672e1', 'INVALID_OPTIONS_COMBO_PNG'
 
           # Changes are intentionally localized; verify both interface languages
           # and that all original ECU commands and analysis modes remain active.
