@@ -141,6 +141,16 @@ expected_mems3_session = [
     "mems_manager_mems3_close",
 ]
 
+expected_rc5_session = [
+    "mems_manager_rc5_open_transport",
+    "mems_manager_rc5_wakeup",
+    "mems_manager_rc5_ping",
+    "mems_manager_rc5_read_faults",
+    "mems_manager_rc5_decode_fault_detail",
+    "mems_manager_rc5_clear_faults",
+    "mems_manager_rc5_close_session",
+]
+
 exports = []
 in_exports = False
 for raw in definition.splitlines():
@@ -153,9 +163,9 @@ for raw in definition.splitlines():
     if in_exports:
         exports.append(line.split()[0])
 
-if exports != expected_exports + expected_extensions + expected_families + expected_injection + expected_protocol_catalogue + expected_lucas5as + expected_mems19_wakeup + expected_mems2j_session + expected_mems3_session:
+if exports != expected_exports + expected_extensions + expected_families + expected_injection + expected_protocol_catalogue + expected_lucas5as + expected_mems19_wakeup + expected_mems2j_session + expected_mems3_session + expected_rc5_session:
     raise SystemExit(f"FAIL: changed ABI or missing family/injection/codec exports: {exports}")
-if len(set(exports)) != 123:
+if len(set(exports)) != 130:
     raise SystemExit("FAIL: duplicate or missing symbols in ROSCO DLL")
 
 required_protocol_guards = [
@@ -201,7 +211,7 @@ for name, value in required_commands.items():
     if not re.search(pattern, header):
         raise SystemExit(f"FAIL historical command changed/missing: {name}={value}")
 
-print("OK: 91 original + 9 Lucas 5AS + 5 MEMS1.9 + 9 native MEMS2J + 9 native MEMS3 = 123 exports")
+print("OK: 91 original + 9 Lucas 5AS + 5 MEMS1.9 + 9 native MEMS2J + 9 native MEMS3 + 7 native RC5 = 130 exports")
 assert "mems_reset_ECU_leopold @54" in definition
 print("OK: Manager reset ECU=FA and adjustments=0F, explicit LeopoldG ECU=AF")
 assert exports[54:65] == expected_families
@@ -211,6 +221,7 @@ assert exports[91:100] == expected_lucas5as
 assert exports[100:105] == expected_mems19_wakeup
 assert exports[105:114] == expected_mems2j_session
 assert exports[114:123] == expected_mems3_session
+assert exports[123:130] == expected_rc5_session
 catalogue_header = (root / "protocol_catalogue.h").read_text(encoding="utf-8")
 catalogue_source = (root / "protocol_catalogue.c").read_text(encoding="utf-8")
 for name in expected_protocol_catalogue:
@@ -308,6 +319,26 @@ for required in ("dcb.BaudRate = 9600", "dcb.Parity = EVENPARITY", "mems3_frame_
 if '#include "mems3_session.c"' not in mems3_test:
     raise SystemExit("FAIL MEMS3 offline test must exercise production source")
 print("OK: nine native MEMS3 session APIs, offline serial test and zero Qt dependency")
+
+rc5_header=(root / "rc5_session.h").read_text(encoding="utf-8")
+rc5_source=(root / "rc5_session.c").read_text(encoding="utf-8")
+rc5_test=(root / "rc5_session_selftest.c").read_text(encoding="utf-8")
+for name in expected_rc5_session:
+    if not re.search(rf"\b{re.escape(name)}\s*\(",rc5_header) or not re.search(rf"\b{re.escape(name)}\s*\(",rc5_source):
+        raise SystemExit(f"FAIL RC5 ABI missing: {name}")
+for required in ("rc5_session.c","dll_rc5_session_selftest","rc5_session_selftest.c"):
+    if required not in cmake:
+        raise SystemExit(f"FAIL RC5 CMake missing: {required}")
+for required in ("dcb.BaudRate = 2400","dcb.Parity = NOPARITY","0x55,0x06,0x3B","mems_rc5_validate_frame(","!explicitly_confirmed"):
+    if required not in rc5_source:
+        raise SystemExit(f"FAIL RC5 protocol guard missing: {required}")
+for forbidden in ("#include <Qt","#include <QSerialPort","mems3_frame_encode(","mems2j_frame_encode("):
+    if forbidden in rc5_header or forbidden in rc5_source:
+        raise SystemExit(f"FAIL RC5 unexpected dependency: {forbidden}")
+if '#include "rc5_session.c"' not in rc5_test:
+    raise SystemExit("FAIL RC5 offline test must exercise production source")
+print("OK: seven native RC5 session APIs, explicit diagnostic DTC clear, offline serial test")
+
 
 
 

@@ -134,3 +134,12 @@ EXPORTS
     mems_manager_mems3_last_transaction @121
     mems_manager_mems3_is_open @122
     mems_manager_mems3_close @123
+
+; RC5/EC5 SRS diagnostic session, additive only.
+    mems_manager_rc5_open_transport @124
+    mems_manager_rc5_wakeup @125
+    mems_manager_rc5_ping @126
+    mems_manager_rc5_read_faults @127
+    mems_manager_rc5_decode_fault_detail @128
+    mems_manager_rc5_clear_faults @129
+    mems_manager_rc5_close_session @130

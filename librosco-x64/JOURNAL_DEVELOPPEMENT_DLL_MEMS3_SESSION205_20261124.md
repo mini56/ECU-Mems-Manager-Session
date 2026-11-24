@@ -21,3 +21,7 @@ Test Win32 simulé avec réponses XOR indépendantes, écho fragmenté/complet o
 ## Validation CI — premier passage
 
 Run [45358305771](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45358305771) : arrêt avant compilation dans validate_protocol_guards.py, liste statique restée à 114. Correction additive : contrôle des 123 noms, déclaration/implémentation des neuf exports MEMS3, CMake et protocole ; conservation de tous les contrôles précédents. Nouvelle validation isolée requise.
+
+## Résultat final MEMS3 — VERT
+
+[Run 45367580697](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45367580697), commit 971f5edfbc46513cbf63b03dfbad3beb9291a2f7 : 10/10 CTest, 123 exports exacts, 15 imports Manager résolus, compilation et liaison, smoke UI 16 pages, Setup officiel SHA256 contrôlé, Setup isolé créé/installé/testé/désinstallé. Logs finaux SESSION205_NEW_DLL_COMPLETE_SETUP_TEST_PASS. Aucun calculateur physique.

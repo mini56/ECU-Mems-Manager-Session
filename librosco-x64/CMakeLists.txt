@@ -23,6 +23,7 @@ add_library(rosco SHARED
     mems19_wakeup.c
     mems2j_session.c
     mems3_session.c
+    rc5_session.c
     mems_manager_x64.def
 )
 
@@ -102,3 +103,7 @@ add_test(NAME dll_mems2j_session_selftest COMMAND dll_mems2j_session_selftest)
 # Independent MEMS 3 native transport, fake serial I/O regression.
 add_executable(dll_mems3_session_selftest mems3_session_selftest.c protocol_catalogue.c)
 add_test(NAME dll_mems3_session_selftest COMMAND dll_mems3_session_selftest)
+
+# Independent RC5 SRS diagnostic transport (offline simulated serial regression).
+add_executable(dll_rc5_session_selftest rc5_session_selftest.c protocol_catalogue.c)
+add_test(NAME dll_rc5_session_selftest COMMAND dll_rc5_session_selftest)

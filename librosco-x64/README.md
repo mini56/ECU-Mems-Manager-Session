@@ -1,4 +1,12 @@
-## Nouveau lot MEMS 3 — 123 exports prévus, validation en cours
+## Nouveau lot RC5 — 130 exports prévus, validation en cours
+
+[Journal RC5](JOURNAL_DEVELOPPEMENT_DLL_RC5_SESSION205_20261124.md). Aucun changement du Manager 205.
+
+## Dernière validation logicielle : MEMS3 — 123 exports
+
+[Run Windows vert 45367580697](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45367580697) : 10/10 CTest, 123 exports, 15 imports, 16 pages et Setup indépendant installé puis désinstallé. Aucun ECU physique.
+
+## Historique du lot MEMS 3 — 123 exports validés
 
 [Journal du lot MEMS 3](JOURNAL_DEVELOPPEMENT_DLL_MEMS3_SESSION205_20261124.md). Aucun changement du Manager 205. Dernier lot validé : 114 exports MEMS 2J.
 
