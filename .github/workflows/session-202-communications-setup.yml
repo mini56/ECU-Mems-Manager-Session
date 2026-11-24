@@ -2,17 +2,6 @@ name: "SESSION 202 - Journal communications ECU - Setup Windows"
 run-name: SESSION 202 - JOURNAL COMMUNICATIONS ECU - ${{ github.sha }}
 on:
   workflow_dispatch:
-  push:
-    branches: [fix-documentary-additive-session-161-20261118]
-    paths:
-      - '.github/workflows/session-202-communications-setup.yml'
-      - 'othercontrolunitstab.h'
-      - 'uishellsmoketest.cpp'
-      - 'ECUCommunicationLogSelfTest.cpp'
-      - 'ecucommunicationlog.cpp'
-      - 'ecucommunicationtraceio.h'
-      - 'analysistab_impl_part1.inc'
-      - 'analysistab_impl_part3.inc'
 permissions:
   contents: write
 concurrency:

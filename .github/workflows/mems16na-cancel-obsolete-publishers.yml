@@ -1,0 +1,23 @@
+name: MEMS 1.6 NA - neutralisation des publications obsoletes
+on:
+  push:
+    branches: [fix-documentary-additive-session-161-20261118]
+    paths:
+      - '.github/workflows/mems16na-cancel-obsolete-publishers.yml'
+permissions:
+  contents: read
+jobs:
+  cancel-202:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: session-three-cables-202-build
+      cancel-in-progress: true
+    steps:
+      - run: echo "Publication automatique SESSION 202 suspendue"
+  cancel-203:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: session-three-cables-203-build
+      cancel-in-progress: true
+    steps:
+      - run: echo "Publication automatique SESSION 203 suspendue"
