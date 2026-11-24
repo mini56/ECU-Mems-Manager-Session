@@ -76,7 +76,7 @@ bool Logger::openNaSegment(const Mems16Na::SessionEvidence &na)
   m_logFileStream<<QString::fromLatin1(Mems16Na::LogV2::marker())<<"\n"
     <<"# ECU_ID="<<identity<<"\n"
     <<"# FIRMWARE="<<firmware<<"\n"
-    <<"# STARTED="<<now.toString(Qt::ISODateWithMs)<<"\n"
+    <<"# STARTED="<<now.toOffsetFromUtc(now.offsetFromUtc()).toString(Qt::ISODateWithMs)<<"\n"
     <<QString::fromStdString(Mems16Na::LogV2::header())<<endl;
   if(m_logFileStream.status()!=QTextStream::Ok || !m_logFile.flush()) {
     m_logFile.close();m_naFirmware.clear();m_naIdentity.clear();return false;
@@ -89,6 +89,13 @@ bool Logger::openSegment(const Mems16Na::SessionEvidence &na)
   m_naFirmware.clear();m_naIdentity.clear();
   if(na.identifiedProfile())return openNaSegment(na);
   bool success = false;
+  // A manually reused file name must never append legacy rows to a V2 log.
+  if(!m_forceUnique) {
+    QFile existing(QDir(m_logDir).filePath(m_requestedName+m_logExtension));
+    if(existing.open(QIODevice::ReadOnly) &&
+       existing.readLine(128).trimmed()==Mems16Na::LogV2::marker())
+      m_forceUnique=true;
+  }
   const QString stem=m_forceUnique?m_requestedName+QStringLiteral("_")+QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_HHmmss_zzz")):m_requestedName;
   m_lastAttemptedLog = m_forceUnique?uniqueLogPath(stem):QDir(m_logDir).filePath(stem+m_logExtension);
 
@@ -247,7 +254,7 @@ bool Logger::logData(const mems_data *data,const Mems16Na::SessionEvidence &na)
   }
   if(!firmware.isEmpty()) {
     const auto now=QDateTime::currentDateTime();
-    const auto fields=Mems16Na::LogV2::fields(na,now.toString(Qt::ISODateWithMs).toStdString());
+    const auto fields=Mems16Na::LogV2::fields(na,now.toOffsetFromUtc(now.offsetFromUtc()).toString(Qt::ISODateWithMs).toStdString());
     m_logFileStream<<now.toString(QStringLiteral("hh:mm:ss.zzz"))
       <<QString::fromStdString(Mems16Na::LogV2::csv(fields,false))<<endl;
   } else writeLegacyRow(data);
