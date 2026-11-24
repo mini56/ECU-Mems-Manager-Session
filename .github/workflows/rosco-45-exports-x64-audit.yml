@@ -1,8 +1,8 @@
 # Exclusively the DLL verification workflow. No Session build, Setup or MAJ
-# workflow is changed by this file. Test revision: RC5 static ABI guard + independent Session205 Setup install + uninstall smoke.
+# workflow is changed by this file. Test revision: Adapter static ABI guard + independent Session205 Setup install + uninstall smoke.
 # The application is built only in a
 # disposable worktree pinned to the real Session 205 commit.
-name: DLL MEMS Manager x64 - validation Session 205 / RC5
+name: DLL MEMS Manager x64 - validation Session 205 / ADAPTERS
 run-name: Test DLL / Session 205 / ${{ github.sha }}
 on:
   # An edit to THIS workflow starts ONE CI validation on dll-manager.

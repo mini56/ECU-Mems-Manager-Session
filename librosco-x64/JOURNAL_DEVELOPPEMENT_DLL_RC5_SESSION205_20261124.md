@@ -16,3 +16,7 @@ Source : rc5protocol.h de Session 205, codecs RC5 historiques de la DLL. Transpo
 
 Le CTest simule le port et l'horloge Win32 ; tests de rythme du réveil, réponse ping, écho fragmenté, défauts présents/historiques/inconnus, zéro défaut, checksum, confirmation, refus et annulation. Pas de matériel connecté. Validation attendue : 11 tests, 130 exports PE, 15 imports de Manager, 16 pages et Setup séparé. **CI à confirmer.**
 
+
+## Résultat final RC5 — VERT
+
+[Run 45370170574](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45370170574), commit 76bca3fe921204399e3a0a81c554a5b8a30ee5d6. 11/11 CTest, 130 exports PE exacts, 15 imports Manager résolus, 16 pages, Setup officiel SHA256 vérifié et Setup indépendant compilé/installé/testé/désinstallé. Aucun ECU physique.

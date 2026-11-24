@@ -1,4 +1,12 @@
-## Nouveau lot RC5 — 130 exports prévus, validation en cours
+## Nouveau lot détection native des adaptateurs — 133 exports prévus
+
+[Journal adaptateurs](JOURNAL_DEVELOPPEMENT_DLL_ADAPTERS_SESSION205_20261124.md). T01–T03, lecture seule ; auto-connexion à suivre. Manager 205 inchangé.
+
+## Dernière validation : RC5 — 130 exports
+
+[Run vert 45370170574](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45370170574) : 11/11 CTest, 130 exports, 15 imports, 16 pages, Setup indépendant installé et désinstallé. Aucun ECU physique.
+
+## Historique RC5 — 130 exports validés
 
 [Journal RC5](JOURNAL_DEVELOPPEMENT_DLL_RC5_SESSION205_20261124.md). Aucun changement du Manager 205.
 

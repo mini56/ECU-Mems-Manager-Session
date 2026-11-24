@@ -24,8 +24,11 @@ add_library(rosco SHARED
     mems2j_session.c
     mems3_session.c
     rc5_session.c
+    serial_adapters.c
     mems_manager_x64.def
 )
+
+target_link_libraries(rosco PRIVATE setupapi cfgmgr32 advapi32)
 
 target_include_directories(rosco PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_definitions(rosco PRIVATE
@@ -107,3 +110,8 @@ add_test(NAME dll_mems3_session_selftest COMMAND dll_mems3_session_selftest)
 # Independent RC5 SRS diagnostic transport (offline simulated serial regression).
 add_executable(dll_rc5_session_selftest rc5_session_selftest.c protocol_catalogue.c)
 add_test(NAME dll_rc5_session_selftest COMMAND dll_rc5_session_selftest)
+
+# Read-only adapter discovery tests; no physical serial communication.
+add_executable(dll_serial_adapters_selftest serial_adapters_selftest.c)
+target_link_libraries(dll_serial_adapters_selftest PRIVATE setupapi cfgmgr32 advapi32)
+add_test(NAME dll_serial_adapters_selftest COMMAND dll_serial_adapters_selftest)
