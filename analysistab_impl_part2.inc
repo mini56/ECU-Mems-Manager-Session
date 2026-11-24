@@ -153,7 +153,8 @@ public:
             return m_originalValues->at(source).at(index.row());
         if(!m_values || source<0 || source>=m_values->size() ||
            index.row()>=m_values->at(source).size())return QVariant();
-        return QString::number(m_values->at(source).at(index.row()),'g',12);
+        const double value=m_values->at(source).at(index.row());
+        return qIsFinite(value)?QString::number(value,'g',12):I18n::text(29000);
     }
     void setSelectedChannels(const QVector<int> &selected)
     {

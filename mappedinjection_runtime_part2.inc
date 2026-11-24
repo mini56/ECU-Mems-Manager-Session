@@ -120,7 +120,9 @@ public:
             m_window->setProperty("ecuReadMode",mode);m_dashboard->setReadMode(mode);updateStatusSoon();
         });
         QObject::connect(m_mems,&MEMSInterface::dataReady,m_window,[this](){
-            m_analysis->appendDiagnosticData(m_mems->getData());
+            Mems16Na::SessionEvidence na;
+            const mems_data *data=m_mems->getData(&na);
+            m_analysis->appendDiagnosticData(data,&na);
             // A dataReady emitted by the normal polling loop is the proof that
             // the first fresh post-Mode-4 diagnostic frame is available.
             if(m_window->property("ecuReadMode").toString()==QStringLiteral("transition")){

@@ -54,5 +54,22 @@
   "29052": "Diagnose: Daten nicht validiert",
   "29053": "Lambda-Fehlerindikator (7D/09): %1",
   "29054": "Informative Messung; kein validierter Fehlergrenzwert für diese Interpretation.",
-  "29055": "Kurzzeit-Kraftstoffkorrektur"
+  "29055": "Kurzzeit-Kraftstoffkorrektur",
+  "29056": "Betrag der Leerlaufkorrektur",
+  "29057": "Lambdasondenspannung",
+  "29058": "Lambda-Fehlerindikator (7D/09)",
+  "29059": "Lambda-Regelung aktiv",
+  "29060": "Vollständiger Zeitstempel",
+  "29061": "Validierte Stichprobe (0/1)",
+  "29062": "Rohrahmen %1 (HEX)",
+  "29063": "%1 — Rohwert",
+  "29064": "%1 — Verfügbarkeit",
+  "29065": "Schritte",
+  "29066": "%1 — Fehlermaske",
+  "29067": "%1 — Zustandsmaske",
+  "29068": "%1 — unbekannte Maske",
+  "29069": "Verfügbar",
+  "29070": "Historische Interpretation: Firmware nicht verifiziert. Originalwerte beibehalten.",
+  "29071": "MEMS 1.6 V2-Aufzeichnung: ungültiger Kopf oder Identität.",
+  "29072": "Werte nur aus validierten Rohrahmen neu berechnet; Datei unverändert."
 }

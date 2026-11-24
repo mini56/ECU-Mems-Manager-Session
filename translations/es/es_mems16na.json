@@ -54,5 +54,22 @@
   "29052": "Diagnóstico: datos no validados",
   "29053": "Indicador de avería lambda (7D/09): %1",
   "29054": "Medición informativa; sin umbral de avería validado para esta interpretación.",
-  "29055": "Corrección de combustible a corto plazo"
+  "29055": "Corrección de combustible a corto plazo",
+  "29056": "Amplitud de corrección del ralentí",
+  "29057": "Tensión sonda lambda",
+  "29058": "Indicador de avería lambda (7D/09)",
+  "29059": "Regulación lambda activa",
+  "29060": "Marca temporal completa",
+  "29061": "Muestra validada (0/1)",
+  "29062": "Trama %1 bruta (HEX)",
+  "29063": "%1 — bruto",
+  "29064": "%1 — disponibilidad",
+  "29065": "pasos",
+  "29066": "%1 — máscara de averías",
+  "29067": "%1 — máscara de estados",
+  "29068": "%1 — máscara no identificada",
+  "29069": "Disponible",
+  "29070": "Interpretación histórica: firmware no verificado. Valores originales conservados.",
+  "29071": "Registro MEMS 1.6 V2: cabecera o identidad no válida.",
+  "29072": "Valores recalculados solo a partir de tramas brutas validadas; archivo intacto."
 }

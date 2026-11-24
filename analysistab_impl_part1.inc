@@ -1,5 +1,6 @@
 #include "analysistab.h"
 #include "i18n.h"
+#include "mems16na_analysis.h"
 #include "tooltipbubblemanager.h"
 
 #include <QApplication>
@@ -220,8 +221,10 @@ static void configureAnalysisVisibleScroll(QAbstractScrollArea *area, Qt::Scroll
 
 static QString friendlyColumnName(const QString &rawName)
 {
-    static QMap<QString, QString> names;
-    if (names.isEmpty()) {
+    const QString naName=Mems16Na::Analysis::label(rawName);
+    if(!naName.isEmpty())return naName;
+    QMap<QString, QString> names;
+    {
         names["80x01-02_engine-rpm"] = I18n::text(6400);
         names["80x03_coolant_temp"] = I18n::text(6401);
         names["80x04_ambient_temp"] = I18n::text(6402);

@@ -18,6 +18,10 @@ on:
       - 'logger.h'
       - 'mems16na_log_schema.h'
       - 'tools/mems16na_log_selftest.cpp'
+      - 'analysistab.h'
+      - 'mems16na_analysis.h'
+      - 'mappedinjection_runtime_part2.inc'
+      - 'tools/mems16na_analysis_test/**'
       - 'analysistab_impl_part1.inc'
       - 'analysistab_impl_part2.inc'
       - 'analysistab_impl_part3.inc'
@@ -120,6 +124,17 @@ jobs:
           if($LASTEXITCODE -ne 0){throw 'NA_DIAGNOSTIC_COMPILE_FAILED'}
           & ./build-na-diagnostic/Release/mems16na_diagnostic_test.exe
           if($LASTEXITCODE -ne 0){throw 'NA_DIAGNOSTIC_QT_SELFTEST_FAILED'}
+      - name: Tester la relecture et les voies MEMS 1.6 NA
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
+          cmake -S tools/mems16na_analysis_test -B build-na-analysis -A x64 -DCMAKE_PREFIX_PATH='C:/Qt/5.15.2/msvc2019_64'
+          if($LASTEXITCODE -ne 0){throw 'NA_ANALYSIS_CONFIG_FAILED'}
+          cmake --build build-na-analysis --config Release --parallel
+          if($LASTEXITCODE -ne 0){throw 'NA_ANALYSIS_COMPILE_FAILED'}
+          & ./build-na-analysis/Release/mems16na_analysis_test.exe
+          if($LASTEXITCODE -ne 0){throw 'NA_ANALYSIS_QT_SELFTEST_FAILED'}
       - name: Compiler SESSION et tests de mise a jour
         shell: pwsh
         run: |

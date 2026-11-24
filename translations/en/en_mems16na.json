@@ -54,5 +54,22 @@
   "29052": "Diagnostics: unvalidated data",
   "29053": "Lambda fault indicator (7D/09): %1",
   "29054": "Informational reading; no validated fault threshold for this interpretation.",
-  "29055": "Short-term fuel correction"
+  "29055": "Short-term fuel correction",
+  "29056": "Idle correction magnitude",
+  "29057": "Lambda sensor voltage",
+  "29058": "Lambda fault indicator (7D/09)",
+  "29059": "Lambda closed-loop active",
+  "29060": "Full timestamp",
+  "29061": "Validated sample (0/1)",
+  "29062": "Raw frame %1 (HEX)",
+  "29063": "%1 — raw",
+  "29064": "%1 — availability",
+  "29065": "steps",
+  "29066": "%1 — fault mask",
+  "29067": "%1 — state mask",
+  "29068": "%1 — unidentified mask",
+  "29069": "Available",
+  "29070": "Historical interpretation: firmware not verified. Original values retained.",
+  "29071": "MEMS 1.6 V2 recording: invalid header or identity.",
+  "29072": "Values recalculated only from validated raw frames; file unchanged."
 }

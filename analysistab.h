@@ -18,6 +18,7 @@
 #include <QMap>
 #include <QElapsedTimer>
 #include "rosco.h"
+#include "mems16na_session_evidence.h"
 
 class QButtonGroup;
 class QTableView;
@@ -94,7 +95,7 @@ public:
     void selectInjectionLive(bool notify = true);
     void setDiagnosticLiveAvailable(bool available);
     void setInjectionRamReadAvailable(bool available, const QString &reason = QString());
-    void appendDiagnosticData(const mems_data *data);
+    void appendDiagnosticData(const mems_data *data, const Mems16Na::SessionEvidence *na = nullptr);
     void appendInjectionSample(double finalMs, double baseMs, double transientMs,
                                quint16 baseRaw, quint16 transientRaw, quint8 transientCounter);
 
@@ -126,6 +127,9 @@ private:
     void showCommunicationFile(const QString &path);
     void syncTableColumns();
     void prepareDiagnosticLive();
+    void prepareNaLive(const Mems16Na::SessionEvidence &na);
+    QString m_naLiveIdentity;
+    bool m_naLiveReset = true;
     void prepareInjectionLive();
     void appendLiveRow(const QVector<double> &values);
     void refreshLiveCharts();

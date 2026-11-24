@@ -54,5 +54,22 @@
   "29052": "Diagnosi: dati non convalidati",
   "29053": "Indicatore guasto lambda (7D/09): %1",
   "29054": "Misura informativa; nessuna soglia di guasto convalidata per questa interpretazione.",
-  "29055": "Correzione carburante a breve termine"
+  "29055": "Correzione carburante a breve termine",
+  "29056": "Ampiezza correzione del minimo",
+  "29057": "Tensione sonda lambda",
+  "29058": "Indicatore guasto lambda (7D/09)",
+  "29059": "Regolazione lambda attiva",
+  "29060": "Data e ora complete",
+  "29061": "Campione convalidato (0/1)",
+  "29062": "Trama %1 grezza (HEX)",
+  "29063": "%1 — grezzo",
+  "29064": "%1 — disponibilità",
+  "29065": "passi",
+  "29066": "%1 — maschera guasti",
+  "29067": "%1 — maschera stati",
+  "29068": "%1 — maschera non identificata",
+  "29069": "Disponibile",
+  "29070": "Interpretazione storica: firmware non verificato. Valori originali conservati.",
+  "29071": "Registrazione MEMS 1.6 V2: intestazione o identità non valida.",
+  "29072": "Valori ricalcolati solo da trame grezze convalidate; file invariato."
 }

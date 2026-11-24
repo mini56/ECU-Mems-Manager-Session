@@ -137,6 +137,7 @@ void AnalysisTab::setLiveButtons(bool diagnostic,bool injection)
 void AnalysisTab::setDiagnosticLiveAvailable(bool available)
 {
     m_diagnosticLiveButton->setEnabled(available);
+    if(!available)m_naLiveReset=true;
     if(!available && diagnosticLiveSelected()) setLiveButtons(false,false);
     else if(available && diagnosticLiveSelected()) setLiveButtons(true,false);
 }
@@ -155,8 +156,10 @@ void AnalysisTab::selectDiagnosticLive(bool notify)
 {
     if(!m_diagnosticLiveButton->isEnabled()) return;
     if(m_liveSource!=DiagnosticLiveSource) prepareDiagnosticLive();
+    m_naLiveReset=true;
     m_liveSource=DiagnosticLiveSource;setProperty("analysisSourceFile",QString());setLiveButtons(true,false);
     m_fileLabel->setText(I18n::text(7918));
+    m_fileLabel->setToolTip(QString());
     if(notify) emit liveSourceRequested(false);
 }
 
@@ -166,6 +169,7 @@ void AnalysisTab::selectInjectionLive(bool notify)
     if(m_liveSource!=InjectionLiveSource) prepareInjectionLive();
     m_liveSource=InjectionLiveSource;setProperty("analysisSourceFile",QString());setLiveButtons(false,true);
     m_fileLabel->setText(I18n::text(7919));
+    m_fileLabel->setToolTip(QString());
     if(notify) emit liveSourceRequested(true);
 }
 
@@ -174,6 +178,7 @@ void AnalysisTab::onInjectionLiveClicked(){selectInjectionLive(true);}
 
 void AnalysisTab::prepareDiagnosticLive()
 {
+    m_naLiveIdentity.clear();m_naLiveReset=false;
     m_time.clear();m_columns.clear();m_columnNames.clear();
     m_originalTimeTexts.clear();m_originalColumnTexts.clear();
     const QStringList raw=diagnosticRawNames();
@@ -184,15 +189,49 @@ void AnalysisTab::prepareDiagnosticLive()
 
 void AnalysisTab::prepareInjectionLive()
 {
+    m_naLiveIdentity.clear();m_naLiveReset=true;
     m_time.clear();m_columns.clear();
     m_originalTimeTexts.clear();m_originalColumnTexts.clear();m_rawColumnNames.clear();
     m_columnNames=QStringList()<<I18n::text(7901)<<I18n::text(7902)<<I18n::text(7903)<<I18n::text(7904)<<I18n::text(7920)<<I18n::text(7921);
     m_columns.resize(m_columnNames.size());m_liveClock.restart();rebuildCheckboxes();
 }
 
-void AnalysisTab::appendDiagnosticData(const mems_data *data)
+void AnalysisTab::prepareNaLive(const Mems16Na::SessionEvidence &na)
+{
+    m_time.clear();m_columns.clear();m_columnNames.clear();
+    m_originalTimeTexts.clear();m_originalColumnTexts.clear();
+    m_rawColumnNames=Mems16Na::Analysis::keys();
+    for(const QString &s:m_rawColumnNames)m_columnNames<<friendlyColumnName(s);
+    m_columns.resize(m_columnNames.size());
+    m_originalColumnTexts.resize(m_columnNames.size());
+    m_naLiveIdentity=QString::fromLatin1(na.identifiedProfile()->firmware)+QStringLiteral(" / ")+
+        QString::fromStdString(Mems16Na::LogV2::hex(na.identity().data(),na.identity().size()));
+    m_naLiveReset=false;m_liveClock.restart();rebuildCheckboxes();
+    m_fileLabel->setText(I18n::text(7918)+QStringLiteral(" — ")+m_naLiveIdentity);
+    m_fileLabel->setToolTip(I18n::text(29050));
+}
+
+void AnalysisTab::appendDiagnosticData(const mems_data *data,const Mems16Na::SessionEvidence *na)
 {
     if(m_liveSource!=DiagnosticLiveSource||!data)return;
+    if(na&&na->identifiedProfile()) {
+        const QString id=QString::fromLatin1(na->identifiedProfile()->firmware)+QStringLiteral(" / ")+
+            QString::fromStdString(Mems16Na::LogV2::hex(na->identity().data(),na->identity().size()));
+        if(m_naLiveReset||id!=m_naLiveIdentity)prepareNaLive(*na);
+        const QDateTime now=QDateTime::currentDateTime();
+        const QString stamp=now.toOffsetFromUtc(now.offsetFromUtc()).toString(Qt::ISODateWithMs);
+        const auto row=Mems16Na::Analysis::row(*na,stamp);
+        if(row.numbers.size()!=m_columns.size())return;
+        m_originalTimeTexts<<stamp;
+        for(int i=0;i<row.texts.size();++i)m_originalColumnTexts[i]<<row.texts[i];
+        appendLiveRow(row.numbers);
+        return;
+    }
+    if(!m_naLiveIdentity.isEmpty()) {
+        prepareDiagnosticLive();m_fileLabel->setText(I18n::text(7918));
+        m_fileLabel->setToolTip(I18n::text(29070));
+    }
+    // Legacy session remains on its original channel layout.
     appendLiveRow(diagnosticValues(data));
 }
 
@@ -210,7 +249,11 @@ void AnalysisTab::appendLiveRow(const QVector<double> &values)
     const double now=m_liveClock.elapsed()/1000.0;m_time.append(now);
     for(int i=0;i<values.size();++i)m_columns[i].append(values[i]);
     const double cutoff=now-120.0;
-    while(!m_time.isEmpty()&&m_time.first()<cutoff){m_time.remove(0);for(QVector<double> &c:m_columns)if(!c.isEmpty())c.remove(0);}
+    while(!m_time.isEmpty()&&m_time.first()<cutoff){
+        m_time.remove(0);for(QVector<double> &c:m_columns)if(!c.isEmpty())c.remove(0);
+        if(!m_originalTimeTexts.isEmpty())m_originalTimeTexts.removeFirst();
+        for(QStringList &c:m_originalColumnTexts)if(!c.isEmpty())c.removeFirst();
+    }
     refreshLiveCharts();
 }
 
@@ -285,6 +328,7 @@ void AnalysisTab::parseCsv(const QString &path)
     QTextStream stream(&file);
     QStringList headers;
     bool naV2=false;
+    QString firmware,ecuId,started;
     QChar separator=QLatin1Char(',');
     // Ignore optional ECU identifier / comments but never discard the actual
     // first CSV header. The old reader unconditionally skipped one line.
@@ -294,6 +338,9 @@ void AnalysisTab::parseCsv(const QString &path)
             line.remove(0,1);
         if(line.isEmpty())continue;
         if(line==QStringLiteral("# MEMS16NA_SCHEMA=2")){naV2=true;continue;}
+        if(naV2&&line.startsWith(QStringLiteral("# ECU_ID="))){ecuId=line.mid(9);continue;}
+        if(naV2&&line.startsWith(QStringLiteral("# FIRMWARE="))){firmware=line.mid(11);continue;}
+        if(naV2&&line.startsWith(QStringLiteral("# STARTED="))){started=line.mid(10);continue;}
         if(line.startsWith(QLatin1Char('#'))){
             const QString prefix=line.mid(1).trimmed().toLower();
             if(!prefix.startsWith(QStringLiteral("time")) &&
@@ -312,6 +359,15 @@ void AnalysisTab::parseCsv(const QString &path)
     }
     if(!headers.isEmpty() && headers[0].startsWith(QLatin1Char('#')))
         headers[0].remove(0,1);
+    const auto identity=Mems16Na::Analysis::identity(firmware,ecuId);
+    if(naV2) {
+        const QStringList expected=QStringList()<<QStringLiteral("time")<<Mems16Na::Analysis::keys();
+        bool same=headers.size()==expected.size();
+        for(int i=0;same&&i<headers.size();++i)same=headers.at(i)==expected.at(i);
+        if(!same||!identity.identifiedProfile()) {
+            QMessageBox::warning(this,I18n::text(6454),I18n::text(29071));return;
+        }
+    }
     const int count=headers.size()-1;
     QStringList names,originalNames,timeTexts;
     for(int i=1;i<headers.size();++i){
@@ -324,6 +380,7 @@ void AnalysisTab::parseCsv(const QString &path)
     QVector<QVector<double>> values(count);
     QVector<QStringList> originals(count);
     QTime firstTime;
+    QDateTime firstStamp;
     int lines=0;
     while(!stream.atEnd()){
         const QString line=stream.readLine();
@@ -332,6 +389,22 @@ void AnalysisTab::parseCsv(const QString &path)
         const QStringList fields=analysisCsvFields(line,separator);
         if(fields.size()<2)continue;
         const QString first=fields.at(0).trimmed();
+        if(naV2) {
+            const QString stamp=fields.value(1);
+            const QDateTime iso=QDateTime::fromString(stamp,Qt::ISODateWithMs);
+            // Preserve absolute time across midnight; corrupt timestamps do not create invented times.
+            if(!iso.isValid())continue;
+            if(!firstStamp.isValid())firstStamp=iso;
+            const double sec=firstStamp.msecsTo(iso)/1000.0;
+            if(!times.isEmpty()&&sec<times.last())continue;
+            const auto evidence=fields.size()==headers.size()?Mems16Na::Analysis::replay(identity,fields.value(2),fields.value(3),fields.value(4)):Mems16Na::Analysis::replay(identity,QString(),QString(),QString());
+            // All physical values are derived once from the complete original frames.
+            // Never multiply a value that was already stored in volts or mV.
+            const auto row=Mems16Na::Analysis::row(evidence,stamp);
+            times<<sec;timeTexts<<stamp;
+            for(int col=0;col<count;++col){values[col]<<row.numbers.at(col);originals[col]<<row.texts.at(col);}
+            ++lines;continue;
+        }
         QTime t=QTime::fromString(first,QStringLiteral("hh:mm:ss"));
         if(!t.isValid())t=QTime::fromString(first,QStringLiteral("hh:mm:ss.zzz"));
         double sec=lines;
@@ -366,11 +439,18 @@ void AnalysisTab::parseCsv(const QString &path)
     m_originalTimeTexts=timeTexts;
     m_originalColumnTexts=std::move(originals);
     m_liveSource=FileSource;
+    m_naLiveIdentity.clear();m_naLiveReset=true;
     setProperty("analysisSourceFile",QFileInfo(path).fileName());
     setLiveButtons(false,false);
     emit liveSourceRequested(false);
     m_fileLabel->setText(QFileInfo(path).fileName()+
         QStringLiteral(" (%1 points)").arg(lines));
+    if(naV2) {
+        m_fileLabel->setToolTip(I18n::text(29050)+QStringLiteral("\n")+firmware+
+            QStringLiteral(" / ")+ecuId+QStringLiteral("\n")+started+QStringLiteral("\n")+I18n::text(29072));
+    } else if(headers.contains(QStringLiteral("80x01-02_engine-rpm")))
+        m_fileLabel->setToolTip(I18n::text(29070));
+    else m_fileLabel->setToolTip(QString());
     m_overlayChart->setData(m_time,m_columns,m_columnNames,m_colors);
     rebuildCheckboxes();
     m_valuesModel->dataUpdated();
