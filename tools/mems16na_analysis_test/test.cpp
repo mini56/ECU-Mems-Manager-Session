@@ -1,11 +1,11 @@
 #include "mems16na_analysis.h"
-#include <QCoreApplication>
+#include <QApplication>
 #include <iostream>
 using namespace Mems16Na;
 using namespace Mems16Na::Analysis;
 #define CHECK(x) do{if(!(x)){std::cerr<<"FAIL "<<__LINE__<<" "<<#x<<"\n";return 1;}}while(0)
 int main(int argc,char **argv) {
-    QCoreApplication app(argc,argv);
+    QApplication app(argc,argv);
     CHECK(I18n::load(QStringLiteral("fr")));
     auto id=identity(QStringLiteral("AANMP002"),QStringLiteral("98000202"));
     CHECK(id.identifiedProfile());

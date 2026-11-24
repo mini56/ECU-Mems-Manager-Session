@@ -93,7 +93,8 @@ inline Row row(const SessionEvidence &s,const QString &timestamp) {
         const QString key=QString::fromStdString(f.name);
         const QString value=QString::fromStdString(f.value);
         bool ok=false;const double number=value.toDouble(&ok);
-        out.numbers<<((ok&&qIsFinite(number))?number:gap());
+        const bool textual=key==QStringLiteral("na_timestamp")||key==QStringLiteral("na_frame80_hex")||key==QStringLiteral("na_frame7d_hex")||key.endsWith(QStringLiteral("_availability"));
+        out.numbers<<((!textual&&ok&&qIsFinite(number))?number:gap());
         QString text=value;
         if(key.endsWith(QStringLiteral("_availability")))text=status(value);
         else if(value.isEmpty()) {
