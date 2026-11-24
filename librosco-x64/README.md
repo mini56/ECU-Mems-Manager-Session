@@ -1,3 +1,7 @@
+## Lot auto-connexion moteur — 138 exports sources, validation à venir
+
+[Journal auto-connexion](JOURNAL_DEVELOPPEMENT_DLL_AUTO_CONNECT_SESSION205_20261124.md). T04–T08, aucun changement Manager. Le run des adaptateurs est distinct.
+
 ## Nouveau lot détection native des adaptateurs — 133 exports prévus
 
 [Journal adaptateurs](JOURNAL_DEVELOPPEMENT_DLL_ADAPTERS_SESSION205_20261124.md). T01–T03, lecture seule ; auto-connexion à suivre. Manager 205 inchangé.

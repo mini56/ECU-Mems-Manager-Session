@@ -148,3 +148,10 @@ EXPORTS
     mems_manager_list_serial_adapters @131
     mems_manager_get_adapter_details @132
     mems_manager_detect_adapter_family @133
+
+; Engine automatic session dispatcher, additive only.
+    mems_manager_auto_connect @134
+    mems_manager_get_session_identity @135
+    mems_manager_get_session_family @136
+    mems_manager_get_session_capabilities @137
+    mems_manager_disconnect_auto @138

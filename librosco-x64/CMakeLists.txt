@@ -25,6 +25,7 @@ add_library(rosco SHARED
     mems3_session.c
     rc5_session.c
     serial_adapters.c
+    auto_connect.c
     mems_manager_x64.def
 )
 
@@ -115,3 +116,7 @@ add_test(NAME dll_rc5_session_selftest COMMAND dll_rc5_session_selftest)
 add_executable(dll_serial_adapters_selftest serial_adapters_selftest.c)
 target_link_libraries(dll_serial_adapters_selftest PRIVATE setupapi cfgmgr32 advapi32)
 add_test(NAME dll_serial_adapters_selftest COMMAND dll_serial_adapters_selftest)
+
+# Engine auto-dispatch regression; all protocol and enumeration calls mocked.
+add_executable(dll_auto_connect_selftest auto_connect_selftest.c)
+add_test(NAME dll_auto_connect_selftest COMMAND dll_auto_connect_selftest)
