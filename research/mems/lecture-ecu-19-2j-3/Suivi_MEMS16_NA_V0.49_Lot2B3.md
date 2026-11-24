@@ -7,3 +7,12 @@ Base b24cb65b4b774a89c748c25e7e273adfc564949c. V0.43 ch.48,49,61,63,65,66.
 - Sept clés nouvelles × six langues, total 56; test Qt sans ECU ajouté (AANMP002, EKDMF002, bit 40, défauts multiples, unités, trames invalides, fin session, retour historique). CI privée, pas de publication.
 - DLL mise de côté sur instruction utilisateur. Pas de changement de ses sources/ABI/commandes, ni reprise de la branche DLL. À rattraper séparément après stabilisation Manager, en distinguant règles d'interprétation Manager et fonctions réellement nécessaires à la DLL. Aucun changement d'allumage.
 - Reste : logger, analyse/relecture, Aide, validation UI et réelle. D1 non ajouté au dialogue automatique. Tests à vérifier après exécution.
+
+## État CI au contrôle
+- Code : `0df190e864938b7111834735a3813aa5d5aed41c`.
+- Lot 2B2 : [45471374336](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45471374336)
+- tests : completed / success
+- windows : in_progress / non terminé (Compiler SESSION et tests de mise a jour)
+- Lot 2B3 : [45472045837](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45472045837)
+- tests : in_progress / non terminé (Valider les trois tests autonomes et les six langues)
+- Pas de publication. Aucun résultat Qt/Windows ne doit être supposé avant la fin du run.
