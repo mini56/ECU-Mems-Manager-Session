@@ -35,6 +35,7 @@
 #include <QPixmap>
 #include <QtMath>
 #include <utility>
+#include <limits>
 
 namespace {
 
@@ -450,12 +451,12 @@ static AxisSpec axisForChart(const QString &name, const QVector<double> &values)
     if (isFixedPercentSignal(name))
         return { 0.0, 100.0, 25.0, 0 };
 
-    double rawMin = values.isEmpty() ? 0.0 : values.first();
-    double rawMax = rawMin;
-    for (double value : values)
-    {
-        rawMin = qMin(rawMin, value);
-        rawMax = qMax(rawMax, value);
+    double rawMin=0.0,rawMax=0.0;
+    bool found=false;
+    for(double value:values) {
+        if(!qIsFinite(value))continue;
+        if(!found){rawMin=rawMax=value;found=true;}
+        else {rawMin=qMin(rawMin,value);rawMax=qMax(rawMax,value);}
     }
 
     const bool zeroBased = isZeroBasedSignal(name);
@@ -573,13 +574,19 @@ static void paintAnalysisChart(SingleChartWidget *chart)
     const int count = qMin(time.count(), values.count());
     for (int i = 0; i < count; ++i)
     {
+        if(!qIsFinite(values[i])) {
+            if(poly.size()==1)painter.drawPoint(poly.first());
+            else if(poly.size()>1)painter.drawPolyline(poly);
+            poly.clear();continue;
+        }
         const double xFraction = (time[i] - tMin) / tSpan;
         const double yFraction = (values[i] - axis.minimum) / vSpan;
         const double x = plotRect.left() + xFraction * plotRect.width();
         const double y = plotRect.bottom() - yFraction * plotRect.height();
         poly << QPointF(x, y);
     }
-    painter.drawPolyline(poly);
+    if(poly.size()==1)painter.drawPoint(poly.first());
+    else if(poly.size()>1)painter.drawPolyline(poly);
 
     painter.setPen((darkTheme?QColor("#aab5bd"):QColor("#344250")));
     for (int i = 0; i <= 5; ++i)
@@ -615,7 +622,7 @@ static void paintAnalysisChart(SingleChartWidget *chart)
         if (index < values.count())
         {
             const int valueDecimals = qMax(1, axis.decimals);
-            const QString label = QString::number(values[index], 'f', valueDecimals);
+            const QString label = qIsFinite(values[index])?QString::number(values[index], 'f', valueDecimals):I18n::text(29000);
             QFontMetrics metrics(axisFont);
             const int textWidth = metrics.horizontalAdvance(label) + 10;
             int boxX = cursorX + 6;

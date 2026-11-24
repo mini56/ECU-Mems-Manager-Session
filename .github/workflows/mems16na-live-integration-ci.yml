@@ -14,6 +14,13 @@ on:
       - 'summarytab.h'
       - 'mainwindow.cpp'
       - 'mainwindow.h'
+      - 'logger.cpp'
+      - 'logger.h'
+      - 'mems16na_log_schema.h'
+      - 'tools/mems16na_log_selftest.cpp'
+      - 'analysistab_impl_part1.inc'
+      - 'analysistab_impl_part2.inc'
+      - 'analysistab_impl_part3.inc'
       - 'diagnosticpanel.cpp'
       - 'diagnosticpanel.h'
       - 'tools/mems16na_diagnostic_test/**'
@@ -32,6 +39,7 @@ jobs:
           c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems16na_decoder_selftest.cpp -o decoder && ./decoder
           c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems16na_session_selftest.cpp -o session && ./session tools/testdata/mems16na-session-206.txt
           c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems16na_live_trace_selftest.cpp -o live && ./live tools/testdata/mems16na-session-206.txt
+          c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems16na_log_selftest.cpp -o logv2 && ./logv2 tools/testdata/mems16na-session-206.txt
           python tools/test_mems16na_translation_catalog.py
           python tools/test_save81_source.py
           python tools/test_adjustment_buttons_source.py

@@ -86,6 +86,7 @@ public:
     void discardPair() {
         have80_=false; havePair_=false; command_=-1; reply_.clear(); overflow_=false;
     }
+    const std::array<std::uint8_t,4>& identity() const { return identity_; }
     const Profile* identifiedProfile() const { return profile_; }
     bool ready() const { return profile_ && havePair_; }
     Frame frame80() const { return ready()?Frame{a_.data(),a_.size()}:Frame{nullptr,0}; }

@@ -284,6 +284,7 @@ void AnalysisTab::parseCsv(const QString &path)
     }
     QTextStream stream(&file);
     QStringList headers;
+    bool naV2=false;
     QChar separator=QLatin1Char(',');
     // Ignore optional ECU identifier / comments but never discard the actual
     // first CSV header. The old reader unconditionally skipped one line.
@@ -292,6 +293,7 @@ void AnalysisTab::parseCsv(const QString &path)
         if(!line.isEmpty() && line.at(0)==QChar::ByteOrderMark)
             line.remove(0,1);
         if(line.isEmpty())continue;
+        if(line==QStringLiteral("# MEMS16NA_SCHEMA=2")){naV2=true;continue;}
         if(line.startsWith(QLatin1Char('#'))){
             const QString prefix=line.mid(1).trimmed().toLower();
             if(!prefix.startsWith(QStringLiteral("time")) &&
@@ -349,7 +351,7 @@ void AnalysisTab::parseCsv(const QString &path)
                 QString normalized=original;normalized.replace(QLatin1Char(','),QLatin1Char('.'));
                 numeric=normalized.toDouble(&numericOk);
             }
-            values[col].append(numericOk?numeric:0.0);
+            values[col].append(numericOk?numeric:(naV2?std::numeric_limits<double>::quiet_NaN():0.0));
         }
         ++lines;
     }

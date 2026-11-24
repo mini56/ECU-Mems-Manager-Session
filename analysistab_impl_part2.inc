@@ -45,13 +45,17 @@ void ChartWidget::paintEvent(QPaintEvent *event)
     int visibleCount=0;
     for(int s=0;s<m_series.size();++s){
         if(s>=m_visible.size()||!m_visible[s]||m_series[s].isEmpty())continue;
-        ++visibleCount;
         const QVector<double> &vals=m_series[s];
-        double vMin=vals.first(),vMax=vals.first();for(double x:vals){vMin=qMin(vMin,x);vMax=qMax(vMax,x);}
+        double vMin=0,vMax=0;bool found=false;
+        for(double x:vals)if(qIsFinite(x)){if(!found){vMin=vMax=x;found=true;}else{vMin=qMin(vMin,x);vMax=qMax(vMax,x);}}
+        if(!found)continue;
+        ++visibleCount;
         const double vSpan=qMax(0.001,vMax-vMin);
         QPolygonF poly; const int n=qMin(m_time.size(),vals.size());
-        for(int i=0;i<n;++i){const double xf=(m_time[i]-tMin)/tSpan;const double yf=(vals[i]-vMin)/vSpan;poly<<QPointF(plot.left()+xf*plot.width(),plot.bottom()-yf*plot.height());}
-        p.setPen(QPen(m_colors[s%m_colors.size()],1.8));p.drawPolyline(poly);
+        p.setPen(QPen(m_colors[s%m_colors.size()],1.8));
+        auto segment=[&](){if(poly.size()==1)p.drawPoint(poly.first());else if(poly.size()>1)p.drawPolyline(poly);poly.clear();};
+        for(int i=0;i<n;++i){if(!qIsFinite(vals[i])){segment();continue;}const double xf=(m_time[i]-tMin)/tSpan;const double yf=(vals[i]-vMin)/vSpan;poly<<QPointF(plot.left()+xf*plot.width(),plot.bottom()-yf*plot.height());}
+        segment();
     }
     if(!visibleCount)drawEmptyMessage(p,plot,I18n::text(6441));
     p.setPen((darkTheme?QColor("#8a93a6"):QColor("#425160")));
@@ -64,7 +68,7 @@ void ChartWidget::paintEvent(QPaintEvent *event)
         int y=plot.top()+5;
         for(int s=0;s<m_series.size();++s){
             if(s>=m_visible.size()||!m_visible[s]||idx>=m_series[s].size())continue;
-            QString txt=QString("%1 : %2").arg(m_names[s]).arg(m_series[s][idx],0,'f',2);
+            QString txt=QString("%1 : %2").arg(m_names[s],qIsFinite(m_series[s][idx])?QString::number(m_series[s][idx],'f',2):I18n::text(29000));
             p.setPen(m_colors[s%m_colors.size()]);p.drawText(QRect(plot.left()+8,y,plot.width()-16,17),Qt::AlignLeft|Qt::AlignVCenter,txt);y+=18;
         }
     }

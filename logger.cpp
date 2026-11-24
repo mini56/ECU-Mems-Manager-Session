@@ -2,6 +2,8 @@
 #include <QDateTime>
 #include <QStandardPaths>
 #include "logger.h"
+#include "mems16na_log_schema.h"
+#include <QFileInfo>
 
 /**
  * Constructor. Sets the interface class pointer as
@@ -38,9 +40,57 @@ bool Logger::EcuIdTransmitted(QString id)
  */
 bool Logger::openLog(QString fileName)
 {
-  bool success = false;
+  if(m_recording)return false;
+  m_requestedName=fileName;
+  m_forceUnique=false;
+  Mems16Na::SessionEvidence na;
+  m_mems->getData(&na);
+  m_recording=openSegment(na);
+  return m_recording;
+}
 
-  m_lastAttemptedLog = m_logDir + QDir::separator() + fileName + m_logExtension;
+QString Logger::uniqueLogPath(const QString &stem) const
+{
+  const QDir dir(m_logDir);
+  QString path=dir.filePath(stem+m_logExtension);
+  for(int i=1;QFileInfo::exists(path);++i)
+    path=dir.filePath(stem+QStringLiteral("_%1").arg(i)+m_logExtension);
+  return path;
+}
+
+bool Logger::openNaSegment(const Mems16Na::SessionEvidence &na)
+{
+  const auto *profile=na.identifiedProfile();
+  if(!profile || !QDir().mkpath(m_logDir))return false;
+  const QString firmware=QString::fromLatin1(profile->firmware);
+  const QString identity=QString::fromStdString(Mems16Na::LogV2::hex(na.identity().data(),na.identity().size()));
+  const QDateTime now=QDateTime::currentDateTime();
+  m_lastAttemptedLog=uniqueLogPath(m_requestedName+QStringLiteral("_MEMS16NA_")+firmware+
+      QStringLiteral("_")+now.toString(QStringLiteral("yyyyMMdd_HHmmss_zzz")));
+  m_logFile.setFileName(m_lastAttemptedLog);
+  // Exclusive creation: even another process cannot cause an old file to be appended.
+  if(!m_logFile.open(QIODevice::WriteOnly|QIODevice::NewOnly))return false;
+  m_logFileStream.setDevice(&m_logFile);
+  m_logFileStream.resetStatus();
+  m_naFirmware=firmware;m_naIdentity=identity;
+  m_logFileStream<<QString::fromLatin1(Mems16Na::LogV2::marker())<<"\n"
+    <<"# ECU_ID="<<identity<<"\n"
+    <<"# FIRMWARE="<<firmware<<"\n"
+    <<"# STARTED="<<now.toString(Qt::ISODateWithMs)<<"\n"
+    <<QString::fromStdString(Mems16Na::LogV2::header())<<endl;
+  if(m_logFileStream.status()!=QTextStream::Ok || !m_logFile.flush()) {
+    m_logFile.close();m_naFirmware.clear();m_naIdentity.clear();return false;
+  }
+  return true;
+}
+
+bool Logger::openSegment(const Mems16Na::SessionEvidence &na)
+{
+  m_naFirmware.clear();m_naIdentity.clear();
+  if(na.identifiedProfile())return openNaSegment(na);
+  bool success = false;
+  const QString stem=m_forceUnique?m_requestedName+QStringLiteral("_")+QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_HHmmss_zzz")):m_requestedName;
+  m_lastAttemptedLog = m_forceUnique?uniqueLogPath(stem):QDir(m_logDir).filePath(stem+m_logExtension);
 
   // Enregistre dans les Documents utilisateur, sans ecrire dans Program Files.
   if (!m_logFile.isOpen() && QDir().mkpath(m_logDir))
@@ -49,9 +99,10 @@ bool Logger::openLog(QString fileName)
     bool alreadyExists = QFileInfo(m_lastAttemptedLog).exists();
 
     m_logFile.setFileName(m_lastAttemptedLog);
-    if (m_logFile.open(QFile::WriteOnly | QFile::Append))
+    if (m_logFile.open(m_forceUnique?(QIODevice::WriteOnly|QIODevice::NewOnly):(QIODevice::WriteOnly|QIODevice::Append)))
     {
       m_logFileStream.setDevice(&m_logFile);
+      m_logFileStream.resetStatus();
 
       if (!alreadyExists)
       {
@@ -127,7 +178,20 @@ bool Logger::openLog(QString fileName)
  */
 void Logger::closeLog()
 {
+  m_logFileStream.flush();
   m_logFile.close();
+  m_recording=false;
+  m_naFirmware.clear();m_naIdentity.clear();
+}
+
+void Logger::endNaSession()
+{
+  if(!m_recording||m_naFirmware.isEmpty())return;
+  m_logFileStream.flush();
+  m_logFile.close();
+  m_naFirmware.clear();m_naIdentity.clear();
+  m_forceUnique=true;
+  // Retain the existing recording request; a later session gets a new file.
 }
 
 /**
@@ -166,8 +230,33 @@ void Logger::closeLog()
  */
 void Logger::logData()
 {
-  mems_data* data = m_mems->getData();
+  Mems16Na::SessionEvidence na;
+  const mems_data *data=m_mems->getData(&na);
+  logData(data,na);
+}
 
+bool Logger::logData(const mems_data *data,const Mems16Na::SessionEvidence &na)
+{
+  if(!m_recording||!data)return true;
+  const auto *profile=na.identifiedProfile();
+  const QString firmware=profile?QString::fromLatin1(profile->firmware):QString();
+  const QString identity=profile?QString::fromStdString(Mems16Na::LogV2::hex(na.identity().data(),na.identity().size())):QString();
+  if(!m_logFile.isOpen()||firmware!=m_naFirmware||identity!=m_naIdentity) {
+    m_logFileStream.flush();m_logFile.close();m_forceUnique=true;
+    if(!openSegment(na)){closeLog();return false;}
+  }
+  if(!firmware.isEmpty()) {
+    const auto now=QDateTime::currentDateTime();
+    const auto fields=Mems16Na::LogV2::fields(na,now.toString(Qt::ISODateWithMs).toStdString());
+    m_logFileStream<<now.toString(QStringLiteral("hh:mm:ss.zzz"))
+      <<QString::fromStdString(Mems16Na::LogV2::csv(fields,false))<<endl;
+  } else writeLegacyRow(data);
+  if(m_logFileStream.status()!=QTextStream::Ok||!m_logFile.flush()) {closeLog();return false;}
+  return true;
+}
+
+void Logger::writeLegacyRow(const mems_data *data)
+{
   if (m_logFile.isOpen() && (m_logFileStream.status() == QTextStream::Ok))
       {
         m_logFileStream << QDateTime::currentDateTime().toString("hh:mm:ss") << "," <<

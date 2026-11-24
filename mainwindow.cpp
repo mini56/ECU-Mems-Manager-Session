@@ -1524,7 +1524,10 @@ void MainWindow::onDataReady()
  m_ui->m_80_1B->setText(QString::number(data->uk5));
 
   if(naIdentified)showNaPages(naEvidence);
-  m_logger->logData();
+  if(!m_logger->logData(data,naEvidence)) {
+    onStopLogging();
+    QMessageBox::warning(this,I18n::text(7054),I18n::text(7055).arg(m_logger->getLogPath()),QMessageBox::Ok);
+  }
 }
 
 /**
@@ -1759,6 +1762,7 @@ void MainWindow::onConnect()
 void MainWindow::onDisconnect()
 {
   restoreNaPages();
+  if(m_logger)m_logger->endNaSession();
   if(m_summaryTab)m_summaryTab->clearNaPresentation();
   if(m_diagnosticPanel)m_diagnosticPanel->endNaSession();
   EcuCommunicationLog::finish();
