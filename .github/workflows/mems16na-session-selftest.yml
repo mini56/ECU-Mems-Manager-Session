@@ -1,0 +1,25 @@
+name: MEMS 1.6 NA - validation du contexte et rejeu Lot 2A
+on:
+  workflow_dispatch:
+  push:
+    branches: [fix-documentary-additive-session-161-20261118]
+    paths:
+      - 'mems16na_session_evidence.h'
+      - 'tools/mems16na_session_selftest.cpp'
+      - 'tools/testdata/mems16na-session-206.txt'
+      - '.github/workflows/mems16na-session-selftest.yml'
+permissions:
+  contents: read
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Valider le decodeur du lot 1
+        run: |
+          c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems16na_decoder_selftest.cpp -o mems16na_decoder_test
+          ./mems16na_decoder_test
+      - name: Valider le contexte de session et le rejeu reel
+        run: |
+          c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems16na_session_selftest.cpp -o mems16na_session_test
+          ./mems16na_session_test tools/testdata/mems16na-session-206.txt
