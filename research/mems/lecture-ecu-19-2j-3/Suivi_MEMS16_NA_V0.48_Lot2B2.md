@@ -5,3 +5,9 @@ Base a5f0ead178bcc231afff287c83b2b11c12330ead. Lot 2B1 : run 45469286130, tests 
 - Sept groupes DTC : aide par profil sur le libellé, même sans défaut; détail complet accessible dans la bulle en cas de texte long. Les huit bits par groupe restent distingués sur Erreurs. Masques de défaut du décodeur appliqués aux LED, à la sonnerie et à l'indicateur général; 40 DTC2 est un état et non une panne, bit non identifié conservé en information. Réinitialisation de l'historique à la transition de profil, pas de commande ECU.
 - Les traductions 2B1 sont réutilisées (aucune nouvelle clé); LSB est le sigle technique de l'octet faible. Les autres générations conservent l'ancien flux. DLL, commande ECU, logger, réglages inchangés.
 - Pas de publication ni de Setup. CI privée Windows 207, validation visuelle à effectuer (notamment longueur des libellés et bulles), Diagnostic automatique et journaux/Analyse à traiter. D1 toujours reçu uniquement via mécanisme existant. Aucun test véhicule nouveau.
+
+## Contrôle CI
+- Commit de code `d3df04443769fc895d4d7eeb8b4e2d05bc700cf1`.
+- [Run 45471374336](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45471374336).
+- tests : in_progress / non terminé (Valider les trois tests autonomes et les six langues)
+- Ne pas considérer le lot validé visuellement ni sur véhicule avant essais. Aucun Setup publié.
