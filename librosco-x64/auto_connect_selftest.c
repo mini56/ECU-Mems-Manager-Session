@@ -50,6 +50,46 @@ static bool fake3(const char *p,mems_manager_mems3_session **s,
     (void)cb;(void)tr;(void)u;(void)r;if(!log_attempt(30,p))return false;
     *s=(mems_manager_mems3_session*)(uintptr_t)4;++g.live;return true;
 }
+static mems_manager_auto_session *active;
+static bool cancel_in_read,fail_read;
+static bool fake_legacy_read(mems_info *i,mems_data *data){
+    (void)i;memset(data,0,sizeof(*data));data->engine_rpm=1234;
+    if(cancel_in_read)CHECK(mems_manager_cancel_current(active));
+    return !fail_read;
+}
+static bool fake19_read(mems_info *i,mems_data *data,bool echo){
+    CHECK(echo);return fake_legacy_read(i,data);
+}
+static bool fake_heartbeat(mems_info *i){(void)i;return true;}
+static bool fake19_cmd(mems_info *i,uint8_t cmd,bool echo,uint8_t *reply){
+    (void)i;(void)reply;CHECK(echo&&cmd==MEMS_Heartbeat);return true;
+}
+static bool fake_measure(uint8_t id,uint8_t *raw,size_t cap,size_t *n,mems_codec_measurements *m){
+    CHECK(cap>=4);raw[0]=0x61;raw[1]=id;raw[2]=0x01;raw[3]=0x02;*n=4;
+    if(m){memset(m,0,sizeof(*m));m->id=id;}
+    if(cancel_in_read)CHECK(mems_manager_cancel_current(active));
+    return !fail_read;
+}
+static bool fake2_measure(mems_manager_mems2j_session *s,uint8_t id,uint8_t *raw,size_t cap,size_t *n,mems_codec_measurements *m){
+    (void)s;return fake_measure(id,raw,cap,n,m);
+}
+static bool fake3_measure(mems_manager_mems3_session *s,uint8_t id,uint8_t *raw,size_t cap,size_t *n,mems_codec_measurements *m){
+    (void)s;return fake_measure(id,raw,cap,n,m);
+}
+static bool fake2_fault(mems_manager_mems2j_session *s,uint8_t *raw,size_t cap,size_t *n){
+    return fake2_measure(s,0x19,raw,cap,n,NULL);
+}
+static bool fake3_fault(mems_manager_mems3_session *s,uint8_t *raw,size_t cap,size_t *n){
+    (void)s;CHECK(cap>=2);raw[0]=0x58;raw[1]=0;*n=2;return !fail_read;
+}
+static bool fake2_keep(mems_manager_mems2j_session *s){(void)s;return true;}
+static bool fake3_keep(mems_manager_mems3_session *s){(void)s;return true;}
+static bool fake2_last(const mems_manager_mems2j_session *s,mems_manager_mems2j_result *r,uint8_t *neg,uint32_t *ms){
+    (void)s;(void)ms;*r=fail_read?MEMS_MANAGER_2J_NEGATIVE_RESPONSE:MEMS_MANAGER_2J_OK;*neg=fail_read?0x31:0;return true;
+}
+static bool fake3_last(const mems_manager_mems3_session *s,mems_manager_mems3_result *r,uint8_t *neg,uint32_t *ms){
+    (void)s;(void)ms;*r=fail_read?MEMS_MANAGER_3_NEGATIVE_RESPONSE:MEMS_MANAGER_3_OK;*neg=fail_read?0x31:0;return true;
+}
 static void close2(mems_manager_mems2j_session *s){CHECK(s!=NULL);--g.live;++g.closed;}
 static void close3(mems_manager_mems3_session *s){CHECK(s!=NULL);--g.live;++g.closed;}
 static bool cancel(void *user){(void)user;return g.cancel_after&&g.n>=g.cancel_after;}
@@ -63,6 +103,18 @@ static bool cancel(void *user){(void)user;return g.cancel_after&&g.n>=g.cancel_a
 #define mems_manager_mems3_connect fake3
 #define mems_manager_mems2j_close close2
 #define mems_manager_mems3_close close3
+#define mems_read fake_legacy_read
+#define mems_read_kline19 fake19_read
+#define mems_heartbeat fake_heartbeat
+#define mems_command_kline19 fake19_cmd
+#define mems_manager_mems2j_read_measurement fake2_measure
+#define mems_manager_mems3_read_measurement fake3_measure
+#define mems_manager_mems2j_read_faults fake2_fault
+#define mems_manager_mems3_read_faults fake3_fault
+#define mems_manager_mems2j_keepalive fake2_keep
+#define mems_manager_mems3_keepalive fake3_keep
+#define mems_manager_mems2j_last_transaction fake2_last
+#define mems_manager_mems3_last_transaction fake3_last
 #include "auto_connect.c"
 int main(void){
     mems_manager_auto_session *s=NULL;mems_manager_auto_identity id;mems_manager_auto_result r;
@@ -95,6 +147,44 @@ int main(void){
     CHECK(!mems_manager_auto_connect(NULL,NULL,NULL,NULL,NULL,&r)&&r==MEMS_MANAGER_AUTO_INVALID);
     CHECK(!mems_manager_get_session_identity(NULL,&id)&&!mems_manager_get_session_capabilities(NULL));
     mems_manager_disconnect_auto(NULL);
+    {
+        mems_data data;mems_manager_transport_error error;uint32_t duration;
+        uint8_t raw[96],b[2]={0x61,0x09};size_t n;mems_codec_measurements metrics;
+        mems_manager_trace_event ev;
+        reset();g.success_family=1;g.success_port=1;
+        CHECK(mems_manager_auto_connect(NULL,&s,cancel,NULL,NULL,&r));
+        active=s;CHECK(!mems_manager_cancel_current(s));
+        CHECK(!mems_manager_get_transport_error(s,&error));
+        CHECK(mems_manager_auto_read_legacy(s,&data)&&data.engine_rpm==1234);
+        CHECK(mems_manager_get_response_timing(s,&duration));
+        CHECK(mems_manager_auto_keepalive(s));
+        CHECK(!mems_manager_auto_read_measurement(s,9,raw,sizeof(raw),&n,&metrics));
+        CHECK(mems_manager_get_transport_error(s,&error)&&error.status==MEMS_MANAGER_TRANSPORT_UNSUPPORTED&&!error.has_timing);
+        cancel_in_read=true;data.engine_rpm=999;
+        CHECK(!mems_manager_auto_read_legacy(s,&data)&&data.engine_rpm==999);
+        CHECK(mems_manager_get_transport_error(s,&error)&&error.status==MEMS_MANAGER_TRANSPORT_CANCELLED);
+        cancel_in_read=false;
+        CHECK(mems_manager_auto_read_legacy(s,&data)&&data.engine_rpm==1234);
+        mems_manager_disconnect_auto(s);s=NULL;
+        reset();g.kline=true;g.success_family=20;g.success_port=1;
+        CHECK(mems_manager_auto_connect(NULL,&s,cancel,NULL,NULL,&r));active=s;
+        CHECK(mems_manager_auto_read_measurement(s,9,raw,sizeof(raw),&n,&metrics)&&n==4&&raw[1]==9&&metrics.id==9);
+        CHECK(mems_manager_auto_read_faults(s,raw,sizeof(raw),&n)&&raw[1]==0x19);
+        CHECK(mems_manager_auto_keepalive(s));
+        fail_read=true;n=999;
+        CHECK(!mems_manager_auto_read_measurement(s,9,raw,sizeof(raw),&n,NULL)&&n==999);
+        CHECK(mems_manager_get_transport_error(s,&error)&&error.status==MEMS_MANAGER_TRANSPORT_NATIVE_FAILURE&&error.has_native_status&&error.negative_response_code==0x31);
+        fail_read=false;cancel_in_read=true;
+        CHECK(!mems_manager_auto_read_measurement(s,9,raw,sizeof(raw),&n,NULL)&&n==999);
+        cancel_in_read=false;
+        CHECK(mems_manager_auto_read_measurement(s,9,raw,sizeof(raw),&n,NULL)&&n==4);
+        mems_manager_clear_trace(s);
+        for(unsigned i=0;i<MEMS_MANAGER_TRACE_EVENTS+3;++i)native_trace(s,2,i,b,sizeof(b));
+        CHECK(mems_manager_get_next_trace_event(s,&ev)&&ev.dropped_total==3&&ev.family==20&&ev.length==2&&ev.bytes[1]==9&&strcmp(ev.port,"COM1")==0);
+        CHECK(ev.tick_ms==3);
+        mems_manager_clear_trace(s);CHECK(!mems_manager_get_next_trace_event(s,&ev));
+        mems_manager_disconnect_auto(s);s=NULL;CHECK(!g.live);
+    }
     if(failures)return 1;
     puts("AUTO_CONNECT_SELFTEST_PASS: protocol order, ECU confirmation, fallback, cleanup, cancellation, identity and capabilities");
     return 0;

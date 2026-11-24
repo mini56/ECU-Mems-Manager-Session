@@ -155,3 +155,14 @@ EXPORTS
     mems_manager_get_session_family @136
     mems_manager_get_session_capabilities @137
     mems_manager_disconnect_auto @138
+
+; Auto session diagnostics and acquisition, additive only.
+    mems_manager_cancel_current @139
+    mems_manager_get_transport_error @140
+    mems_manager_get_next_trace_event @141
+    mems_manager_clear_trace @142
+    mems_manager_get_response_timing @143
+    mems_manager_auto_read_legacy @144
+    mems_manager_auto_read_measurement @145
+    mems_manager_auto_read_faults @146
+    mems_manager_auto_keepalive @147

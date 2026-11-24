@@ -25,8 +25,8 @@ def check(new_path, manager_path, definition_path):
     dll = PE(new_path)
     app = PE(manager_path)
     expected = read_definition(definition_path)
-    if len(expected) != 138:
-        raise AssertionError(f"DLL definition must declare 138 exports, got {len(expected)}")
+    if len(expected) != 147:
+        raise AssertionError(f"DLL definition must declare 147 exports, got {len(expected)}")
     # Original 91 names/ordinals must remain byte-exact in order.
     # Static guard validates the historical list; PE guard protects it again
     # when loading the Session 205 executable.
@@ -102,11 +102,24 @@ def check(new_path, manager_path, definition_path):
         "mems_manager_get_session_capabilities",
         "mems_manager_disconnect_auto",
     ]
-    if expected[133:] != [(name, ordinal) for ordinal, name in enumerate(auto_names, start=134)]:
+    if expected[133:138] != [(name, ordinal) for ordinal, name in enumerate(auto_names, start=134)]:
         raise AssertionError("Auto session symbols/ordinals must be 134..138")
+    auto_io_names = [
+        "mems_manager_cancel_current",
+        "mems_manager_get_transport_error",
+        "mems_manager_get_next_trace_event",
+        "mems_manager_clear_trace",
+        "mems_manager_get_response_timing",
+        "mems_manager_auto_read_legacy",
+        "mems_manager_auto_read_measurement",
+        "mems_manager_auto_read_faults",
+        "mems_manager_auto_keepalive",
+    ]
+    if expected[138:] != [(name, ordinal) for ordinal, name in enumerate(auto_io_names, start=139)]:
+        raise AssertionError("Auto I/O symbols/ordinals must be 139..147")
     if len(set(name for name, _ in expected)) != len(expected):
         raise AssertionError("Duplicate symbol in .def")
-    if [ordinal for _, ordinal in expected] != list(range(1, 139)):
+    if [ordinal for _, ordinal in expected] != list(range(1, 148)):
         raise AssertionError("Non-sequential / changed DLL export ordinals")
     if dll.machine != 0x8664 or app.machine != 0x8664:
         raise AssertionError("Both the built DLL and real Session 205 executable must be AMD64")

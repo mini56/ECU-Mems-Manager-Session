@@ -1,6 +1,7 @@
 #ifndef MEMS_MANAGER_AUTO_CONNECT_H
 #define MEMS_MANAGER_AUTO_CONNECT_H
 #include "serial_adapters.h"
+#include "protocol_catalogue.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -55,6 +56,62 @@ ROSCO_API mems_manager_auto_family mems_manager_get_session_family(
 ROSCO_API uint32_t mems_manager_get_session_capabilities(
     const mems_manager_auto_session *session);
 ROSCO_API void mems_manager_disconnect_auto(mems_manager_auto_session *session);
+/* Operations on the same opaque session, without reopening the port.
+ * All except cancel_current run on its owner thread. Output is only
+ * committed on success. Legacy output uses existing ROSCO ABI/units.
+ * DTC for 1.x/1.9 is carried in mems_data; framed DTC uses raw payload.
+ * Framed calls require capacity >= MEMS_CODEC_MAX_PAYLOAD (96 bytes).
+ */
+ROSCO_API bool mems_manager_auto_read_legacy(mems_manager_auto_session *s,mems_data *data);
+ROSCO_API bool mems_manager_auto_read_measurement(mems_manager_auto_session *s,uint8_t id,
+    uint8_t *raw,size_t capacity,size_t *length,mems_codec_measurements *metrics);
+ROSCO_API bool mems_manager_auto_read_faults(mems_manager_auto_session *s,
+    uint8_t *raw,size_t capacity,size_t *length);
+ROSCO_API bool mems_manager_auto_keepalive(mems_manager_auto_session *s);
+/* Cross-thread request only while an operation is active; the caller must
+ * keep s alive. No forced COM close. Legacy operations finish their blocking
+ * call, then report cancellation; native framed calls check the predicate.
+ * Connect uses the predicate supplied to auto_connect (s not yet published).
+ */
+ROSCO_API bool mems_manager_cancel_current(mems_manager_auto_session *s);
+typedef enum mems_manager_transport_status {
+    MEMS_MANAGER_TRANSPORT_OK=0, MEMS_MANAGER_TRANSPORT_INVALID=1,
+    MEMS_MANAGER_TRANSPORT_UNSUPPORTED=2, MEMS_MANAGER_TRANSPORT_CANCELLED=3,
+    MEMS_MANAGER_TRANSPORT_LEGACY_FAILURE=4, MEMS_MANAGER_TRANSPORT_NATIVE_FAILURE=5
+} mems_manager_transport_status;
+typedef struct mems_manager_transport_error {
+    uint32_t status,family,native_status;
+    uint8_t has_native_status,negative_response_code,has_timing,reserved;
+    uint32_t duration_ms;
+} mems_manager_transport_error;
+/* Last completed generic operation, including failure. Native status is
+ * the original 2J/3 enum when the underlying transaction ran.
+ * Legacy failure has no invented negative response or OS error.
+ * Duration is elapsed host operation time (not isolated ECU latency).
+ */
+ROSCO_API bool mems_manager_get_transport_error(const mems_manager_auto_session *s,
+    mems_manager_transport_error *out);
+ROSCO_API bool mems_manager_get_response_timing(const mems_manager_auto_session *s,
+    uint32_t *duration_ms);
+#define MEMS_MANAGER_TRACE_BYTES 512u
+#define MEMS_MANAGER_TRACE_EVENTS 256u
+typedef struct mems_manager_trace_event {
+    uint64_t sequence,tick_ms,dropped_total;
+    uint32_t family;
+    char port[16];
+    uint16_t length;
+    uint8_t direction,reserved;
+    uint8_t bytes[MEMS_MANAGER_TRACE_BYTES];
+} mems_manager_trace_event;
+/* Consume oldest retained TX/RX event. Bounded FIFO drops oldest on overflow;
+ * sequence and dropped_total expose gaps. Failed probe events retain their
+ * own family/port. Native 2J/3 byte callbacks only; legacy trace not yet
+ * available. Caller persists events to file; DLL writes no log files.
+ * Clear discards queued events and resets loss counter, not sequence.
+ */
+ROSCO_API bool mems_manager_get_next_trace_event(mems_manager_auto_session *s,
+    mems_manager_trace_event *out);
+ROSCO_API void mems_manager_clear_trace(mems_manager_auto_session *s);
 #ifdef __cplusplus
 }
 #endif

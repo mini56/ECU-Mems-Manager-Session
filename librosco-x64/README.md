@@ -1,3 +1,7 @@
+## Lot opérations auto-session — 147 exports sources, CI à confirmer
+
+[Journal des opérations et du traçage](JOURNAL_DEVELOPPEMENT_DLL_AUTO_IO_SESSION205_20261124.md). Aucun changement de Manager 205. Le tracé legacy et délais configurables restent à faire.
+
 ## Lot auto-connexion moteur — 138 exports sources, validation à venir
 
 [Journal auto-connexion](JOURNAL_DEVELOPPEMENT_DLL_AUTO_CONNECT_SESSION205_20261124.md). T04–T08, aucun changement Manager. Le run des adaptateurs est distinct.
