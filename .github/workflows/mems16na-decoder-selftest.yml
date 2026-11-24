@@ -1,0 +1,21 @@
+name: MEMS 1.6 NA - validation du decodeur Lot 1
+on:
+  workflow_dispatch:
+  push:
+    branches: [fix-documentary-additive-session-161-20261118]
+    paths:
+      - 'mems16na_decoder.h'
+      - 'mems16na_profiles.inc'
+      - 'tools/mems16na_decoder_selftest.cpp'
+      - '.github/workflows/mems16na-decoder-selftest.yml'
+permissions:
+  contents: read
+jobs:
+  decoder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compiler et tester le decodeur sans ECU
+        run: |
+          c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems16na_decoder_selftest.cpp -o mems16na_test
+          ./mems16na_test
