@@ -8,5 +8,12 @@ Journal fourni du 24/11/2026 13:13:38 : D0 = 98 00 02 02; D1 = écho D1, puis tr
 ## Source ajoutée
 - mems16na_session_evidence.h : observation passive des transactions terminées, identification par nom exact du catalogue NA et concordance D0/D1, rejet des réponses contradictoires, contrôle longueur annoncée et réelle, association 80/7D consécutive, reset du contexte local sans action ECU.
 - Aucun D1 ajouté à la connexion. D1 est déjà disponible dans l'outil de protocole existant. Sans réponse D1 complète, le profil reste non identifié. Ne pas déduire AANMP002 du seul ID.
-- Tests synthétiques et rejeu réel; les 30 couples après D1 sont à vérifier en CI. Les réponses D1 à une ou deux répétitions sont acceptées seulement si les enregistrements sont complets et concordants; seule la forme à trois répétitions est attestée sur ce véhicule.
+- Tests synthétiques et rejeu réel; les 30 couples après D1 sont validés en CI. Les réponses D1 à une ou deux répétitions sont acceptées seulement si les enregistrements sont complets et concordants; seule la forme à trois répétitions est attestée sur ce véhicule.
 - Pas de modification des sources historiques, DLL, commandes, traduction ou autres générations. Aucun Setup. Raccordement aux écrans et aux fichiers d'analyse encore à faire. Il faut relier le contexte à des transactions réellement achevées, vérifier les frontières et l'absence d'impact sur les temps de polling. Ne pas déclencher l'ancien workflow de publication 206 en modifiant ses chemins surveillés sans préparer une CI de test.
+
+## Résultats contrôlés
+- Commit de code : `ce0b1a10906733920689bf260ed86e33c2810e9e`.
+- [Run 45467321257](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45467321257) : succès; deux compilations C++11 avec avertissements bloquants. Sorties `MEMS16NA_SELFTEST_OK` et `MEMS16NA_SESSION_OK`.
+- 31 couples réels: premier non classé (D1 absent), 30 interprétés AANMP002. 30/30 : température ambiante/carburant FF non disponible; 32 pas; 13,4 V; références 27,00 / 31,75 / 39,75 / 55,50 TPS; compteur 1; DTC0/1/2 = 00. Écart régime −28 à +32 tr/min.
+- Test de trames 7D 14/33 octets, longueur annoncée incohérente, D1 contradictoire/incomplète, nom Turbo, changement de session et commande intermédiaire: rejet de l'interprétation NA dans les cas testés. Les valeurs doivent être consommées au point de fin de transaction; pas de réutilisation de l'ancien couple lors d'une lecture incomplète.
+- Lot 2A autonome validé, non raccordé aux écrans. Lot 2B : intégrer l'observation passive des réponses existantes dans le flux Manager et les traductions/bulles DTC; aucun ajout de commande et aucune activation de profil sur le seul ID.
