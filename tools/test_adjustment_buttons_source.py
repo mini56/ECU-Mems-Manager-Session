@@ -31,9 +31,9 @@ for name,(constant,hexval) in command_map.items():
     assert "emit "+name+"();" in w, name
     assert "connect(this, SIGNAL("+name+"()), m_mems, SLOT("+slot+"()))" in w, name
     assert m.count("void MEMSInterface::"+slot+"()")==1, name
-    assert re.search(r"\\b"+constant+r"\\s*=\\s*"+hexval,cmd), name
+    assert re.search(r"\b"+constant+r"\s*=\s*"+hexval,cmd), name
     assert "guardedMemsTestActuator("+constant+", NULL)" in m, name
-    assert not re.search(r"connect\\s*\\(\\s*m_ui->"+widget+r"\\s*,\\s*SIGNAL\\s*\\(\\s*clicked",w), name
+    assert not re.search(r"connect\s*\(\s*m_ui->"+widget+r"\s*,\s*SIGNAL\s*\(\s*clicked",w), name
 assert "saveTimeouts.ReadTotalTimeoutConstant = 700;" in m
 assert "SAVE81_ACK_00_DUREE_TRANSACTION_MS=%1" in m
 print("ADJUSTMENTS_EIGHT_SINGLE_QT_SLOT_CONNECTIONS_PASS")

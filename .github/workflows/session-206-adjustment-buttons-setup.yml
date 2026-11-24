@@ -716,7 +716,7 @@ jobs:
           $uiHeader=Get-ChildItem build-session-206 -Recurse -File -Filter ui_mainwindow.h | Select-Object -First 1
           if(-not $uiHeader){throw 'SESSION_206_GENERATED_UI_HEADER_MISSING'}
           $uiCode=Get-Content -LiteralPath $uiHeader.FullName -Raw
-          if($uiCode -notmatch 'QMetaObject::connectSlotsByName\\(MainWindow\\)'){throw 'SESSION_206_QT_AUTO_CONNECT_MISSING'}
+          if($uiCode -notmatch 'QMetaObject::connectSlotsByName\(MainWindow\)'){throw 'SESSION_206_QT_AUTO_CONNECT_MISSING'}
           Write-Host 'SESSION_206_QT_AUTOCONNECT_GENERATED_PASS'
           Write-Host 'SESSION_206_COMPILE_PASS'
       - name: Tester le catalogue de mises a jour sans connexion ni base Rover
