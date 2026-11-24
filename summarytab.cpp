@@ -8,6 +8,7 @@
 #include <QTimer>
 #include <QSize>
 #include "i18n.h"
+#include "mems16na_presentation.h"
 #define tr I18n::text
 
 // The longest visible Parameter label determines the natural first-column
@@ -299,9 +300,10 @@ void SummaryTab::setValue(int globalRow, const QString &rawText, const QString &
   }
 }
 
-void SummaryTab::updateData(mems_data *data)
+void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
 {
   if (!data) return;
+  if (!na || !na->identifiedProfile())clearNaPresentation();
   if (m_showing2J)
   {
     for (int globalRow=0; globalRow<m_rowCount; ++globalRow)
@@ -511,11 +513,13 @@ void SummaryTab::updateData(mems_data *data)
   setValue(m_rowDtc1,
            QString::number(data->dtc1),
            data->dtc1 != 0 ? I18n::text(6685) /* EN: FAULTS */ : I18n::text(6686) /* EN: no fault */);
+  if(na && na->identifiedProfile())applyNaPresentation(*na);
 }
 
 
 void SummaryTab::update2JData(const QVariantMap &values, const QString &family)
 {
+  clearNaPresentation();
   // MEMS 2J sends 0x21/0x61 measurements, not ROSCO 0x80/0x7D.
   // Reuse the existing three measurement tables without mixing the units.
   struct Field { const char *key; const char *label; const char *unit; };
@@ -621,4 +625,86 @@ void SummaryTab::update2JData(const QVariantMap &values, const QString &family)
         item->setToolTip(QStringLiteral("%1 : %2").arg(family,key));
     }
   }
+}
+
+void SummaryTab::clearNaPresentation()
+{
+  if(!m_showingNa)return;
+  for(int i=0;i<m_rowCount;++i) {
+    QTableWidget *t=i/m_rowsPerTable==0?m_table0:i/m_rowsPerTable==1?m_table1:m_table2;
+    const int row=i%m_rowsPerTable;
+    t->setRowHidden(row,false);
+    t->item(row,0)->setText(m_naSavedLabels.value(i));
+    const QString tip=m_naSavedTooltips.value(i);
+    for(int col=0;col<4;++col)t->item(row,col)->setToolTip(tip);
+    t->item(row,1)->setIcon(tip.isEmpty()?QIcon():QIcon(":/icons/helpbubble.png"));
+    setValue(i,QStringLiteral("--"),QStringLiteral("--"));
+  }
+  m_showingNa=false;
+  for(QTableWidget *t:{m_table0,m_table1,m_table2})sizeSummaryTable(t);
+}
+
+void SummaryTab::applyNaPresentation(const Mems16Na::SessionEvidence &na)
+{
+  using namespace Mems16Na;
+  const auto *p=na.identifiedProfile();
+  if(!p)return;
+  auto table=[this](int i){return i/m_rowsPerTable==0?m_table0:i/m_rowsPerTable==1?m_table1:m_table2;};
+  auto item=[&](int i,int col){return table(i)->item(i%m_rowsPerTable,col);};
+  const bool first=!m_showingNa;
+  if(first) {
+    m_naSavedLabels.clear();m_naSavedTooltips.clear();
+    for(int i=0;i<m_rowCount;++i) {
+      m_naSavedLabels<<item(i,0)->text();
+      m_naSavedTooltips<<item(i,0)->toolTip();
+    }
+    m_showingNa=true;
+  }
+  auto row=[&](int i,int key,const Value &v,const QString &out,const QString &tip=QString()){
+    item(i,0)->setText(I18n::text(key));
+    setValue(i,rawText(v),out);
+    if(!tip.isEmpty())setTooltip(i,tip);
+    else {
+      item(i,0)->setToolTip(QString());item(i,1)->setToolTip(QString());
+      item(i,1)->setIcon(QIcon());item(i,2)->setToolTip(QString());
+    }
+    item(i,3)->setToolTip(out+(tip.isEmpty()?QString():QStringLiteral("\n")+tip));
+  };
+  const auto m=na.measurements();
+  row(m_rowAmbientTemp,29046,m.ambient,numeric(m.ambient,0,QStringLiteral(" °C")));
+  row(m_rowFuelTemp,29047,m.fuel,numeric(m.fuel,0,QStringLiteral(" °C")));
+  row(m_rowThrottlePot,29027,m.throttleVoltage,numeric(m.throttleVoltage,2,QStringLiteral(" V")));
+  row(m_rowUk1,29022,m.pn,m.pn.availability==Availability::Available?
+      (m.pn.calculated?QStringLiteral("P/N"):I18n::text(29035)):statusText(m.pn),I18n::text(29045));
+  row(m_rowParkNeutralSwitch,29023,m.ac,state(m.ac,29036,29037),I18n::text(29045));
+  row(m_rowIdleSetPoint,29024,m.idleAmplitude,idleCorrection(m));
+  row(m_rowIdleHot,29025,m.idleHot,steps(m.idleHot));
+  row(m_rowUk2,29026,m.learnVoltage,numeric(m.learnVoltage,1,QStringLiteral(" V")));
+  row(m_rowUk5,29028,m.ignitionOff,state(m.ignitionOff,29038,29039),I18n::text(29045));
+  row(m_rowThrottleAngle,6627,m.throttleAngle,numeric(m.throttleAngle,1,QStringLiteral(" °")));
+  row(m_rowLongTermFuelTrim,29029,m.injectionTime,numeric(m.injectionTime,0,QStringLiteral(" µs")),I18n::text(29044));
+  row(m_rowIdleBasePos,29030,m.idleBase,steps(m.idleBase));
+  row(m_rowIdleErrorHotCorrected,29031,m.idleError,numeric(m.idleError,0,QStringLiteral(" RPM")),I18n::text(29043));
+  const int hi[]={m_rowUk11,m_rowUk13,m_rowUk15,m_rowUk1A};
+  const int lo[]={m_rowUk12,m_rowUk14,m_rowUk16,m_rowUk1B};
+  QString refHelp=I18n::text(29041);
+  if(p->repeatedThrottleReference)refHelp+=QStringLiteral("\n")+I18n::text(29042);
+  for(int i=0;i<4;++i) {
+    item(hi[i],0)->setText(I18n::text(29032).arg(i+1));
+    setValue(hi[i],throttleWord(m.throttleReference[i]),numeric(m.throttleReference[i],2,QStringLiteral(" TPS")));
+    setTooltip(hi[i],refHelp);
+    table(lo[i])->setRowHidden(lo[i]%m_rowsPerTable,true);
+  }
+  table(m_rowUk10)->setRowHidden(m_rowUk10%m_rowsPerTable,true);
+  row(m_rowUk1C,29033,m.learnCount,numeric(m.learnCount,0));
+  const int rows[]={m_rowDtc0,m_rowDtc1,m_rowDtc2,m_rowDtc3,m_rowDtc4,m_rowDtc5,m_rowUk7};
+  const Group groups[]={Group::Dtc0,Group::Dtc1,Group::Dtc2,Group::Dtc3,Group::Dtc4,Group::Dtc5,Group::Indirect7D10};
+  for(int i=0;i<7;++i) {
+    const auto d=na.dtc(groups[i]);
+    const QString help=dtcHelp(p,groups[i]),result=dtcText(p,groups[i],d);
+    setValue(rows[i],rawDtc(d),result);
+    setTooltip(rows[i],help);
+    item(rows[i],3)->setToolTip(result+QStringLiteral("\n\n")+help);
+  }
+  if(first)for(QTableWidget *t:{m_table0,m_table1,m_table2})sizeSummaryTable(t);
 }

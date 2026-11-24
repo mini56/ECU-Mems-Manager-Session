@@ -1124,8 +1124,9 @@ void MainWindow::onDataReady()
     m_ui->m_engine_error->setChecked(!faults.isEmpty());
     return;
   }
-  mems_data* data = m_mems->getData();
-  m_summaryTab->updateData(data);
+  Mems16Na::SessionEvidence naEvidence;
+  mems_data* data = m_mems->getData(&naEvidence);
+  m_summaryTab->updateData(data,&naEvidence);
   if (m_diagnosticPanel) m_diagnosticPanel->updateData(data);
   int corrected_iac = (data->iac_position > IAC_MAXIMUM) ? IAC_MAXIMUM : data->iac_position;
   const double ignitionAdvanceDeg = static_cast<double>(data->ignition_advance) * 0.5 - 24.0;
@@ -1744,6 +1745,7 @@ void MainWindow::onConnect()
  */
 void MainWindow::onDisconnect()
 {
+  if(m_summaryTab)m_summaryTab->clearNaPresentation();
   EcuCommunicationLog::finish();
   m_ui->m_saveAdjustmentsButton->setEnabled(false);
   setProperty("ecuConnectInProgress", false);

@@ -9,6 +9,7 @@
 #include <QVector>
 #include <QStringList>
 #include "rosco.h"
+#include "mems16na_session_evidence.h"
 
 /**
  * Onglet "toutes les mesures" : liste complete de toutes les valeurs
@@ -27,7 +28,8 @@ class SummaryTab : public QWidget
 
 public:
     explicit SummaryTab(QWidget *parent = 0);
-    void updateData(mems_data *data);
+    void updateData(mems_data *data, const Mems16Na::SessionEvidence *na = nullptr);
+    void clearNaPresentation();
     void update2JData(const QVariantMap &values,
                       const QString &family = QStringLiteral("MEMS 2J"));
     void applyVisualTheme(bool dark);
@@ -45,6 +47,9 @@ private:
     QTableWidget *m_table2;
     int m_rowCount;
     bool m_showing2J = false;
+    bool m_showingNa = false;
+    QStringList m_naSavedLabels, m_naSavedTooltips;
+    void applyNaPresentation(const Mems16Na::SessionEvidence &na);
     QStringList m_savedRowLabels;
     QStringList m_savedRowTooltips;
     int m_rowsPerTable;

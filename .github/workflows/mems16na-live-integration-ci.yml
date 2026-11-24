@@ -1,0 +1,140 @@
+name: MEMS 1.6 NA - integration privee Lot 2B1
+on:
+  workflow_dispatch:
+  push:
+    branches: [fix-documentary-additive-session-161-20261118]
+    paths:
+      - '.github/workflows/mems16na-live-integration-ci.yml'
+      - 'mems16na_live_trace.h'
+      - 'mems16na_presentation.h'
+      - 'mems16na_session_evidence.h'
+      - 'memsinterface.cpp'
+      - 'memsinterface.h'
+      - 'summarytab.cpp'
+      - 'summarytab.h'
+      - 'mainwindow.cpp'
+      - 'tools/mems16na_live_trace_selftest.cpp'
+      - 'tools/test_mems16na_translation_catalog.py'
+      - 'translations/*/*_mems16na.json'
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Valider les trois tests autonomes et les six langues
+        run: |
+          c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems16na_decoder_selftest.cpp -o decoder && ./decoder
+          c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems16na_session_selftest.cpp -o session && ./session tools/testdata/mems16na-session-206.txt
+          c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems16na_live_trace_selftest.cpp -o live && ./live tools/testdata/mems16na-session-206.txt
+          python tools/test_mems16na_translation_catalog.py
+          python tools/test_save81_source.py
+          python tools/test_adjustment_buttons_source.py
+  windows:
+    needs: tests
+    runs-on: windows-2025
+    timeout-minutes: 90
+    env:
+      MEMS_BUILD_NUMBER: '207'
+      ORT_GENAI_VERSION: '0.14.0'
+      ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331939af451a25ac59774102d7fd09ef673adc85c5ebf'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Installer Qt 5.15.2 MSVC x64
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check 'aqtinstall==3.3.0' pefile
+          if($LASTEXITCODE -ne 0){throw 'QT_INSTALL_PREP_FAILED'}
+          $sevenZip=(Get-Command 7z.exe -ErrorAction Stop).Source
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m qtcharts -O C:\Qt --external $sevenZip
+          if($LASTEXITCODE -ne 0){throw 'QT_INSTALL_FAILED'}
+      - name: Recuperer le SDK ONNX GenAI 0.14.0 sans changer l'IA
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $name="onnxruntime-genai-$env:ORT_GENAI_VERSION-win-x64.zip"
+          $archive=Join-Path $env:RUNNER_TEMP $name
+          $folder=Join-Path $env:RUNNER_TEMP 'onnx-genai'
+          $url="https://github.com/microsoft/onnxruntime-genai/releases/download/v$env:ORT_GENAI_VERSION/$name"
+          curl.exe -L --fail --retry 1 --retry-delay 1 -o $archive $url
+          if($LASTEXITCODE -eq 0){
+            if((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:ORT_GENAI_WIN_X64_SHA256){throw 'ONNX_GITHUB_SHA256_MISMATCH'}
+            Expand-Archive $archive $folder -Force
+            Write-Host 'ONNX_OFFICIAL_0140_VERIFIED'
+          }else{
+            if(Test-Path $archive){Remove-Item $archive -Force}
+            $stem="microsoft.ml.onnxruntimegenai.$env:ORT_GENAI_VERSION"
+            $root="https://api.nuget.org/v3-flatcontainer/microsoft.ml.onnxruntimegenai/$env:ORT_GENAI_VERSION"
+            $package=Join-Path $env:RUNNER_TEMP "$stem.nupkg"
+            curl.exe -L --fail --retry 2 --retry-delay 2 -o $package "$root/$stem.nupkg"
+            if($LASTEXITCODE -ne 0){throw 'ONNX_NUGET_DOWNLOAD_FAILED'}
+            dotnet nuget verify "$package" --all --verbosity normal
+            if($LASTEXITCODE -ne 0){throw 'ONNX_NUGET_SIGNATURE_CHECK_FAILED'}
+            # Verify Microsoft-signed package instead of the nonexistent NuGet .sha512 endpoint.
+            Write-Host 'ONNX_NUGET_SIGNATURE_VERIFIED'
+            $zip=Join-Path $env:RUNNER_TEMP 'onnx-genai-nuget-0140.zip'
+            Copy-Item $package $zip -Force
+            Expand-Archive $zip $folder -Force
+            Write-Host 'ONNX_NUGET_0140_VERIFIED'
+          }
+          $header=Get-ChildItem $folder -Recurse -File -Filter ort_genai_c.h | Select-Object -First 1
+          # Require x64 import library: the signed NuGet also contains ARM64.
+          $lib=Get-ChildItem $folder -Recurse -File -Filter onnxruntime-genai.lib |
+            Where-Object {$_.FullName.Contains('win-x64') -and -not $_.FullName.Contains('win-arm64')} |
+            Select-Object -First 1
+          if(-not $lib){throw 'ONNX_WIN_X64_IMPORT_LIBRARY_NOT_FOUND'}
+          Write-Host "ONNX_GENAI_X64_LIBRARY=$($lib.FullName)"
+          if(-not $header -or -not $lib){
+            Get-ChildItem $folder -Recurse -File | Where-Object {$_.Name -match '(genai|ort_genai)'} | Select-Object -First 35 FullName | Format-Table
+            throw 'ONNX_CPP_HEADER_OR_LIB_MISSING_DO_NOT_DISABLE_AI'
+          }
+          "ORT_GENAI_INCLUDE_DIR=$($header.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "ORT_GENAI_LIBRARY=$($lib.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Compiler SESSION et tests de mise a jour
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          cmake -S . -B build-session-207 -A x64 -DCMAKE_PREFIX_PATH='C:/Qt/5.15.2/msvc2019_64' -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF -DMEMS_USE_ONNX_GENAI=ON "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
+          if($LASTEXITCODE -ne 0){throw 'CMAKE_SESSION_CONFIG_FAILED'}
+          $helpQrc=Get-Content 'build-session-207/mems-help-illustrations.qrc' -Raw -Encoding utf8
+          if(([regex]::Matches($helpQrc,'<file alias=')).Count -ne 13){throw 'SESSION_207_HELP_QRC_MISSING_IMAGES'}
+          Write-Host 'SESSION_207_HELP_IMAGES_EMBEDDED_PASS'
+          # mems19_protocol_selftest runs in the executable's CMake POST_BUILD.
+          # Qt DLLs must already be resolvable at this stage on Windows.
+          $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
+          cmake --build build-session-207 --config Release --target ecu_mems_manager ecu_mems_uninstaller ecu_communication_log_selftest mems_documentary_update_selftest mems_documentary_selftest mems_documentary_multilingual_selftest mems_documentary_native_intent_selftest mems_documentary_encrypted_selftest mems_documentary_encrypted_install_selftest mems_ecu_reference_routing_selftest --parallel
+          if($LASTEXITCODE -ne 0){throw 'CMAKE_SESSION_COMPILATION_FAILED'}
+          if(-not(Test-Path build-session-207/Release/ecu_mems_manager.exe)){throw 'SESSION_EXE_MISSING'}
+          $bin=(Resolve-Path build-session-207/Release).Path
+          $env:PATH="C:\Qt\5.15.2\msvc2019_64\bin;$bin;$env:PATH"
+          & "$bin/mems_ecu_reference_routing_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'ECU_REFERENCE_ROUTING_NON_REGRESSION_FAILED'}
+          & "$bin/ecu_communication_log_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'ECU_COMMUNICATION_LOG_SELFTEST_FAILED'}
+          Write-Host 'SESSION_207_ECU_COMMUNICATION_LOG_NO_OVERWRITE_PASS'
+          & "$bin/mems19_protocol_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'MEMS19_PROTOCOL_SELFTEST_FAILED'}
+          Write-Host 'SESSION_207_MEMS19_PROTOCOL_SELFTEST_PASS'
+          & "$bin/mems2j_protocol_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'MEMS2J_PROTOCOL_SELFTEST_FAILED'}
+          Write-Host 'SESSION_207_MEMS2J_PROTOCOL_SELFTEST_PASS'
+          & "$bin/mems3_protocol_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'MEMS3_PROTOCOL_SELFTEST_FAILED'}
+          Write-Host 'SESSION_207_MEMS3_PROTOCOL_SELFTEST_PASS'
+          & "$bin/lucas5as_protocol_selftest.exe"
+          if($LASTEXITCODE -ne 0){throw 'LUCAS5AS_PROTOCOL_SELFTEST_FAILED'}
+          Write-Host 'SESSION_207_LUCAS_5AS_OUTPUT_PROTOCOL_SELFTEST_PASS'
+          Write-Host 'SESSION_207_LUCAS_5AS_PLIP_MONITOR_SELFTEST_PASS'
+          Write-Host 'SESSION_207_ECU_ROUTING_AND_EXISTING_IA_INTENT_NON_REGRESSION_PASS'
+          $uiHeader=Get-ChildItem build-session-207 -Recurse -File -Filter ui_mainwindow.h | Select-Object -First 1
+          if(-not $uiHeader){throw 'SESSION_207_GENERATED_UI_HEADER_MISSING'}
+          $uiCode=Get-Content -LiteralPath $uiHeader.FullName -Raw
+          if($uiCode -notmatch 'QMetaObject::connectSlotsByName\(MainWindow\)'){throw 'SESSION_207_QT_AUTO_CONNECT_MISSING'}
+          Write-Host 'SESSION_207_QT_AUTOCONNECT_GENERATED_PASS'
+          Write-Host 'SESSION_207_COMPILE_PASS'

@@ -12,6 +12,7 @@
 #include "rosco.h"
 #include "commonunits.h"
 #include "protocolcontext.h"
+#include "mems16na_session_evidence.h"
 
 namespace Mems2JProtocol { class Session; }
 namespace Mems3Protocol { class Session; }
@@ -30,6 +31,7 @@ public:
     void disconnectFromECU();
     void requestShutdown();
     mems_data* getData();
+    mems_data* getData(Mems16Na::SessionEvidence *naEvidence);
     QVariantMap mems2jValues() const;
     QStringList mems2jFaults() const;
     librosco_version getVersion() { return mems_get_lib_version(); }
@@ -150,6 +152,8 @@ signals:
 
 private:
     mems_data m_data;
+    Mems16Na::SessionEvidence m_naSession; // worker-thread only
+    Mems16Na::SessionEvidence m_naSnapshot; // protected by m_dataMutex
     mutable QMutex m_dataMutex;
     QString m_deviceName;
     mems_info m_memsinfo;

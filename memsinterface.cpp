@@ -11,6 +11,9 @@
 #include <sys/select.h>
 #endif
 #include "memsinterface.h"
+#include "mems16na_live_trace.h"
+#include <QFile>
+#include <QFileInfo>
 #include "ecucommunicationtraceio.h"
 #include "mems19protocol.h"
 #include "mems2jprotocol.h"
@@ -191,6 +194,8 @@ void MEMSInterface::onIdleAirControlMovementRequest(int desiredPos)
  */
 bool MEMSInterface::openRoscoTransport()
 {
+  m_naSession.reset();
+  { QMutexLocker locker(&m_dataMutex); m_naSnapshot.reset(); }
   if (m_shutdownRequested.loadAcquire() != 0)
     return false;
 
@@ -199,6 +204,11 @@ bool MEMSInterface::openRoscoTransport()
   m_connectedState.storeRelease(status ? 1 : 0);
   if (status)
   {
+    // Identity returned by the existing initialization, not a new ECU request.
+    m_naSession.tx({0xD0});
+    m_naSession.rx({0xD0,m_d0_response_buffer[0],m_d0_response_buffer[1],
+                   m_d0_response_buffer[2],m_d0_response_buffer[3]});
+    m_naSession.finish();
     emit gotEcuId(m_d0_response_buffer);
   }
   return status;
@@ -257,9 +267,19 @@ bool MEMSInterface::isConnected()
  */
 mems_data* MEMSInterface::getData()
 {
+  return getData(nullptr);
+}
+
+mems_data* MEMSInterface::getData(Mems16Na::SessionEvidence *naEvidence)
+{
   static thread_local mems_data snapshot;
   QMutexLocker locker(&m_dataMutex);
   snapshot = m_data;
+  if (naEvidence) {
+    if (ecuFamily()==MemsEcuFamily::Rosco13_16 && isConnected())
+      *naEvidence=m_naSnapshot;
+    else naEvidence->reset();
+  }
   return &snapshot;
 }
 
@@ -359,6 +379,22 @@ void MEMSInterface::runServiceLoop()
       nextData = m_data;
     }
 
+    // Observe only the bytes already written by the existing communication trace.
+    // No additional serial operation and no change to mems_read or its ABI.
+    QString naTracePath;
+    qint64 naTraceStart=-1;
+    m_naSession.discardPair();
+#ifdef WIN32
+    if (family==MemsEcuFamily::Rosco13_16 && m_naSession.identifiedProfile()) {
+      wchar_t path[4096];
+      const DWORD n=GetEnvironmentVariableW(L"ECU_MEMS_COMM_TRACE_FILE",path,4096);
+      if(n && n<4096) {
+        naTracePath=QString::fromWCharArray(path,int(n));
+        const QFileInfo info(naTracePath);
+        if(info.isFile())naTraceStart=info.size();
+      }
+    }
+#endif
     // The K-Line path reads the actual announced frame lengths and accounts
     // for the adapter's optional local echo. Leave legacy ROSCO untouched.
 #ifdef MEMS_NATIVE_KLINE_19
@@ -371,9 +407,34 @@ void MEMSInterface::runServiceLoop()
 
     if (readOk)
     {
+      if (naTraceStart>=0) {
+        QFile trace(naTracePath);
+        if(trace.open(QIODevice::ReadOnly)) {
+          const qint64 count=trace.size()-naTraceStart;
+          if(count>0 && count<=8192 && trace.seek(naTraceStart)) {
+            const QByteArray bytes=trace.read(count);
+            if(bytes.size()==count &&
+               Mems16Na::consumeLivePair(m_naSession,bytes.toStdString())) {
+              const auto a=m_naSession.frame80();
+              const auto b=m_naSession.frame7d();
+              // Verify the raw trace belongs to the same DLL sample.
+              if(Mems16Na::word(a,1)!=nextData.engine_rpm ||
+                 a.bytes[4]!=nextData.ambient_temp || a.bytes[6]!=nextData.fuel_temp ||
+                 a.bytes[9]!=nextData.throttle_pot || a.bytes[13]!=nextData.dtc0 ||
+                 a.bytes[14]!=nextData.dtc1 || a.bytes[16]!=nextData.idle_hot ||
+                 b.bytes[2]!=nextData.throttle_angle || b.bytes[5]!=nextData.dtc2 ||
+                 b.bytes[11]!=nextData.long_term_fuel_trim ||
+                 b.bytes[20]!=nextData.idle_error2 || b.bytes[21]!=nextData.uk10 ||
+                 b.bytes[31]!=nextData.uk1C)
+                m_naSession.discardPair();
+            }
+          }
+        }
+      }
       {
         QMutexLocker locker(&m_dataMutex);
         m_data = nextData;
+        m_naSnapshot=m_naSession;
       }
       emit readSuccess();
       emit dataReady();
@@ -408,6 +469,8 @@ void MEMSInterface::runServiceLoop()
   m_connectedState.storeRelease(0);
   if (m_shutdownRequested.loadAcquire() == 0)
     m_disconnectRequested.storeRelease(0);
+  m_naSession.reset();
+  { QMutexLocker locker(&m_dataMutex); m_naSnapshot.reset(); }
   emit disconnected();
 
   if (m_shutdownThread || m_shutdownRequested.loadAcquire() != 0)
@@ -969,6 +1032,16 @@ void MEMSInterface::sendRoscoReadCommand(quint8 command)
   }
 #endif
 
-  if (m_shutdownRequested.loadAcquire() == 0)
+  if (m_shutdownRequested.loadAcquire() == 0) {
+    if (ecuFamily()==MemsEcuFamily::Rosco13_16 && (command==0xD0 || command==0xD1)) {
+      m_naSession.tx({command});
+      m_naSession.rx(std::vector<std::uint8_t>(response.begin(),response.end()));
+      m_naSession.finish();
+      // Do not publish the old measurement with a newly selected profile.
+      // The next successful poll publishes a consistent new snapshot.
+      QMutexLocker locker(&m_dataMutex);
+      m_naSnapshot=m_naSession;
+    }
     emit protocolResponse(command, response);
+  }
 }

@@ -2,27 +2,6 @@ name: "SESSION 206 - Correction des doubles commandes de reglages - Setup Window
 run-name: SESSION 206 - REGLAGES SANS DOUBLE ENVOI - ${{ github.sha }}
 on:
   workflow_dispatch:
-  push:
-    branches: [fix-documentary-additive-session-161-20261118]
-    paths:
-      - '.github/workflows/session-206-adjustment-buttons-setup.yml'
-      - 'othercontrolunitstab.h'
-      - 'uishellsmoketest.cpp'
-      - 'ECUCommunicationLogSelfTest.cpp'
-      - 'ecucommunicationlog.cpp'
-      - 'ecucommunicationtraceio.h'
-      - 'analysistab_impl_part1.inc'
-      - 'analysistab_impl_part3.inc'
-      - 'analysistab_impl_part2.inc'
-      - 'analysistab_impl_part4.inc'
-      - 'translations/**'
-      - 'memsinterface.cpp'
-      - 'memsinterface.h'
-      - 'mainwindow.cpp'
-      - 'mainwindow.h'
-      - 'mainwindow.ui'
-      - 'tools/test_adjustment_buttons_source.py'
-      - 'tools/test_save81_source.py'
 permissions:
   contents: write
 concurrency:
