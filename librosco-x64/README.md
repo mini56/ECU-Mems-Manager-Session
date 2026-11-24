@@ -1,3 +1,7 @@
+## Nouveau lot MEMS 3 — 123 exports prévus, validation en cours
+
+[Journal du lot MEMS 3](JOURNAL_DEVELOPPEMENT_DLL_MEMS3_SESSION205_20261124.md). Aucun changement du Manager 205. Dernier lot validé : 114 exports MEMS 2J.
+
 # `mems_manager_x64.dll` — moteur protocolaire x64 d’ECU MEMS Manager
 
 Cette arborescence construit la **nouvelle DLL Windows x64 native d’ECU MEMS Manager**.

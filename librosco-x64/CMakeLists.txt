@@ -22,6 +22,7 @@ add_library(rosco SHARED
     mems19_wakeup_codec.c
     mems19_wakeup.c
     mems2j_session.c
+    mems3_session.c
     mems_manager_x64.def
 )
 
@@ -97,3 +98,7 @@ add_test(NAME dll_mems19_wakeup_selftest COMMAND dll_mems19_wakeup_selftest)
 # the compiled executable cannot access any physical serial port or ECU.
 add_executable(dll_mems2j_session_selftest mems2j_session_selftest.c protocol_catalogue.c)
 add_test(NAME dll_mems2j_session_selftest COMMAND dll_mems2j_session_selftest)
+
+# Independent MEMS 3 native transport, fake serial I/O regression.
+add_executable(dll_mems3_session_selftest mems3_session_selftest.c protocol_catalogue.c)
+add_test(NAME dll_mems3_session_selftest COMMAND dll_mems3_session_selftest)

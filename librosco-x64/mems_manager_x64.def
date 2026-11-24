@@ -123,3 +123,14 @@ EXPORTS
     mems_manager_mems2j_last_transaction @112
     mems_manager_mems2j_is_open @113
     mems_manager_mems2j_close @114
+
+; Native MEMS 3, additive only.
+    mems_manager_mems3_connect @115
+    mems_manager_mems3_read_measurement @116
+    mems_manager_mems3_read_faults @117
+    mems_manager_mems3_clear_faults @118
+    mems_manager_mems3_keepalive @119
+    mems_manager_mems3_read_cycle @120
+    mems_manager_mems3_last_transaction @121
+    mems_manager_mems3_is_open @122
+    mems_manager_mems3_close @123
