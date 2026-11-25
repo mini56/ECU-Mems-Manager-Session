@@ -1,5 +1,5 @@
-name: SESSION 208 - Setup prive de test
-run-name: SESSION 208 - Setup prive - controle A propos corrige - ${{ github.sha }}
+name: SESSION 208 - Setup de test
+run-name: SESSION 208 - Validation complete et Setup de test - ${{ github.sha }}
 on:
   workflow_dispatch:
   push:
@@ -42,15 +42,6 @@ jobs:
       ORT_GENAI_WIN_X64_SHA256: '8a303e52dc7be8fb2a5331939af451a25ac59774102d7fd09ef673adc85c5ebf'
     steps:
       - uses: actions/checkout@v4
-      - name: Verifier que le depot de test est prive
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $ErrorActionPreference='Stop'
-          if($env:GITHUB_REPOSITORY -ne 'mini56/ECU-Mems-Manager-Session'){throw 'UNEXPECTED_REPOSITORY'}
-          $visibility=gh api "repos/$env:GITHUB_REPOSITORY" --jq '.visibility'
-          if($LASTEXITCODE -ne 0 -or "$visibility".Trim() -ne 'private'){throw 'PRIVATE_REPOSITORY_REQUIRED'}
       - name: Installer Python
         uses: actions/setup-python@v5
         with:
@@ -482,15 +473,13 @@ jobs:
           if($dialog -notmatch 'checkManifestWindows\(' -or $dialog -notmatch 'downloadPackWindows\('){throw 'NATIVE_TRANSPORT_NOT_CONNECTED_TO_DIALOG'}
           if($env:MEMS_BUILD_NUMBER -ne '208'){throw 'WRONG_BUILD_NUMBER'}
           Write-Host 'SESSION_208_NATIVE_WINDOWS_HTTPS_TRANSPORT_INTEGRATED'
-      - name: Mettre le Setup de test et son SHA256 dans une prerelease du depot prive uniquement
+      - name: Mettre le Setup de test et son SHA256 dans une prerelease du depot principal uniquement
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference='Stop'
           if($env:GITHUB_REPOSITORY -ne 'mini56/ECU-Mems-Manager-Session'){throw 'UNEXPECTED_REPOSITORY'}
-          $visibility=gh api "repos/$env:GITHUB_REPOSITORY" --jq '.visibility'
-          if($LASTEXITCODE -ne 0 -or "$visibility".Trim() -ne 'private'){throw 'PRIVATE_REPOSITORY_REQUIRED'}
           $tag="mems-session-build-208-test-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
           $setup=Get-ChildItem setup-session-208 -File -Filter '*.exe' | Select-Object -First 1
           if(-not $setup -or $setup.Length -lt 100MB){throw 'SESSION_208_SETUP_MISSING_OR_TOO_SMALL'}
@@ -500,7 +489,7 @@ jobs:
           $hash=(Get-FileHash -LiteralPath $final -Algorithm SHA256).Hash.ToLowerInvariant()
           $hashFile=Join-Path $setup.DirectoryName 'SESSION-208-Setup.sha256'
           "$hash  $asset" | Set-Content -LiteralPath $hashFile -Encoding ascii
-          gh release create $tag $final $hashFile --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'SESSION 208 - Essai prive' --notes 'Version de test. Validation sur vehicule requise.' --prerelease --latest=false
+          gh release create $tag $final $hashFile --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'SESSION 208 - Essai' --notes 'Version de test. Validation sur vehicule requise.' --prerelease --latest=false
           if($LASTEXITCODE -ne 0){throw 'PRIVATE_TEST_RELEASE_FAILED'}
           $release=gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$tag" | ConvertFrom-Json
           if($LASTEXITCODE -ne 0 -or -not $release.prerelease){throw 'PRIVATE_TEST_RELEASE_VERIFY_FAILED'}
