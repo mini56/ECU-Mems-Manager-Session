@@ -80,5 +80,7 @@
   "29078": "No AANMP002, este byte é uma constante FF não utilizada. As outras variantes devem ser verificadas.",
   "29079": "Byte 80/1A",
   "29080": "Byte 7D/03",
-  "29081": "DTC ? (7D/10)"
+  "29081": "DTC ? (7D/10)",
+  "29082": "Não utilizado (referência)",
+  "29083": "Histórico: %1 amostras validadas"
 }

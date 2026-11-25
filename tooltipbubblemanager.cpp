@@ -16,6 +16,7 @@
 #include <QToolTip>
 #include <QScreen>
 #include <QTextDocument>
+#include <QStringList>
 #include <QAbstractButton>
 #include <QGuiApplication>
 

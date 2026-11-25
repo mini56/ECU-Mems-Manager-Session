@@ -145,6 +145,10 @@ bool verifyApprovedVisualRules(MainWindow &window)
         auto *label=window.findChild<QLabel*>(QString::fromLatin1(name));
         ok=check(label&&label->text()==QStringLiteral("--"),name)&&ok;
     }
+    for(const char *name:{"r_7D_0E","r_7D_10","r_7D_11","r_7D_16"}){
+        auto *label=window.findChild<QLabel*>(QString::fromLatin1(name));
+        ok=check(label&&label->text()==I18n::text(29082),name)&&ok;
+    }
     if(ok)logSmoke(QStringLiteral("MEMS16NA_RAW_OFFLINE_HELP_AND_LABELS_PASS"));
 
     // The three measurement tables must preserve typography and a
@@ -713,10 +717,16 @@ bool verifyUi(MainWindow &window)
     // Dark and light have explicit independent foreground/background pairs.
     // Test the genuine stylesheet text used by both application startup and
     // rebuilt SESSION shell, without any theme-dependent hardcoded widget patch.
-    ok=check(STYLE_DARK.contains(QStringLiteral("background-color: #1b2731;")) &&
-             STYLE_DARK.contains(QStringLiteral("color: #f4f7fa;")) &&
-             STYLE_LIGHT.contains(QStringLiteral("background-color: #fff9f1;")) &&
-             STYLE_LIGHT.contains(QStringLiteral("color: #202936;")) &&
+    const QString darkTip=STYLE_DARK.mid(STYLE_DARK.lastIndexOf(QStringLiteral("QToolTip {")));
+    const QString lightTip=STYLE_LIGHT.mid(STYLE_LIGHT.lastIndexOf(QStringLiteral("QToolTip {")));
+    ok=check(darkTip.contains(QStringLiteral("background-color: #000000;")) &&
+             darkTip.contains(QStringLiteral("color: #ffffff;")) &&
+             lightTip.contains(QStringLiteral("background-color: #ffffff;")) &&
+             lightTip.contains(QStringLiteral("color: #000000;")) &&
+             darkTip.contains(QStringLiteral("border: 1px solid #ff8a22;")) &&
+             lightTip.contains(QStringLiteral("border: 1px solid #ff8a22;")) &&
+             darkTip.contains(QStringLiteral("border-radius: 8px;")) &&
+             lightTip.contains(QStringLiteral("border-radius: 8px;")) &&
              qApp->styleSheet().contains(QStringLiteral("QToolTip")),
              "Tooltips must have legible contrasting colors in both themes") && ok;
 

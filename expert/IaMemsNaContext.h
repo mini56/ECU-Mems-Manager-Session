@@ -111,14 +111,54 @@ inline QString dtcAnswer(int i,const Mems16Na::SessionEvidence &na,bool referenc
         QString::fromLatin1(p->firmware)+QStringLiteral("\n")+dtcText(p,g,d)+
         QStringLiteral("\n")+dtcHelp(p,g);
 }
+inline const Mems16Na::Profile *requestedProfile(const QString &question)
+{
+    std::size_t n=0;const auto *p=Mems16Na::catalog(n);
+    const QString text=question.toUpper();
+    for(std::size_t i=0;i<n;++i)
+        if(IaMemsConversationRouting::containsWord(text,QString::fromLatin1(p[i].firmware)))return &p[i];
+    return nullptr;
+}
 inline bool explicitReference(const QString &question)
 {
     const QString t=IaResponseLogic::normalize(question);
     if(t.contains(QStringLiteral("1.6"))&&IaResponseLogic::hasAny(t,{"atmospher","naturally aspirated","atmosfer","saugmotor","aspirato"}))return true;
-    std::size_t n=0;const auto *p=Mems16Na::catalog(n);
-    for(std::size_t i=0;i<n;++i)
-        if(question.contains(QString::fromLatin1(p[i].firmware),Qt::CaseInsensitive))return true;
+    return requestedProfile(question)!=nullptr;
+}
+// Explicit workshop operations and software help retain the historical route.
+inline bool otherRoute(const QString &question)
+{
+    const QString t=IaResponseLogic::normalize(question);
+    if(IaMemsConversationRouting::isDocumentationQuestion(question))return true;
+    if(IaResponseLogic::hasAny(t,{"onglet","logiciel","cadran","software","tab ","depose","deposer","repose","reposer","demontage","demonter","remontage","remonter","remplacement","remplacer","serrage","reparation","remove ","removal","refit","replace ","ausbau","einbau","sostituz","sustitucion","desmontagem"}))return true;
     return false;
+}
+inline QString referenceAnswer(const QString &question)
+{
+    using namespace Mems16Na;
+    const auto *p=requestedProfile(question);
+    const int dtc=requestedDtc(question);
+    QStringList lines{I18n::text(29074)};
+    if(p)lines<<QString::fromLatin1(p->firmware);
+    if(dtc>=0){
+        lines<<groupName(dtc)<<(p?dtcHelp(p,static_cast<Group>(dtc)):dtcDocumentation(static_cast<Group>(dtc)));
+        lines.removeDuplicates();
+        return lines.join(QLatin1Char('\n'));
+    }
+    lines<<I18n::text(29044)<<I18n::text(29043)<<I18n::text(29041);
+    if(p&&p->repeatedThrottleReference)lines<<I18n::text(29042);
+    lines<<I18n::text(29027)+QStringLiteral(" : 80/09 × 5/255 V")
+         <<I18n::text(29024)+QStringLiteral(" : 80/0F × 6.25 RPM ; (7D/13 − 128) × 25 RPM")
+         <<I18n::text(29025)+QStringLiteral(" : 80/10")
+         <<I18n::text(29030)+QStringLiteral(" : 7D/0F")
+         <<I18n::text(29026)+QStringLiteral(" : 80/11 × 0.1 V")
+         <<I18n::text(29033)+QStringLiteral(" : 7D/1F")
+         <<I18n::text(6627)+QStringLiteral(" : 7D/02 × 0.5°")
+         <<I18n::text(29057)+QStringLiteral(" : 7D/06 × 5 mV")
+         <<I18n::text(29058)+QStringLiteral(" : 7D/09")
+         <<I18n::text(29059)+QStringLiteral(" : 7D/0A")
+         <<I18n::text(29045)<<I18n::text(29054);
+    return lines.join(QLatin1Char('\n'));
 }
 inline bool relevant(const QString &question)
 {

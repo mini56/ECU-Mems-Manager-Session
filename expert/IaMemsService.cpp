@@ -471,6 +471,10 @@ void IaMemsService::setConnected(bool connected)
 void IaMemsService::setContext(const ExpertContext &context)
 {
     m_context = context;
+    if(const auto *profile=m_naEvidence.identifiedProfile()){
+        m_context.family=QStringLiteral("1.6");
+        m_context.firmware=QString::fromLatin1(profile->firmware);
+    }
     m_engine.setContext(m_context);
     emit statusChanged();
 }
@@ -519,14 +523,17 @@ void IaMemsService::setNaDiagnostic(const Mems16Na::SessionEvidence &na,const me
 QString IaMemsService::naAnswer(const QString &question) const
 {
     using namespace Mems16Na;
+    if(IaMemsNa::otherRoute(question)||!IaMemsNa::relevant(question))return QString();
     const int dtc=IaMemsNa::requestedDtc(question);
-    const bool live=m_connected && m_naEvidence.identifiedProfile();
-    if(!live){
-        if(dtc>=0 && IaMemsNa::explicitReference(question))
-            return IaMemsNa::dtcAnswer(dtc,m_naEvidence,true);
+    const auto *actual=m_naEvidence.identifiedProfile();
+    const auto *requested=IaMemsNa::requestedProfile(question);
+    const QString generation=IaMemsConversationRouting::requestedGeneration(question);
+    if(!generation.isEmpty()&&generation!=QStringLiteral("1.6"))return QString();
+    const bool live=m_connected && actual;
+    if(!live || (requested && requested!=actual)){
+        if(IaMemsNa::explicitReference(question))return IaMemsNa::referenceAnswer(question);
         return QString();
     }
-    if(!IaMemsNa::relevant(question))return QString();
     if(dtc>=0)return IaMemsNa::dtcAnswer(dtc,m_naEvidence,false);
     if(!m_naEvidence.ready())return I18n::text(29052)+QStringLiteral("\n")+I18n::text(29048);
     const QString t=IaResponseLogic::normalize(question);
@@ -554,8 +561,35 @@ QString IaMemsService::naAnswer(const QString &question) const
         }
         return lines.join(QLatin1Char('\n'));
     }
-    // Use exactly the same table and thresholds as the Diagnostic page.
-    // Append the remaining qualified values and their documented meanings.
+    // Use the same decoder for focused readings and the same live report
+    // for all diagnostic questions (including dwell and engine-state checks).
+    const auto m=m_naEvidence.measurements();
+    const auto intent=IaResponseLogic::classify(question);
+    const QString heading=I18n::text(29049)+QStringLiteral(" : ")+QString::fromLatin1(actual->firmware)+QStringLiteral("\n");
+    auto reading=[&](int key,const QString &value){return I18n::text(key)+QStringLiteral(" : ")+value;};
+    if(intent==IaResponseLogic::Intent::Throttle){
+        QStringList rows{heading.trimmed(),reading(29027,numeric(m.throttleVoltage,2,QStringLiteral(" V"))),
+                         reading(6627,numeric(m.throttleAngle,1,QStringLiteral(" °")))};
+        for(int i=0;i<4;++i)rows<<I18n::text(29032).arg(i+1)+QStringLiteral(" : ")+numeric(m.throttleReference[i],2,QStringLiteral(" TPS"));
+        rows<<reading(29033,numeric(m.learnCount,0))<<I18n::text(29041);
+        return rows.join(QLatin1Char('\n'));
+    }
+    if(intent==IaResponseLogic::Intent::Idle){
+        return heading+reading(29031,numeric(m.idleError,0,QStringLiteral(" RPM")))+QStringLiteral("\n")+
+            reading(29024,idleCorrection(m))+QStringLiteral("\n")+reading(29025,steps(m.idleHot))+QStringLiteral("\n")+
+            reading(29030,steps(m.idleBase))+QStringLiteral("\n")+I18n::text(29043)+QStringLiteral("\n")+I18n::text(29054);
+    }
+    if(intent==IaResponseLogic::Intent::Lambda){
+        return heading+reading(29057,numeric(m.lambdaMv,0,QStringLiteral(" mV")))+QStringLiteral("\n")+
+            reading(29058,state(m.lambdaFault,29038,29039))+QStringLiteral("\n")+
+            reading(29059,state(m.closedLoop,29038,29039))+QStringLiteral("\n")+IaMemsNa::dtcAnswer(2,m_naEvidence,false);
+    }
+    if(intent==IaResponseLogic::Intent::None&&IaResponseLogic::hasAny(t,{"injection","injectie","inyeccion","einspritz","iniezion","injecao"})&&
+       IaResponseLogic::hasAny(t,{"correction","corrige","trim","correccion","correcao","korrektur","correzion"}))
+        return heading+reading(29029,numeric(m.injectionTime,0,QStringLiteral(" µs")))+QStringLiteral("\n")+I18n::text(29044)+QStringLiteral("\n")+I18n::text(29054);
+    if(!m_naHistory.isEmpty()&&(intent==IaResponseLogic::Intent::Battery||intent==IaResponseLogic::Intent::Rpm||
+       intent==IaResponseLogic::Intent::Coolant||intent==IaResponseLogic::Intent::Map||intent==IaResponseLogic::Intent::Advance))
+        return heading+IaResponseLogic::metricAnswer(intent,m_naHistory.constLast().values,true);
     return m_naReport+QStringLiteral("\n\n")+IaMemsNa::measurementDetails(m_naEvidence);
 }
 

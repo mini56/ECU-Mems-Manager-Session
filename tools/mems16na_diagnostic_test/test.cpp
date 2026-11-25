@@ -1,6 +1,7 @@
 #include "diagnosticpanel.h"
 #include "summarytab.h"
 #include "mems16na_presentation.h"
+#include "expert/IaMemsNaContext.h"
 #include <QPushButton>
 #include "i18n.h"
 #include <QApplication>
@@ -46,6 +47,29 @@ int main(int argc,char **argv) {
     CHECK(!t.contains(I18n::text(6884).section('%',0,0)));
     CHECK(t.contains(QStringLiteral("-1 RPM"))&&t.contains(QStringLiteral("8 µs")));
     CHECK(table->item(3,2)->text()==I18n::text(6841));
+    CHECK(panel.naDiagnosticReport().contains(I18n::text(29019)));
+    const auto ai=IaMemsNa::observation(na,d,1000);
+    CHECK(ai.values.value(QStringLiteral("injection_time_us"))==8);
+    CHECK(ai.values.value(QStringLiteral("idle_error_rpm"))==-1);
+    CHECK(ai.values.value(QStringLiteral("idle_signed_rpm"))==-50);
+    CHECK(ai.values.value(QStringLiteral("na_dtc2_fault"))==0);
+    CHECK(ai.values.value(QStringLiteral("na_dtc2_state"))==64);
+    CHECK(!ai.values.contains(QStringLiteral("long_term_trim_pct")));
+    CHECK(!ai.values.contains(QStringLiteral("idle_error_hot_corrected")));
+    CHECK(!ai.values.contains(QStringLiteral("ambient_c")));
+    CHECK(!ai.values.contains(QStringLiteral("fuel_c")));
+    CHECK(IaMemsNa::dtcAnswer(4,na,false).contains(I18n::text(29001)));
+    CHECK(IaMemsNa::dtcAnswer(2,na,false).contains(I18n::text(29019)));
+    CHECK(IaMemsNa::requestedDtc(QStringLiteral("DTC 4"))==4);
+    CHECK(IaMemsNa::requestedDtc(QStringLiteral("7D/10"))==6);
+    CHECK(IaMemsNa::otherRoute(QStringLiteral("dépose du papillon")));
+    CHECK(IaMemsNa::requestedProfile(QStringLiteral("AANMP002 DTC 1"))==na.identifiedProfile());
+    CHECK(IaMemsNa::referenceAnswer(QStringLiteral("AANMP002 DTC 4")).contains(I18n::text(29001)));
+    CHECK(IaMemsNa::measurementDetails(na).contains(QStringLiteral("8 µs")));
+    CHECK(!IaMemsNa::measurementDetails(na).contains(QStringLiteral("255 °C")));
+    CHECK(documentedUnusedDtc(Group::Dtc3)&&documentedUnusedDtc(Group::Dtc4)&&documentedUnusedDtc(Group::Dtc5)&&documentedUnusedDtc(Group::Indirect7D10));
+    CHECK(!documentedUnusedDtc(Group::Dtc0)&&!documentedUnusedDtc(Group::Dtc1)&&!documentedUnusedDtc(Group::Dtc2));
+    CHECK(documentation(dtcDocumentation(Group::Dtc1))==dtcDocumentation(Group::Dtc1));
     const QByteArray sameId=QByteArray::fromHex("98000202");
     panel.setEcuId(sameId);panel.updateData(&d,&na);
     auto buttons=panel.findChildren<QPushButton*>();
@@ -68,6 +92,7 @@ int main(int argc,char **argv) {
     CHECK(table->item(2,3)->text().contains(I18n::text(29011)));
     CHECK(table->item(2,2)->text()==I18n::text(29051));
     na.discardPair();panel.updateData(&d,&na);
+    CHECK(IaMemsNa::observation(na,d,1001).values.isEmpty());
     CHECK(table->rowCount()==8);
     CHECK(report->toPlainText().contains(I18n::text(29048)));
     CHECK(!report->toPlainText().contains(QStringLiteral("-1 RPM")));
@@ -107,6 +132,8 @@ int main(int argc,char **argv) {
                 auto *bubble=it->tableWidget()->item(it->row(),1);
                 if(bubble->icon().isNull()||bubble->toolTip().isEmpty())return false;
             }
+            for(int id:{6639,6642,6647,29081})
+                if(value(id,2)!=QStringLiteral("--")||value(id,3)!=I18n::text(29082))return false;
             auto *dtc=find(6658);
             return dtc&&dtc->toolTip().contains(I18n::text(29010))&&dtc->toolTip().contains(I18n::text(29012))
                 &&dtc->toolTip().contains(I18n::text(29013))&&dtc->toolTip().contains(I18n::text(29015));

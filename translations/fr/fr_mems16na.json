@@ -80,5 +80,7 @@
   "29078": "Sur AANMP002, cet octet est une constante FF non utilisée. Les autres variantes doivent être vérifiées.",
   "29079": "Octet 80/1A",
   "29080": "Octet 7D/03",
-  "29081": "DTC ? (7D/10)"
+  "29081": "DTC ? (7D/10)",
+  "29082": "Non utilisé (référence)",
+  "29083": "Historique : %1 échantillons validés"
 }
