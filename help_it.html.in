@@ -185,7 +185,7 @@ small{color:#aebcc5}
 <p>Nel pannello Strumenti, <b>Registrazione</b> avvia il log diagnostico e <b>Interrompi</b> lo conclude. <b>Istantanea</b> salva un'immagine della finestra; <b>Visualizza catture</b> apre il visualizzatore.</p>
 
 <h2 id="chapter-14">14. Aiuto contestuale</h2>
-<p>Quando disponibile, l'aiuto contestuale usa la grafica della bolla integrata, indipendente dalla versione di Windows.</p>
+<p><img src=":/icons/helpbubble.png" width="14" height="14"> Un piccolo punto interrogativo arancione in un cerchio indica la guida contestuale. Passare il puntatore sul simbolo per leggere la guida del parametro corrispondente. Il simbolo è identico nei temi chiaro e scuro, senza sfondo colorato. Le immagini illustrative possono mostrare il simbolo precedente.</p>
 
 <h2 id="chapter-15">15. Opzioni</h2>
 <p>Le opzioni includono porta seriale, unità di temperatura, tema, lingua e collegamento sul desktop. Il collegamento può essere mantenuto automaticamente.</p>

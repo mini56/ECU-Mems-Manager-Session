@@ -188,7 +188,7 @@ small{color:#aebcc5}
 <p>En la zona Herramientas, <b>Grabación</b> inicia el registro de diagnóstico y <b>Detener</b> lo finaliza. <b>Captura instantánea</b> guarda una imagen de la ventana; <b>Ver capturas</b> abre el visor.</p>
 
 <h2 id="chapter-14">14. Ayuda contextual</h2>
-<p>Cuando existe ayuda contextual, el programa muestra una burbuja de ayuda integrada cuyo aspecto no depende de la versión de Windows.</p>
+<p><img src=":/icons/helpbubble.png" width="14" height="14"> Un pequeño signo de interrogación naranja dentro de un círculo indica ayuda contextual. Sitúe el puntero sobre él para leer la ayuda del parámetro correspondiente. El símbolo es idéntico en los temas claro y oscuro, sin fondo de color. Las capturas ilustrativas pueden mostrar el símbolo anterior.</p>
 
 <h2 id="chapter-15">15. Opciones</h2>
 <p>Permite seleccionar interfaz serie, unidades de temperatura, tema, idioma y acceso directo del escritorio. El programa puede mantener el acceso directo automáticamente.</p>

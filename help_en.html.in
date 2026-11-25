@@ -218,7 +218,7 @@ small{color:#aebcc5}
 <p>In the <b>Tools</b> panel, <b>Record</b> starts diagnostic logging and <b>Stop</b> ends it. <b>Snapshot</b> captures an image of the window; <b>View captures</b> opens the viewer to inspect, enlarge or delete images. Deletion requires confirmation. The log file name appears in the Tools panel and lower status strip.</p>
 
 <h2 id="chapter-14">14. Tooltips and help bubble</h2>
-<p>Wherever contextual help is available, ECU MEMS Manager uses the embedded help-bubble graphic. Its appearance does not depend on the Windows version or computer.</p>
+<p><img src=":/icons/helpbubble.png" width="14" height="14"> A small orange circled question mark indicates contextual help. Hover over it to read the help for the corresponding parameter. The symbol is identical in light and dark themes, with no coloured background. Illustrative screenshots may show the previous symbol.</p>
 
 <h2 id="chapter-15">15. Options</h2>
 <p>Options include the serial device, temperature units, interface theme, language and Desktop-shortcut settings. The Desktop shortcut can be created and maintained automatically.</p>

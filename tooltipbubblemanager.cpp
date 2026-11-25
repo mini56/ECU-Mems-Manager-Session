@@ -219,6 +219,7 @@ void TooltipBubbleManager::ensureBubble(QWidget *widget)
         bubble->setStyleSheet("background: transparent;");
     }
 
+    bubble->setFixedSize(helpHitSize(),helpHitSize());
     bubble->setPixmap(helpBubblePixmap(
         qApp && qApp->property("ecuDarkTheme").toBool()));
     const int y = qMax(0, (widget->height() - bubble->height()) / 2);

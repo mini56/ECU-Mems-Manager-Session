@@ -183,7 +183,7 @@ small{color:#aebcc5}
 <p>Na secção Ferramentas, <b>Gravação</b> inicia o registo de diagnóstico e <b>Parar</b> termina-o. <b>Captura instantânea</b> guarda uma imagem; <b>Ver capturas</b> permite consultar as imagens.</p>
 
 <h2 id="chapter-14">14. Ajuda contextual</h2>
-<p>Quando existe ajuda contextual, o programa utiliza a imagem da bolha de ajuda integrada, independentemente da versão do Windows.</p>
+<p><img src=":/icons/helpbubble.png" width="14" height="14"> Um pequeno ponto de interrogação laranja dentro de um círculo indica ajuda contextual. Passe o ponteiro sobre o símbolo para ler a ajuda do parâmetro correspondente. O símbolo é idêntico nos temas claro e escuro, sem fundo colorido. As capturas ilustrativas podem mostrar o símbolo anterior.</p>
 
 <h2 id="chapter-15">15. Opções</h2>
 <p>As opções incluem porta série, unidades de temperatura, tema, idioma e atalho no ambiente de trabalho. O atalho pode ser criado e mantido automaticamente.</p>

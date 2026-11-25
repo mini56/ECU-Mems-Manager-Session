@@ -218,7 +218,7 @@ small{color:#aebcc5}
 <p>Dans la zone <b>Outils</b>, <b>Enregistrement</b> démarre l'enregistrement du diagnostic et <b>Arrêter</b> le termine. <b>Vue instantanée</b> crée une capture d'écran ; <b>Voir les captures</b> ouvre le visualiseur permettant de consulter, agrandir ou supprimer une image. La suppression demande confirmation. Le nom du journal apparaît dans la zone Outils et dans le bandeau inférieur.</p>
 
 <h2 id="chapter-14">14. Bulles d’aide</h2>
-<p>Lorsqu’un commentaire contextuel est disponible, ECU MEMS Manager utilise la bulle d’aide intégrée au programme. Son apparence ne dépend pas de la version de Windows utilisée.</p>
+<p><img src=":/icons/helpbubble.png" width="14" height="14"> Le petit point d’interrogation orange entouré d’un cercle indique une aide contextuelle. Survolez-le avec la souris pour lire l’aide du paramètre concerné. Le symbole est identique dans les thèmes clair et sombre, sans fond coloré. Les captures illustratives peuvent montrer l’ancien symbole.</p>
 
 <h2 id="chapter-15">15. Options</h2>
 <p>Les Options regroupent le port série, les unités de température, le thème, la langue et les réglages d’intégration au bureau. La création et le maintien du raccourci Bureau peuvent également être activés.</p>

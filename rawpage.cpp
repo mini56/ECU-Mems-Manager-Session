@@ -86,6 +86,8 @@ void fitRawDataPage(QWidget *page)
 
         for(QLabel *label:block->findChildren<QLabel*>()) {
             const QString name=label->objectName();
+            // Help targets are overlays, not grid rows. Preserve their fixed size.
+            if(name==QStringLiteral("_ecuHelpBubble"))continue;
             const bool header=name.startsWith(QStringLiteral("header_")) ||
                               name.startsWith(QStringLiteral("Aheader_"));
             label->setFont(header

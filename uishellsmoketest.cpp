@@ -485,6 +485,9 @@ bool verifyUi(MainWindow &window)
              helpBody->toPlainText().contains(QStringLiteral(
                  "Masquer automatiquement la barre des tâches")),
              "Help must document database updates and optional taskbar behaviour") && ok;
+    ok=check(helpBody && helpBody->toPlainText().contains(QStringLiteral("point d’interrogation orange"))
+             &&helpBody->toHtml().contains(QStringLiteral(":/icons/helpbubble.png")),
+             "Offline Help must explain and display the actual new question mark")&&ok;
     ok=check(helpBody &&
              helpBody->toPlainText().contains(QStringLiteral("MEMS 2J")) &&
              helpBody->toHtml().contains(QStringLiteral("qrc:/help/images/")),
@@ -866,6 +869,10 @@ bool verifyUi(MainWindow &window)
         navigation->setCurrentRow(i);
         QCoreApplication::processEvents();
         ok=check(tabs->currentIndex()==i,"Sidebar to page navigation mismatch") && ok;
+        if(page)for(auto *icon:page->findChildren<QLabel*>(QStringLiteral("_ecuHelpBubble")))
+            if(icon->isVisibleTo(page))
+                ok=check(icon->size()==QSize(18,18)&&icon->pixmap()&&!icon->pixmap()->isNull(),
+                         "Every page uses the common small help icon")&&ok;
         ok=check(navigation->currentRow()==tabs->currentIndex() &&
                  navigation->currentItem() &&
                  navigation->currentItem()->text()==tabs->tabText(i) &&
@@ -1040,6 +1047,15 @@ bool verifyUi(MainWindow &window)
             ok=check(coloursOk && dataLabels>=10,
                  "Raw 7D/80 text must remain readable in both themes") && ok;
         }
+        // Inspect every page's actual visible help labels after the theme switch.
+        int helpTargets=0;
+        for(auto *icon:window.findChildren<QLabel*>(QStringLiteral("_ecuHelpBubble"))){
+            if(icon->isHidden())continue;
+            ++helpTargets;
+            ok=check(icon->size()==QSize(18,18)&&icon->pixmap()&&!icon->pixmap()->isNull(),
+                     "Theme switch preserves every small help target")&&ok;
+        }
+        ok=check(helpTargets>=7,"Permanent help targets must remain present")&&ok;
         const QString global=qApp->styleSheet();
         ok=check(dark
                 ?global.contains(QStringLiteral("#1e2128"))

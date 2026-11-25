@@ -183,7 +183,7 @@ small{color:#aebcc5}
 <p>Im Bereich Werkzeuge startet <b>Aufzeichnen</b> eine Diagnoseprotokollierung und <b>Stopp</b> beendet sie. <b>Bildschirmfoto</b> speichert ein Fensterbild, <b>Aufnahmen anzeigen</b> öffnet die Bildübersicht.</p>
 
 <h2 id="chapter-14">14. Kontexthilfe</h2>
-<p>Wo Kontexthilfe angeboten wird, verwendet die Software das integrierte Hilfeblasensymbol unabhängig von der Windows-Version.</p>
+<p><img src=":/icons/helpbubble.png" width="14" height="14"> Ein kleines orangefarbenes Fragezeichen im Kreis kennzeichnet die Kontexthilfe. Bewegen Sie den Mauszeiger darüber, um die Hilfe zum jeweiligen Parameter zu lesen. Das Symbol ist in beiden Darstellungen identisch und hat keinen farbigen Hintergrund. Beispielbilder können das frühere Symbol zeigen.</p>
 
 <h2 id="chapter-15">15. Optionen</h2>
 <p>Optionen umfassen seriellen Port, Temperatureinheiten, Darstellung, Sprache und Desktop-Verknüpfung. Die Verknüpfung kann automatisch erstellt und gepflegt werden.</p>
