@@ -131,6 +131,11 @@ inline Measurements decode(const Profile *p, Frame a, Frame b) {
     }
     return m;
 }
+// One qualified signed correction for both live pages and the V2 journal.
+inline Value qualifiedIdleSigned(const Measurements &m) {
+    if(m.idleSigned.availability==Availability::Missing)return missing();
+    return m.signedIdleConsistent?m.idleSigned:unverified(m.idleSigned.raw);
+}
 enum class Group { Dtc0, Dtc1, Dtc2, Dtc3, Dtc4, Dtc5, Indirect7D10 };
 struct DtcDefinition {
     std::uint8_t faultMask, stateMask;

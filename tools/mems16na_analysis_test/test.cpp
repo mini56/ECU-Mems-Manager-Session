@@ -27,6 +27,13 @@ int main(int argc,char **argv) {
     CHECK(r.numbers.at(col("na_idle_error_rpm_value"))==-1);
     CHECK(r.numbers.at(col("na_injection_time_us_value"))==8);
     CHECK(r.numbers.at(col("na_tps_ref4_tps_value"))==55.5);
+    QByteArray signedA=a,signedB=b;signedA[15]=8;signedB[19]=126;
+    auto coherent=row(replay(id,QStringLiteral("1"),QString::fromLatin1(signedA.toHex()),QString::fromLatin1(signedB.toHex())),stamp);
+    CHECK(coherent.numbers.at(col("na_idle_signed_rpm_value"))==-50);
+    signedA[15]=9;
+    auto inconsistent=row(replay(id,QStringLiteral("1"),QString::fromLatin1(signedA.toHex()),QString::fromLatin1(signedB.toHex())),stamp);
+    CHECK(qIsNaN(inconsistent.numbers.at(col("na_idle_signed_rpm_value"))));
+    CHECK(inconsistent.numbers.at(col("na_idle_signed_raw"))==126);
     CHECK(qIsNaN(r.numbers.at(col("na_ambient_c_value"))));
     CHECK(r.texts.at(col("na_ambient_c_value"))==I18n::text(29001));
     CHECK(r.texts.at(col("na_dtc2_raw")).contains(I18n::text(29019)));

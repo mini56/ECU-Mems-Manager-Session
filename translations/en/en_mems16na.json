@@ -71,5 +71,6 @@
   "29069": "Available",
   "29070": "Historical interpretation: firmware not verified. Original values retained.",
   "29071": "MEMS 1.6 V2 recording: invalid header or identity.",
-  "29072": "Values recalculated only from validated raw frames; file unchanged."
+  "29072": "Values recalculated only from validated raw frames; file unchanged.",
+  "29073": "Inj. corr. (µs)"
 }

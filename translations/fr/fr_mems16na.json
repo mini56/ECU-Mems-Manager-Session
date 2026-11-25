@@ -71,5 +71,6 @@
   "29069": "Disponible",
   "29070": "Interprétation historique : firmware non vérifié. Valeurs d'origine conservées.",
   "29071": "Enregistrement MEMS 1.6 V2 : en-tête ou identité non valide.",
-  "29072": "Valeurs recalculées uniquement depuis les trames brutes validées ; aucune modification du fichier."
+  "29072": "Valeurs recalculées uniquement depuis les trames brutes validées ; aucune modification du fichier.",
+  "29073": "Corr. inj. (µs)"
 }

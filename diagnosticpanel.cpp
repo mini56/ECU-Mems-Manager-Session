@@ -1,6 +1,7 @@
 #include "diagnosticpanel.h"
 
 #include <QDateTime>
+#include <QApplication>
 #include <QFile>
 #include <QFileDialog>
 #include <QFont>
@@ -91,7 +92,7 @@ QString DiagnosticPanel::hexByte(quint8 v)
 
 void DiagnosticPanel::setEcuId(const QByteArray &id)
 {
-    if(m_naEvidence.identifiedProfile())endNaSession();
+    if(m_naEvidence.identifiedProfile()&&id!=m_ecuId)endNaSession();
     m_ecuId = id;
     if (m_haveData)
         rebuild(m_last);
@@ -101,7 +102,8 @@ void DiagnosticPanel::updateData(const mems_data *data,const Mems16Na::SessionEv
 {
     if (!data)return;
     const auto *profile=na?na->identifiedProfile():nullptr;
-    if(m_naEvidence.identifiedProfile()!=profile)m_naReference=Snapshot();
+    if(m_naEvidence.identifiedProfile()!=profile||
+       (profile&&m_naEvidence.identity()!=na->identity()))m_naReference=Snapshot();
     if(profile)m_naEvidence=*na;
     else m_naEvidence.reset();
     m_showing2J=false;
@@ -112,6 +114,7 @@ void DiagnosticPanel::updateData(const mems_data *data,const Mems16Na::SessionEv
 
 void DiagnosticPanel::endNaSession()
 {
+    restoreNaChecksStyle();
     if(!m_naEvidence.identifiedProfile())return;
     m_naEvidence.reset();
     m_naReference=Snapshot();
@@ -139,6 +142,7 @@ void DiagnosticPanel::addCheck(const QString &name, const QString &value,
 void DiagnosticPanel::rebuild(const mems_data &d)
 {
     if(m_naEvidence.identifiedProfile()) { rebuildNa(d); return; }
+    restoreNaChecksStyle();
     m_checks->setRowCount(0);
     int issues = 0;
     int warnings = 0;
@@ -436,11 +440,28 @@ void DiagnosticPanel::update2JData(const QVariantMap &values, const QStringList 
     m_report->setPlainText(buildReport());
 }
 
+void DiagnosticPanel::restoreNaChecksStyle()
+{
+    if(!m_naStyleActive)return;
+    m_checks->setStyleSheet(m_naOriginalChecksStyle);
+    m_naOriginalChecksStyle.clear();
+    m_naStyleActive=false;
+}
+
 void DiagnosticPanel::rebuildNa(const mems_data &d)
 {
     using namespace Mems16Na;
     const auto *p=m_naEvidence.identifiedProfile();
     if(!p)return;
+    if(!m_naStyleActive) {
+        m_naOriginalChecksStyle=m_checks->styleSheet();
+        m_naStyleActive=true;
+    }
+    const bool dark=qApp&&qApp->property("ecuDarkTheme").toBool();
+    const QString style=m_naOriginalChecksStyle+(dark?QString():QStringLiteral(
+        "QTableWidget{color:#202936;}QTableWidget:disabled{color:#536172;}"
+        "QTableWidget::item{color:#202936;}QTableWidget::item:disabled{color:#536172;}"));
+    if(m_checks->styleSheet()!=style)m_checks->setStyleSheet(style);
     m_checks->setRowCount(0);
     int issues=0,warnings=0;
     const QString info=I18n::text(6841);
@@ -496,7 +517,7 @@ void DiagnosticPanel::rebuildNa(const mems_data &d)
     add(I18n::text(29027),numeric(m.throttleVoltage,2,QStringLiteral(" V")),
         (dtc1.faultBits&0x80)?I18n::text(29051):info,
         (dtc1.faultBits&0x80)?describe(Circuit::ThrottlePot,0x80):I18n::text(6837));
-    QString lambda=I18n::text(d.closed_loop?6843:6844);
+    QString lambda=state(m.closedLoop,6843,6844);
     if(m.lambdaFault.availability==Availability::Available)
         lambda+=QStringLiteral(" ; ")+I18n::text(29053).arg(I18n::text(m.lambdaFault.calculated?29038:29039));
     else lambda+=QStringLiteral(" ; ")+I18n::text(29002);

@@ -71,5 +71,6 @@
   "29069": "Disponibile",
   "29070": "Interpretazione storica: firmware non verificato. Valori originali conservati.",
   "29071": "Registrazione MEMS 1.6 V2: intestazione o identità non valida.",
-  "29072": "Valori ricalcolati solo da trame grezze convalidate; file invariato."
+  "29072": "Valori ricalcolati solo da trame grezze convalidate; file invariato.",
+  "29073": "Corr. iniez. (µs)"
 }

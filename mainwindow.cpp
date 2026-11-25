@@ -1103,6 +1103,7 @@ void MainWindow::onDataReady()
     const QVariantMap values=m_mems->mems2jValues();
     const QStringList faults=m_mems->mems2jFaults();
     restoreNaPages();
+    clearNaIdentityStatus();
     m_summaryTab->update2JData(values,family);
     if (m_diagnosticPanel) m_diagnosticPanel->update2JData(values,faults,family);
     if (values.contains(QStringLiteral("rpm")))
@@ -1131,10 +1132,27 @@ void MainWindow::onDataReady()
   mems_data* data = m_mems->getData(&naEvidence);
   const bool naIdentified=naEvidence.identifiedProfile()!=nullptr;
   if(!naIdentified)restoreNaPages();
-  if(naIdentified!=m_naFaultHistoryActive) {
+  const QByteArray naIdentity=naIdentified?
+      QByteArray(naEvidence.identifiedProfile()->firmware,8)+
+      QByteArray(reinterpret_cast<const char*>(naEvidence.identity().data()),4):QByteArray();
+  if(naIdentity!=m_naFaultHistoryIdentity) {
     m_prevFaultMaskValid=false;
-    m_naFaultHistoryActive=naIdentified;
+    m_naFaultHistoryIdentity=naIdentity;
   }
+  const bool measurementValid=!naIdentified||naEvidence.ready();
+  const auto naMeasurements=naEvidence.measurements();
+  // The header explains the active decoding without sending a new command.
+  if(m_mems->ecuFamily()==MemsEcuFamily::Rosco13_16) {
+    if(!m_naIdentityTipActive) {
+      m_naIdentityTipOriginal=m_ui->m_ecuIdLabel->toolTip();
+      m_naIdentityTipActive=true;
+    }
+    QString tip=naIdentified?
+      I18n::text(29049)+QStringLiteral(" : ")+QString::fromLatin1(naEvidence.identifiedProfile()->firmware)+
+      QStringLiteral("\n")+I18n::text(29050):I18n::text(29070);
+    if(!measurementValid)tip+=QStringLiteral("\n")+I18n::text(29048);
+    if(m_ui->m_ecuIdLabel->toolTip()!=tip)m_ui->m_ecuIdLabel->setToolTip(tip);
+  } else clearNaIdentityStatus();
   const quint8 fault0=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc0).faultBits:data->dtc0;
   const quint8 fault1=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc1).faultBits:data->dtc1;
   const quint8 fault2=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc2).faultBits:data->dtc2;
@@ -1213,21 +1231,25 @@ void MainWindow::onDataReady()
   m_prevFaultMask = currentFaultMask;
   m_prevFaultMaskValid = !naIdentified || naEvidence.ready();
 
- m_ui->m_RPMSensor->setChecked((data->uk3) != 0);
- m_ui->m_LambdaSensor->setChecked((data->lambda_sensor_status) != 1);
- m_ui->m_JackCount->setChecked((data->uk1C) == 255);
- m_ui->m_LambdaMax->setChecked((data->lambda_voltage) >=200);
-    if (data->lambda_voltage>=200)
+ m_ui->m_RPMSensor->setChecked(measurementValid && (data->uk3) != 0);
+ m_ui->m_LambdaSensor->setChecked(naIdentified?
+    naMeasurements.lambdaFault.availability==Mems16Na::Availability::Available&&naMeasurements.lambdaFault.calculated:
+    (data->lambda_sensor_status)!=1);
+ // 7D/1F is the throttle learning count on NA, not a proven reset fault.
+ m_ui->m_JackCount->setChecked(!naIdentified && (data->uk1C)==255);
+ m_ui->m_LambdaMax->setChecked(measurementValid && (data->lambda_voltage)>=200);
+    if (measurementValid && data->lambda_voltage>=200)
 	{
 		emit LambdaMaxOnce();
 	}
- m_ui->m_LambdaMin->setChecked((data->lambda_voltage) ==0);
-	if (data->lambda_voltage==0)
+ m_ui->m_LambdaMin->setChecked(measurementValid && (data->lambda_voltage)==0);
+	if (measurementValid && data->lambda_voltage==0)
 	{
 		emit LambdaMinOnce();
 	}
- m_ui->m_IACMin->setChecked((data->iac_position) ==0);
-	if ((data->iac_position==0) && (data->idle_error>=50) && (data->idle_switch==0) && (data->uk3!=0))
+ m_ui->m_IACMin->setChecked(measurementValid && (data->iac_position)==0);
+    // The historical recorded anomaly criterion is not validated for NA.
+	if (!naIdentified && (data->iac_position==0) && (data->idle_error>=50) && (data->idle_switch==0) && (data->uk3!=0))
 	{
 		emit IACMinOnce();
 	}
@@ -1762,6 +1784,7 @@ void MainWindow::onConnect()
 void MainWindow::onDisconnect()
 {
   restoreNaPages();
+  clearNaIdentityStatus();
   if(m_logger)m_logger->endNaSession();
   if(m_summaryTab)m_summaryTab->clearNaPresentation();
   if(m_diagnosticPanel)m_diagnosticPanel->endNaSession();
@@ -2583,7 +2606,16 @@ void MainWindow::restoreNaPages()
   m_naOriginalLabels.clear();
   m_naOriginalMargins.clear();
   for(QLabel *label:m_naExtraValues) { label->clear(); label->hide(); }
-  m_naFaultHistoryActive=false;
+  if(!m_naFaultHistoryIdentity.isEmpty())m_prevFaultMaskValid=false;
+  m_naFaultHistoryIdentity.clear();
+}
+
+void MainWindow::clearNaIdentityStatus()
+{
+  if(!m_naIdentityTipActive)return;
+  m_ui->m_ecuIdLabel->setToolTip(m_naIdentityTipOriginal);
+  m_naIdentityTipOriginal.clear();
+  m_naIdentityTipActive=false;
 }
 
 void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na)
@@ -2592,6 +2624,19 @@ void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na)
   const Profile *p=na.identifiedProfile();
   if(!p)return;
   const auto m=na.measurements();
+  if(!na.ready()) {
+    // Clear every received/calculated cell before the qualified NA rendering.
+    // Leave position and parameter labels intact.
+    for(QGridLayout *grid:{m_ui->HF_table,m_ui->HF_table_2}) {
+      for(int i=0;i<grid->count();++i) {
+        int row=0,col=0,rs=0,cs=0;
+        grid->getItemPosition(i,&row,&col,&rs,&cs);
+        if(row==0||col<2)continue;
+        if(QLabel *label=qobject_cast<QLabel*>(grid->itemAt(i)->widget()))
+          label->setText(col==2?QStringLiteral("--"):I18n::text(29048));
+      }
+    }
+  }
   // Existing grid, no added rows. New calculated cells are visible only in NA.
   auto extra=[&](QLabel *raw,QGridLayout *grid)->QLabel*{
     if(m_naExtraValues.contains(raw)) {
@@ -2639,6 +2684,28 @@ void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na)
   row(m_ui->label_80x11,m_ui->m_80_11,extra(m_ui->m_80_11,m_ui->HF_table_2),29026,m.learnVoltage,numeric(m.learnVoltage,1,QStringLiteral(" V")));
   row(m_ui->label_80x1B,m_ui->m_80_1B,extra(m_ui->m_80_1B,m_ui->HF_table_2),29028,m.ignitionOff,state(m.ignitionOff,29038,29039),I18n::text(29045));
   row(m_ui->label_0x02,m_ui->m_7D_02,m_ui->r_7D_02,6627,m.throttleAngle,numeric(m.throttleAngle,1,QStringLiteral(" °")));
+  const auto signedIdle=qualifiedIdleSigned(m);
+  cell(m_ui->label_0x13,m_ui->m_7D_13,m_ui->r_7D_13,QString(),rawText(signedIdle),
+      numeric(signedIdle,0,QStringLiteral(" RPM")),I18n::text(29054));
+  cell(m_ui->label_0x06,m_ui->m_7D_06,m_ui->r_7D_06,QString(),rawText(m.lambdaMv),
+      numeric(m.lambdaMv,0,QStringLiteral(" mV")));
+  cell(m_ui->label_0x09,m_ui->m_7D_09,m_ui->r_7D_09,QString(),rawText(m.lambdaFault),
+      state(m.lambdaFault,7023,7024),I18n::text(29053).arg(state(m.lambdaFault,29038,29039)));
+  cell(m_ui->label_0x0A,m_ui->m_7D_0A,m_ui->r_7D_0A,QString(),rawText(m.closedLoop),
+      state(m.closedLoop,7025,7026));
+  // Overview is a physical reading, not the service adjustment scale.
+  rememberNaLabel(m_ui->m_long_trim_label);
+  m_ui->m_long_trim_label->setText(I18n::text(29073));
+  m_ui->m_long_trim_label->setToolTip(I18n::text(29029)+QStringLiteral("\n")+numeric(m.injectionTime,0,QStringLiteral(" µs")));
+  m_ui->m_long_trim->setText(m.injectionTime.availability==Availability::Available?
+      QString::number(m.injectionTime.calculated,'f',0):QStringLiteral("--"));
+  rememberNaLabel(m_ui->m_JackCountLabel);
+  m_ui->m_JackCountLabel->setText(I18n::text(29033));
+  m_ui->m_JackCountLabel->setToolTip(numeric(m.learnCount,0)+QStringLiteral("\n")+I18n::text(29054));
+  rememberNaLabel(m_ui->m_LambdaSensorLabel);
+  m_ui->m_LambdaSensorLabel->setToolTip(I18n::text(29053).arg(state(m.lambdaFault,29038,29039)));
+  rememberNaLabel(m_ui->m_engineerrorLabel);
+  m_ui->m_engineerrorLabel->setToolTip(na.ready()?I18n::text(29021):I18n::text(29048));
   row(m_ui->label_0x0B,m_ui->m_7D_0B,m_ui->r_7D_0B,29029,m.injectionTime,numeric(m.injectionTime,0,QStringLiteral(" µs")),I18n::text(29044));
   row(m_ui->label_0x0F,m_ui->m_7D_0F,m_ui->r_7D_0F,29030,m.idleBase,steps(m.idleBase));
   rememberNaLabel(m_ui->m_7D_15);
@@ -2693,7 +2760,7 @@ void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na)
       rememberNaLabel(label);
       const bool supported=((def.faultMask|def.stateMask)&mask)!=0;
       const QString name=supported?describe(circuit(p,group,mask),mask):
-        maskText(mask)+QStringLiteral(" : ")+I18n::text((d.unknownBits&mask)?29004:29001);
+        maskText(mask)+QStringLiteral(" : ")+I18n::text(29004);
       QString detail=name;
       if(d.availability==Availability::Missing)detail+=QStringLiteral("\n")+I18n::text(29048);
       else if(def.stateMask&mask)detail+=QStringLiteral("\n")+I18n::text((d.stateBits&mask)?29038:29039);

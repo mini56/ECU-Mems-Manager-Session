@@ -192,7 +192,10 @@ private:
     QHash<QLabel*, QStringList> m_naOriginalLabels;
     QHash<QLabel*, QMargins> m_naOriginalMargins;
     QHash<QLabel*, QLabel*> m_naExtraValues;
-    bool m_naFaultHistoryActive = false;
+    QByteArray m_naFaultHistoryIdentity;
+    bool m_naIdentityTipActive = false;
+    QString m_naIdentityTipOriginal;
+    void clearNaIdentityStatus();
     void showNaPages(const Mems16Na::SessionEvidence &na);
     void restoreNaPages();
     void rememberNaLabel(QLabel *label);

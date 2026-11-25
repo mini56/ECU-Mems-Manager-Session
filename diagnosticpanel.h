@@ -47,6 +47,9 @@ private:
     Snapshot m_naReference;
     Mems16Na::SessionEvidence m_naEvidence;
     void rebuildNa(const mems_data &d);
+    void restoreNaChecksStyle();
+    QString m_naOriginalChecksStyle;
+    bool m_naStyleActive = false;
     QString buildNaReport() const;
     mems_data m_last{};
     bool m_haveData = false;

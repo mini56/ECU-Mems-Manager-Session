@@ -76,7 +76,7 @@ inline QString state(const Value &v,int yes,int no) {
 }
 inline QString idleCorrection(const Measurements &m) {
     if(m.idleAmplitude.availability!=Availability::Available)return statusText(m.idleAmplitude);
-    if(m.signedIdleConsistent)return numeric(m.idleSigned,2,QStringLiteral(" RPM"));
+    if(m.signedIdleConsistent)return numeric(qualifiedIdleSigned(m),2,QStringLiteral(" RPM"));
     return I18n::text(29040).arg(QString::number(m.idleAmplitude.calculated,'f',2));
 }
 inline QString rawDtc(const DtcResult &d) {

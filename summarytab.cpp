@@ -320,6 +320,10 @@ void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
     }
     m_showing2J=false;
   }
+  if(na&&na->identifiedProfile()&&!na->ready()) {
+    applyNaPresentation(*na);
+    return;
+  }
 
   // Colonne 1 : valeur reçue directement de l'ECU.
   // Colonne 2 : valeur interprétée selon les mêmes conversions que l'onglet
@@ -660,6 +664,12 @@ void SummaryTab::applyNaPresentation(const Mems16Na::SessionEvidence &na)
     }
     m_showingNa=true;
   }
+  for(int i=0;i<m_rowCount;++i) {
+    if(!na.ready()) {
+      setValue(i,QStringLiteral("--"),I18n::text(29048));
+      item(i,3)->setToolTip(I18n::text(29048));
+    } else item(i,3)->setToolTip(m_naSavedTooltips.value(i));
+  }
   auto row=[&](int i,int key,const Value &v,const QString &out,const QString &tip=QString()){
     item(i,0)->setText(I18n::text(key));
     setValue(i,rawText(v),out);
@@ -682,6 +692,12 @@ void SummaryTab::applyNaPresentation(const Mems16Na::SessionEvidence &na)
   row(m_rowUk2,29026,m.learnVoltage,numeric(m.learnVoltage,1,QStringLiteral(" V")));
   row(m_rowUk5,29028,m.ignitionOff,state(m.ignitionOff,29038,29039),I18n::text(29045));
   row(m_rowThrottleAngle,6627,m.throttleAngle,numeric(m.throttleAngle,1,QStringLiteral(" °")));
+  const auto signedIdle=qualifiedIdleSigned(m);
+  row(m_rowIdleSpeedOffset,6644,signedIdle,numeric(signedIdle,0,QStringLiteral(" RPM")),I18n::text(29054));
+  row(m_rowLambdaVoltage,6631,m.lambdaMv,numeric(m.lambdaMv,0,QStringLiteral(" mV")),I18n::text(6702));
+  row(m_rowLambdaStatus,6634,m.lambdaFault,state(m.lambdaFault,6672,6671),
+      I18n::text(29053).arg(state(m.lambdaFault,29038,29039)));
+  row(m_rowClosedLoop,6635,m.closedLoop,state(m.closedLoop,6673,6674),I18n::text(6704));
   row(m_rowLongTermFuelTrim,29029,m.injectionTime,numeric(m.injectionTime,0,QStringLiteral(" µs")),I18n::text(29044));
   row(m_rowIdleBasePos,29030,m.idleBase,steps(m.idleBase));
   row(m_rowIdleErrorHotCorrected,29031,m.idleError,numeric(m.idleError,0,QStringLiteral(" RPM")),I18n::text(29043));
@@ -703,8 +719,7 @@ void SummaryTab::applyNaPresentation(const Mems16Na::SessionEvidence &na)
     const auto d=na.dtc(groups[i]);
     const QString help=dtcHelp(p,groups[i]),result=dtcText(p,groups[i],d);
     setValue(rows[i],rawDtc(d),result);
-    setTooltip(rows[i],help);
-    item(rows[i],3)->setToolTip(result+QStringLiteral("\n\n")+help);
+    setTooltip(rows[i],result+QStringLiteral("\n\n")+help);
   }
   if(first)for(QTableWidget *t:{m_table0,m_table1,m_table2})sizeSummaryTable(t);
 }

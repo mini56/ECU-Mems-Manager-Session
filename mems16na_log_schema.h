@@ -71,7 +71,7 @@ inline std::vector<Field> fields(const SessionEvidence& s,const std::string& tim
     value(out,"pn","pn_active",m.pn);
     value(out,"ac","ac_request",m.ac);
     value(out,"idle_amplitude","idle_amplitude_rpm",m.idleAmplitude);
-    value(out,"idle_signed","idle_signed_rpm",m.signedIdleConsistent?m.idleSigned:(m.idleSigned.availability==Availability::Missing?missing():unverified(m.idleSigned.raw)));
+    value(out,"idle_signed","idle_signed_rpm",qualifiedIdleSigned(m));
     value(out,"idle_hot","idle_hot_steps",m.idleHot);
     value(out,"learn_voltage","learn_voltage_v",m.learnVoltage);
     value(out,"throttle_voltage","throttle_voltage_v",m.throttleVoltage);

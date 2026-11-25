@@ -71,5 +71,6 @@
   "29069": "Verfügbar",
   "29070": "Historische Interpretation: Firmware nicht verifiziert. Originalwerte beibehalten.",
   "29071": "MEMS 1.6 V2-Aufzeichnung: ungültiger Kopf oder Identität.",
-  "29072": "Werte nur aus validierten Rohrahmen neu berechnet; Datei unverändert."
+  "29072": "Werte nur aus validierten Rohrahmen neu berechnet; Datei unverändert.",
+  "29073": "Einspr. korr. (µs)"
 }

@@ -46,6 +46,12 @@ int main() {
     CHECK(m.ambient.availability==Availability::NotUsed && m.ambient.raw==255 && m.fuel.availability==Availability::NotUsed);
     CHECK(m.pn.calculated==1 && m.ac.calculated==0 && m.ignitionOff.calculated==0);
     CHECK(m.idleAmplitude.calculated==50 && m.idleSigned.calculated==-50 && m.signedIdleConsistent);
+    CHECK(qualifiedIdleSigned(m).calculated==-50);
+    a[15]=9;
+    auto mismatch=qualifiedIdleSigned(decode(p,A,B));
+    CHECK(mismatch.availability==Availability::Unverified && mismatch.raw==126);
+    a[15]=8;
+    CHECK(qualifiedIdleSigned(decode(p,A,{nullptr,0})).availability==Availability::Missing);
     CHECK(m.idleHot.calculated==32 && std::abs(m.learnVoltage.calculated-13.4)<1e-9);
     CHECK(std::abs(m.throttleVoltage.calculated-38*5.0/255)<1e-9);
     CHECK(m.throttleAngle.calculated==9 && m.injectionTime.calculated==-8 && m.idleBase.calculated==107);
