@@ -65,8 +65,15 @@ inline QString dtcDocumentation(Group g) {
     lines<<I18n::text(29021);
     return lines.join(QLatin1Char('\n'));
 }
+inline bool documentedUnusedDtc(Group g) {
+    std::size_t n=0;const auto *profiles=catalog(n);
+    if(!n)return false;
+    for(std::size_t i=0;i<n;++i)if(!definition(&profiles[i],g).constant)return false;
+    return true;
+}
 inline QString documentation(const QString &detail) {
-    return I18n::text(29074)+QStringLiteral("\n")+detail;
+    const QString scope=I18n::text(29074);
+    return detail.startsWith(scope)?detail:scope+QStringLiteral("\n")+detail;
 }
 inline QString dtcText(const Profile *p,Group g,const DtcResult &d) {
     if(d.availability==Availability::Missing)return I18n::text(29048);

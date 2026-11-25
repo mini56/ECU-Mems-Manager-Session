@@ -10,9 +10,97 @@
 #include <QPixmap>
 #include <QVariant>
 #include <QWidget>
+#include <QAbstractItemView>
+#include <QAbstractItemModel>
+#include <QHelpEvent>
+#include <QToolTip>
+#include <QScreen>
+#include <QTextDocument>
+#include <QAbstractButton>
+#include <QGuiApplication>
 
 namespace {
 const char *kBubbleObjectName = "_ecuHelpBubble";
+
+// One presenter for widget and item-view help, including dialogs created later.
+// Native Qt tooltip owns its lifetime, palette and screen-edge repositioning.
+class HelpPresenter final : public QObject
+{
+public:
+    explicit HelpPresenter(QObject *parent) : QObject(parent) {}
+protected:
+    bool eventFilter(QObject *watched,QEvent *event) override
+    {
+        if(event->type()==QEvent::ApplicationDeactivate ||
+           (watched==qApp && event->type()==QEvent::DynamicPropertyChange)) {
+            QToolTip::hideText();
+        }
+        if(event->type()!=QEvent::ToolTip)return false;
+        QWidget *widget=qobject_cast<QWidget*>(watched);
+        if(!widget)return false;
+        auto *help=static_cast<QHelpEvent*>(event);
+        QString detail=widget->toolTip(),title;
+        QRect region=widget->rect();
+        if(auto *view=qobject_cast<QAbstractItemView*>(widget->parentWidget())) {
+            if(view->viewport()==widget) {
+                const QModelIndex index=view->indexAt(help->pos());
+                if(index.isValid()) {
+                    const QString itemHelp=index.data(Qt::ToolTipRole).toString();
+                    if(!itemHelp.isEmpty()) {
+                        detail=itemHelp;
+                        region=view->visualRect(index);
+                        title=index.sibling(index.row(),0).data(Qt::DisplayRole).toString();
+                    }
+                }
+            }
+        }
+        if(auto *icon=widget->findChild<QLabel*>(kBubbleObjectName,Qt::FindDirectChildrenOnly)) {
+            if(!icon->isHidden() && qobject_cast<QLabel*>(widget)) {
+                region=icon->geometry().intersected(widget->rect());
+                if(!region.contains(help->pos())) {
+                    QToolTip::hideText();event->accept();return true;
+                }
+            }
+        }
+        if(detail.trimmed().isEmpty())return false;
+        if(title.isEmpty()) {
+            if(auto *label=qobject_cast<QLabel*>(widget))title=label->text();
+            else if(auto *button=qobject_cast<QAbstractButton*>(widget))title=button->text();
+        }
+        // Convert existing rich help to text, then escape all content exactly once.
+        auto plain=[](const QString &s) {
+            if(!Qt::mightBeRichText(s))return s;
+            QTextDocument document;document.setHtml(s);return document.toPlainText();
+        };
+        title=plain(title).trimmed();
+        if(title.size()>100)title.clear(); // do not turn long explanatory labels into headings
+        QStringList lines;
+        for(const QString &line:plain(detail).split(QLatin1Char('\n'))) {
+            const QString clean=line.trimmed();
+            if(!clean.isEmpty() && clean!=title && !lines.contains(clean))lines<<clean;
+        }
+        if(lines.isEmpty() && title.isEmpty())return false;
+        QScreen *screen=QGuiApplication::screenAt(help->globalPos());
+        if(!screen)screen=QGuiApplication::primaryScreen();
+        const int width=screen?qBound(200,screen->availableGeometry().width()/3,450):420;
+        QString body=lines.join(QLatin1Char('\n')).toHtmlEscaped();
+        body.replace(QLatin1Char('\n'),QStringLiteral("<br/>"));
+        if(!title.isEmpty())body=QStringLiteral("<b>")+title.toHtmlEscaped()+QStringLiteral("</b><br/>")+body;
+        const QString html=QStringLiteral("<table width='%1' cellspacing='0' cellpadding='0'><tr><td>%2</td></tr></table>").arg(width).arg(body);
+        QPoint anchor=widget->mapToGlobal(region.bottomRight());
+        // Prefer the adjacent side; Qt clamps the tooltip to the active screen.
+        if(screen && anchor.x()+width+30>screen->availableGeometry().right())
+            anchor.setX(qMax(screen->availableGeometry().left(),widget->mapToGlobal(region.topLeft()).x()-width-24));
+        QToolTip::showText(anchor,html,widget,region);
+        event->accept();return true;
+    }
+};
+void installHelpPresenter()
+{
+    if(!qApp || qApp->property("_ecuHelpPresenterInstalled").toBool())return;
+    qApp->setProperty("_ecuHelpPresenterInstalled",true);
+    qApp->installEventFilter(new HelpPresenter(qApp));
+}
 }
 
 // Use the original icon for dark mode. In the light theme, create the same
@@ -62,6 +150,7 @@ TooltipBubbleManager::TooltipBubbleManager(QWidget *root) : QObject(root)
 
 void TooltipBubbleManager::install(QWidget *root)
 {
+    installHelpPresenter();
     if (!root || root->findChild<TooltipBubbleManager*>())
         return;
     new TooltipBubbleManager(root);

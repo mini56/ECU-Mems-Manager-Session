@@ -2769,6 +2769,11 @@ void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na,bool documentat
           label->setText(QStringLiteral("--"));
       }
     }
+    // The calculated column can state documentary non-use, but the received
+    // byte remains blank and this is never a live no-fault claim.
+    for(const auto &r:groups)
+      if(Mems16Na::documentedUnusedDtc(r.group)&&r.result)
+        r.result->setText(I18n::text(29082));
     return; // no diagnosis or change of settings while disconnected
   }
   // The existing Errors page has one label/LED per bit. Keep its geometry

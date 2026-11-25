@@ -20,6 +20,7 @@
 #include "splashprogress.h"
 
 #include "mainwindow.h"
+#include "tooltipbubblemanager.h"
 #include "desktopshortcut.h"
 #include "database/DatabaseManager.h"
 #include "database/MemsReferenceDatabase.h"
@@ -307,6 +308,7 @@ int main(int argc, char *argv[])
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling, true);
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true);
     QApplication app(argc, argv);
+    TooltipBubbleManager::install(nullptr);
     if (smokeRequested) {
         QFile trace(QStringLiteral("session_ui_smoke_trace.log"));
         if (trace.open(QIODevice::WriteOnly|QIODevice::Append|QIODevice::Text))

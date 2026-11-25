@@ -749,7 +749,10 @@ void SummaryTab::applyNaPresentation(const Mems16Na::SessionEvidence &na,bool do
   setTooltip(m_rowUk4,documentation(I18n::text(29077)));
   for(int i:{m_rowUk6,m_rowLambdaFrequency,m_rowLambdaDutycycle})
     setTooltip(i,documentation(I18n::text(29078)));
-  if(documentationOnly)for(int i=0;i<m_rowCount;++i)
-    setValue(i,QStringLiteral("--"),QStringLiteral("--"));
+  if(documentationOnly) {
+    for(int i=0;i<m_rowCount;++i)setValue(i,QStringLiteral("--"),QStringLiteral("--"));
+    for(int i=0;i<7;++i)
+      if(documentedUnusedDtc(groups[i]))setValue(rows[i],QStringLiteral("--"),I18n::text(29082));
+  }
   if(first)for(QTableWidget *t:{m_table0,m_table1,m_table2})sizeSummaryTable(t);
 }

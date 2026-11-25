@@ -166,11 +166,11 @@ QScrollBar::handle:horizontal {
     min-width: 24px;
 }
 QToolTip {
-    background-color: #fff9f1;
-    color: #202936;
-    border: 1px solid #c6d1db;
-    padding: 5px 8px;
-    border-radius: 4px;
+    background-color: #ffffff;
+    color: #000000;
+    border: 1px solid #ff8a22;
+    padding: 6px 9px;
+    border-radius: 8px;
 }
 )";
 
@@ -341,11 +341,11 @@ QScrollBar::handle:horizontal {
     min-width: 24px;
 }
 QToolTip {
-    background-color: #1b2731;
-    color: #f4f7fa;
+    background-color: #000000;
+    color: #ffffff;
     border: 1px solid #ff8a22;
-    padding: 5px 8px;
-    border-radius: 4px;
+    padding: 6px 9px;
+    border-radius: 8px;
 }
 )";
 
