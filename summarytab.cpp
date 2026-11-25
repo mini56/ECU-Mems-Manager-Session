@@ -9,6 +9,7 @@
 #include <QSize>
 #include "i18n.h"
 #include "mems16na_presentation.h"
+#include "tooltipbubblemanager.h"
 #define tr I18n::text
 
 // The longest visible Parameter label determines the natural first-column
@@ -78,7 +79,7 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
     tables[i]->setSelectionMode(QTableWidget::NoSelection);
     tables[i]->setAlternatingRowColors(true);
     tables[i]->setShowGrid(false);
-    tables[i]->setIconSize(QSize(24,18));
+    tables[i]->setIconSize(QSize(TooltipBubbleManager::helpIconSize(),TooltipBubbleManager::helpIconSize()));
     if (QTableWidgetItem *head=tables[i]->horizontalHeaderItem(2)) {
       QString value=head->text();
       if (!value.contains(QLatin1Char('\n'))) {

@@ -187,6 +187,9 @@ void OptionsDialog::setupWidgets()
   m_serialDeviceBox->setMinimumWidth(330);
   m_serialDeviceBox->setMinimumHeight(30);
   m_serialDeviceBox->setToolTip(I18n::text(6109));
+  m_serialDeviceBox->setProperty("helpBubbleNoIcon",true);
+  m_serialDeviceLabel->setObjectName(QStringLiteral("optionsSerialDeviceHelpLabel"));
+  m_serialDeviceLabel->setToolTip(m_serialDeviceBox->toolTip());
   if (m_serialDeviceBox->lineEdit())
     m_serialDeviceBox->lineEdit()->setMinimumHeight(22);
 

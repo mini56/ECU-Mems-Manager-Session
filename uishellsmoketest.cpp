@@ -140,7 +140,8 @@ bool verifyApprovedVisualRules(MainWindow &window)
                          "label_0x0E","label_0x11","label_0x16","label_0x10"}){
         auto *label=window.findChild<QLabel*>(QString::fromLatin1(name));
         auto *bubble=label?label->findChild<QLabel*>(QStringLiteral("_ecuHelpBubble"),Qt::FindDirectChildrenOnly):nullptr;
-        ok=check(label&&label->toolTip().contains(I18n::text(29074))&&bubble&&!bubble->isHidden(),name)&&ok;
+        ok=check(label&&label->toolTip().contains(I18n::text(29074))&&bubble&&!bubble->isHidden()
+            &&bubble->size()==QSize(18,18),name)&&ok;
     }
     auto *dtc1=window.findChild<QLabel*>(QStringLiteral("label_80x0E"));
     ok=check(dtc1&&dtc1->toolTip().contains(I18n::text(29012))&&
@@ -697,27 +698,25 @@ bool verifyUi(MainWindow &window)
                  "Update button version obscured by tooltip bubble or clipped") && ok;
         updateBadge->hide();
     }
-    // Light theme help icons must be ORANGE / WHITE, never black.
-    // Dark mode still uses its original icon resource.
+    // Same 14px transparent orange question mark, in both themes.
     const QPixmap lightHelp=TooltipBubbleManager::helpBubblePixmap(false);
     const QPixmap darkHelp=TooltipBubbleManager::helpBubblePixmap(true);
-    int orange=0,white=0,black=0;
-    const QImage helpPixels=lightHelp.toImage().convertToFormat(
-        QImage::Format_ARGB32);
+    const QImage helpPixels=lightHelp.toImage().convertToFormat(QImage::Format_ARGB32);
+    int orange=0,transparent=0,other=0;
     for(int y=0;y<helpPixels.height();++y)
         for(int x=0;x<helpPixels.width();++x){
             const QColor pixel=helpPixels.pixelColor(x,y);
+            if(pixel.alpha()<10){++transparent;continue;}
             if(pixel.alpha()<180)continue;
-            if(pixel.red()>220 && pixel.green()>85 && pixel.green()<190 &&
-               pixel.blue()<90)++orange;
-            if(pixel.red()>235 && pixel.green()>235 && pixel.blue()>235)++white;
-            if(pixel.red()<65 && pixel.green()<65 && pixel.blue()<65)++black;
+            if(pixel.red()>190 && pixel.green()>75 && pixel.green()<135 && pixel.blue()<25)++orange;
+            else ++other;
         }
-    logSmoke(QStringLiteral("Help icon pixels: orange=%1 white=%2 black=%3")
-             .arg(orange).arg(white).arg(black));
-    ok=check(!lightHelp.isNull() && !darkHelp.isNull() &&
-             orange>40 && white>10 && black==0,
-             "Light Help bubble must be orange with white text, not black") && ok;
+    ok=check(!lightHelp.isNull()&&!darkHelp.isNull() &&
+             lightHelp.toImage()==darkHelp.toImage() &&
+             qRound(lightHelp.width()/lightHelp.devicePixelRatio())==14 &&
+             qRound(lightHelp.height()/lightHelp.devicePixelRatio())==14 &&
+             orange>40&&transparent>40&&other==0,
+             "All help icons use the same transparent 14px orange question mark")&&ok;
 
     // Dark and light have explicit independent foreground/background pairs.
     // Test the genuine stylesheet text used by both application startup and
@@ -796,6 +795,15 @@ bool verifyUi(MainWindow &window)
         options->show();
         QCoreApplication::processEvents();
         const bool readable=explanation->isVisibleTo(options);
+        auto *portHelp=options->findChild<QLabel*>(QStringLiteral("optionsSerialDeviceHelpLabel"));
+        auto *portIcon=portHelp?portHelp->findChild<QLabel*>(QStringLiteral("_ecuHelpBubble"),Qt::FindDirectChildrenOnly):nullptr;
+        ok=check(portIcon&&portIcon->isVisibleTo(options)&&portIcon->size()==QSize(18,18),
+                 "Options COM help has the same small icon beside its label")&&ok;
+        for(auto *combo:options->findChildren<QComboBox*>())
+            if(combo->property("helpBubbleNoIcon").toBool()){
+                auto *overlap=combo->findChild<QLabel*>(QStringLiteral("_ecuHelpBubble"),Qt::FindDirectChildrenOnly);
+                ok=check(!overlap||overlap->isHidden(),"Options combo arrow unobstructed")&&ok;
+            }
         options->hide();
         ok=check(defaultDisabled,
                  "Taskbar auto-hide must be unchecked by default") && ok;

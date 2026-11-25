@@ -2,9 +2,7 @@
 
 #include <QApplication>
 #include <QEvent>
-#include <QPainter>
-#include <QPainterPath>
-#include <QFont>
+#include <QDialog>
 #include <QLabel>
 #include <QMargins>
 #include <QPixmap>
@@ -36,6 +34,10 @@ protected:
            (watched==qApp && event->type()==QEvent::DynamicPropertyChange)) {
             QToolTip::hideText();
         }
+        // A dialog created after MainWindow (Help, zoom, database, options)
+        // must also use the same icon manager; never depend on construction order.
+        if(event->type()==QEvent::Show)
+            if(auto *dialog=qobject_cast<QDialog*>(watched))TooltipBubbleManager::install(dialog);
         if(event->type()!=QEvent::ToolTip)return false;
         QWidget *widget=qobject_cast<QWidget*>(watched);
         if(!widget)return false;
@@ -104,40 +106,14 @@ void installHelpPresenter()
 }
 }
 
-// Use the original icon for dark mode. In the light theme, create the same
-// small speech-bubble shape in orange with WHITE lettering. This is a local
-// Qt drawing, so no extra graphic asset, web access or theme-wide replacement.
+// The same transparent orange question mark is packaged at 3x resolution.
+// One asset serves all widgets, table cells, themes and the offline guide.
 QPixmap TooltipBubbleManager::helpBubblePixmap(bool darkTheme)
 {
-    if(darkTheme)
-        return QPixmap(QStringLiteral(":/icons/helpbubble.png"));
-
-    QPixmap pixmap(48,36);
-    pixmap.fill(Qt::transparent);
-    QPainter painter(&pixmap);
-    painter.setRenderHint(QPainter::Antialiasing,true);
-
-    QPainterPath bubble;
-    bubble.addRoundedRect(QRectF(2,2,43,27),5,5);
-    bubble.moveTo(32,27);
-    bubble.lineTo(39,34);
-    bubble.lineTo(38,27);
-    bubble.closeSubpath();
-    painter.setPen(Qt::NoPen);
-    painter.fillPath(bubble,QColor(QStringLiteral("#ff8a1c")));
-    // A thin white contour ensures the icon remains visibly white/orange
-    // even when the host does not have the preferred UI font installed.
-    painter.setPen(QPen(Qt::white,1.6));
-    painter.drawPath(bubble);
-
-    QFont textFont=painter.font();
-    textFont.setFamily(QStringLiteral("Segoe UI"));
-    textFont.setBold(true);
-    textFont.setPixelSize(14);
-    painter.setFont(textFont);
-    painter.setPen(Qt::white);
-    painter.drawText(QRect(2,3,43,25),Qt::AlignCenter,QStringLiteral("HELP"));
-    painter.end();
+    Q_UNUSED(darkTheme);
+    QPixmap pixmap(QStringLiteral(":/icons/helpbubble.png"));
+    if(!pixmap.isNull())
+        pixmap.setDevicePixelRatio(qreal(pixmap.width())/helpIconSize());
     return pixmap;
 }
 
@@ -152,7 +128,7 @@ TooltipBubbleManager::TooltipBubbleManager(QWidget *root) : QObject(root)
 void TooltipBubbleManager::install(QWidget *root)
 {
     installHelpPresenter();
-    if (!root || root->findChild<TooltipBubbleManager*>())
+    if (!root || root->findChild<TooltipBubbleManager*>(QString(),Qt::FindDirectChildrenOnly))
         return;
     new TooltipBubbleManager(root);
 }
@@ -194,6 +170,12 @@ void TooltipBubbleManager::ensureBubble(QWidget *widget)
         if (bubble) bubble->hide();
         return;
     }
+    // Where a combo has an explicit adjacent label, keep its native hover
+    // text without drawing over the arrow or editable field.
+    if(widget->property("helpBubbleNoIcon").toBool()) {
+        if(bubble)bubble->hide();
+        return;
+    }
     const bool bubbleLeft = widget->property("helpBubbleLeft").toBool();
 
     // Labels explicitly marked helpBubbleLeft always reserve the HELP column,
@@ -230,8 +212,9 @@ void TooltipBubbleManager::ensureBubble(QWidget *widget)
     {
         bubble = new QLabel(widget);
         bubble->setObjectName(kBubbleObjectName);
-        bubble->setFixedSize(24, 18);
-        bubble->setScaledContents(true);
+        bubble->setFixedSize(helpHitSize(),helpHitSize());
+        bubble->setScaledContents(false);
+        bubble->setAlignment(Qt::AlignCenter);
         bubble->setAttribute(Qt::WA_TransparentForMouseEvents, true);
         bubble->setStyleSheet("background: transparent;");
     }
@@ -239,10 +222,11 @@ void TooltipBubbleManager::ensureBubble(QWidget *widget)
     bubble->setPixmap(helpBubblePixmap(
         qApp && qApp->property("ecuDarkTheme").toBool()));
     const int y = qMax(0, (widget->height() - bubble->height()) / 2);
+    const int inset=(30-helpHitSize())/2;
     if (bubbleLeft)
-        bubble->move(2, y);
+        bubble->move(inset, y);
     else
-        bubble->move(qMax(0, widget->width() - bubble->width() - 2), y);
+        bubble->move(qMax(0, widget->width() - bubble->width() - inset), y);
     bubble->raise();
     bubble->show();
 }

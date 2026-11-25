@@ -798,8 +798,8 @@ static QString globalStyle()
         // QToolTip is a separate top-level widget. Specify BOTH colors:
         // on Windows the generic QWidget rule otherwise yielded black text
         // against a dark tooltip background for multiple help bubbles.
-        "QToolTip{background-color:#1b2731;color:#f4f7fa;"
-        "border:1px solid #ff8a22;border-radius:4px;padding:5px 8px;}"
+        "QToolTip{background-color:#000000;color:#ffffff;"
+        "border:1px solid #ff8a22;border-radius:8px;padding:6px 9px;}"
     ).arg(QString::fromLatin1(kBg), QString::fromLatin1(kText), QString::fromLatin1(kBorder), QString::fromLatin1(kPanel),
           QString::fromLatin1(kOrange2), QString::fromLatin1(kOrange));
 }

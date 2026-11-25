@@ -21,7 +21,9 @@ for lang in ('fr','en','de','es','it','pt'):
     assert len(guide.ids)==len(set(guide.ids)),lang
     assert guide.ids.count('chapter-mems16na')==1,lang
     assert guide.links.count('chapter-mems16na')==4,lang
-    assert guide.images and all(x.startswith(':/help/images/') for x in guide.images),lang
+    assert guide.images.count(':/icons/helpbubble.png')==1,lang
+    assert len([x for x in guide.images if x.startswith(':/help/images/')])==13,lang
+    assert all(x.startswith(':/help/images/') or x==':/icons/helpbubble.png' for x in guide.images),lang
     section=html.split('<h2 id="chapter-mems16na">',1)[1].split('<h2 id="chapter-9">',1)[0]
     for token in ('123','AANMP002','EKDMF002','EKDMF000','EKDMF003','80/04','80/06','80/0B','80/0C','80/09','80/0F','80/10','80/11','80/1B','7D/02','7D/0B','7D/0F','7D/13','7D/14–15','7D/17–1E','7D/1F','32768','µs','TPS','DTC 0','DTC 1','DTC 2','DTC 3, 4, 5','7D/10','MEMS16NA_SCHEMA=2','×5','160','64','58'):
         assert token in section,(lang,token)

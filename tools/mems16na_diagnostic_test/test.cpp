@@ -143,6 +143,7 @@ int main(int argc,char **argv) {
             summary.applyVisualTheme(dark);
             for(int width:{1200,1366,1920}) {
                 summary.resize(width,600);summary.show();app.processEvents();
+                for(auto *tbl:summary.findChildren<QTableWidget*>())CHECK(tbl->iconSize()==QSize(14,14));
                 summary.updateData(&d,&good);
                 CHECK(value(6644,3)==QStringLiteral("-50 RPM"));
                 CHECK(value(6631,3)==QStringLiteral("840 mV"));

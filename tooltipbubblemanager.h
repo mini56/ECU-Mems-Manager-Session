@@ -12,6 +12,8 @@ public:
     explicit TooltipBubbleManager(QWidget *root);
     static void install(QWidget *root);
     static QPixmap helpBubblePixmap(bool darkTheme);
+    static constexpr int helpIconSize() { return 14; }
+    static constexpr int helpHitSize() { return 18; }
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
