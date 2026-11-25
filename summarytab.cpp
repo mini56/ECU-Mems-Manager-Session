@@ -22,6 +22,7 @@ static void sizeSummaryTable(QTableWidget *table)
   const int width=table->viewport()->width()-2;
   if(width<=0) return;
   header->setStretchLastSection(false);
+  header->setMinimumSectionSize(0);
   for(int col=0;col<4;++col)
     header->setSectionResizeMode(col,QHeaderView::Fixed);
 
@@ -39,7 +40,7 @@ static void sizeSummaryTable(QTableWidget *table)
   const int interpretedMinimum=qMax(106,QFontMetrics(header->font()).horizontalAdvance(
     table->horizontalHeaderItem(3)?table->horizontalHeaderItem(3)->text():QString())+18);
   const int parameterNatural=longest+18;
-  const int parameterAvailable=qMax(100,width-helpWidth-ecuWidth-interpretedMinimum);
+  const int parameterAvailable=qMax(45,width-helpWidth-ecuWidth-interpretedMinimum);
   const int parameterWidth=qMin(parameterNatural,parameterAvailable);
   const int interpretedWidth=qMax(interpretedMinimum,width-parameterWidth-helpWidth-ecuWidth);
 
@@ -317,7 +318,9 @@ void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
       if (QTableWidgetItem *item=table->item(row,0))
       {
         item->setText(m_savedRowLabels.value(globalRow));
-        item->setToolTip(m_savedRowTooltips.value(globalRow));
+        const QString tip=m_savedRowTooltips.value(globalRow);
+        for(int col=0;col<4;++col)table->item(row,col)->setToolTip(tip);
+        table->item(row,1)->setIcon(tip.isEmpty()?QIcon():QIcon(":/icons/helpbubble.png"));
       }
     }
     m_showing2J=false;
@@ -528,57 +531,60 @@ void SummaryTab::update2JData(const QVariantMap &values, const QString &family)
   clearNaPresentation();
   // MEMS 2J sends 0x21/0x61 measurements, not ROSCO 0x80/0x7D.
   // Reuse the existing three measurement tables without mixing the units.
-  struct Field { const char *key; const char *label; const char *unit; };
+  struct Field { const char *key; int label; const char *unit; };
   static const Field fields2J[] = {
-    {"rpm","Régime moteur","tr/min"},
-    {"coolant_c","Température liquide","°C"},
-    {"intake_c","Température admission","°C"},
-    {"oil_c","Température huile","°C"},
-    {"map_kpa","Pression MAP","kPa"},
-    {"throttle_deg","Angle papillon","°"},
-    {"battery_v","Tension batterie","V"},
-    {"lambda_feedback_percent","Correction lambda","% (selon RoverMEMS)"},
-    {"lambda_o2_raw","Sonde lambda (brut)","unité à confirmer"},
-    {"fuel_raw","Carburant (brut)","unité inconnue"},
-    {"idle_steps","Position moteur ralenti","selon source, unité à vérifier"},
-    {"idle_target_rpm","Consigne ralenti","tr/min"},
-    {"idle_offset_raw10","Correction ralenti","unité à confirmer"},
-    {"rpm_error","Écart de régime","tr/min"},
-    {"speed_raw","Vitesse véhicule (brut)","unité inconnue"},
-    {"coil1_raw","Bobine 1 (brut)","unité inconnue"},
-    {"coil2_raw","Bobine 2 (brut)","unité inconnue"},
-    {"injector1_raw","Injection, champ 1 (brut)","unité inconnue"},
-    {"injector2_raw","Injection, champ 2 (brut)","unité inconnue"},
-    {"injector3_raw","Injection, champ 3 (brut)","unité inconnue"},
-    {"injector4_raw","Injection, champ 4 (brut)","unité inconnue"},
-    {"ignition_on","Contact","0/1"},
-    {"throttle_closed","Papillon fermé","0/1"},
-    {"ac_requested","Demande climatisation","0/1"},
-    {"primary_sync","Synchro primaire","0/1"},
-    {"secondary_sync","Synchro secondaire","0/1"},
-    {"closed_loop","Boucle fermée","0/1"},
-    {"cam_raw","VVC / cam (brut)","signification à confirmer"},
-    {"faults_raw","Défauts 21 19 (hex.)","voir diagnostic"}
+    {"rpm",29120,"tr/min"},
+    {"coolant_c",29121,"°C"},
+    {"intake_c",29122,"°C"},
+    {"oil_c",29123,"°C"},
+    {"map_kpa",29124,"kPa"},
+    {"throttle_deg",29125,"°"},
+    {"battery_v",29126,"V"},
+    {"lambda_feedback_percent",29127,"%"},
+    {"lambda_o2_raw",29128,""},
+    {"fuel_raw",29129,""},
+    {"idle_steps",29130,""},
+    {"idle_target_rpm",29131,"tr/min"},
+    {"idle_offset_raw10",29132,""},
+    {"rpm_error",29133,"tr/min"},
+    {"speed_raw",29134,""},
+    {"coil1_raw",29135,""},
+    {"coil2_raw",29136,""},
+    {"injector1_raw",29137,""},
+    {"injector2_raw",29138,""},
+    {"injector3_raw",29139,""},
+    {"injector4_raw",29140,""},
+    {"ignition_on",29141,"0/1"},
+    {"throttle_closed",29142,"0/1"},
+    {"ac_requested",29143,"0/1"},
+    {"primary_sync",29144,"0/1"},
+    {"secondary_sync",29145,"0/1"},
+    {"closed_loop",29146,"0/1"},
+    {"cam_raw",29147,""},
+    {"faults_raw",29148,""},
+    {"DATA_00_RAW",29149,""},
+    {"DATA_06_RAW",29150,""}
   };
   static const Field fields3[] = {
-    {"rpm","Regime moteur","tr/min"},
-    {"coolant_c","Temperature liquide","°C"},
-    {"oil_c","Temperature huile","°C"},
-    {"intake_c","Temperature admission","°C"},
-    {"map_kpa","Pression MAP","kPa"},
-    {"throttle_mv","Potentiometre papillon","mV"},
-    {"lambda_feedback_percent","Correction lambda","% (RoverMEMS)"},
-    {"lambda_mv","Sonde lambda amont","mV"},
-    {"coil1_us","Charge bobine 1","us"},
-    {"coil2_us","Charge bobine 2","us"},
-    {"rpm_deviation_raw","Ecart regime (brut)","unite inconnue"},
-    {"faults_raw","Defauts MEMS 3 (hex.)","voir diagnostic"}
+    {"rpm",29120,"tr/min"},
+    {"coolant_c",29121,"°C"},
+    {"oil_c",29123,"°C"},
+    {"intake_c",29122,"°C"},
+    {"map_kpa",29124,"kPa"},
+    {"throttle_mv",29151,"mV"},
+    {"lambda_feedback_percent",29127,"%"},
+    {"lambda_mv",29152,"mV"},
+    {"coil1_us",29153,"µs"},
+    {"coil2_us",29154,"µs"},
+    {"rpm_deviation_raw",29155,""},
+    {"faults_raw",29148,""}
   };
   const bool is3=family==QStringLiteral("MEMS 3");
   const Field *fields=is3?fields3:fields2J;
   const int count=is3
       ? int(sizeof(fields3)/sizeof(fields3[0]))
       : int(sizeof(fields2J)/sizeof(fields2J[0]));
+  const bool refreshColumns=!m_showing2J || m_table0->isRowHidden(12)!=is3;
   if (!m_showing2J)
   {
     m_savedRowLabels.clear(); m_savedRowTooltips.clear();
@@ -602,10 +608,13 @@ void SummaryTab::update2JData(const QVariantMap &values, const QString &family)
     const Field &f=fields[globalRow];
     if (QTableWidgetItem *item=table->item(row,0))
     {
-      item->setText(QString::fromUtf8(f.label));
-      item->setToolTip(QStringLiteral("%1 — %2").arg(family,QString::fromUtf8(f.unit)));
+      item->setText(I18n::text(f.label));
     }
     const QString key=QString::fromLatin1(f.key);
+    const bool rawOnly=key.endsWith(QStringLiteral("_raw"),Qt::CaseInsensitive);
+    const QString unit=QString::fromUtf8(f.unit);
+    const QString tip=I18n::text(f.label)+QStringLiteral("\n")+(rawOnly?I18n::text(29112):(unit.isEmpty()?I18n::text(29114):unit));
+    setTooltip(globalRow,tip);
     if (!values.contains(key))
     {
       setValue(globalRow,QStringLiteral("--"),QStringLiteral("--"));
@@ -614,23 +623,26 @@ void SummaryTab::update2JData(const QVariantMap &values, const QString &family)
     if (key==QStringLiteral("faults_raw"))
     {
       const QString raw=values.value(key).toString();
-      setValue(globalRow,is3?QStringLiteral("18 00"):QStringLiteral("21 19"),
-                QStringLiteral("Voir diagnostic"));
-      if (QTableWidgetItem *item=table->item(row,3))
-        item->setToolTip(raw);
+      setValue(globalRow,raw,I18n::text(29113));
+      table->item(row,2)->setToolTip(raw);
+    }
+    else if(rawOnly)
+    {
+      const QString raw=values.value(key).toString();
+      setValue(globalRow,raw,QStringLiteral("--"));
+      table->item(row,2)->setToolTip(raw);
     }
     else
     {
+      // The decoder preserves the exact original integer independently of scaling.
+      const QVariantMap received=values.value(QStringLiteral("_received")).toMap();
+      const QString raw=received.contains(key)?received.value(key).toString():QStringLiteral("--");
       const QString value=QString::number(values.value(key).toDouble(),'f',
                           key==QStringLiteral("battery_v")?3:2);
-      // Keep the narrow values column legible; full units remain in tooltip.
-      const QString unit=QString::fromUtf8(f.unit);
-      setValue(globalRow,QStringLiteral("--"),
-               unit.size()<=8 ? QStringLiteral("%1 %2").arg(value,unit) : value);
-      if (QTableWidgetItem *item=table->item(row,3))
-        item->setToolTip(QStringLiteral("%1 : %2").arg(family,key));
+      setValue(globalRow,raw,unit.isEmpty()?value:QStringLiteral("%1 %2").arg(value,unit));
     }
   }
+  if(refreshColumns)for(QTableWidget *table:{m_table0,m_table1,m_table2})sizeSummaryTable(table);
 }
 
 void SummaryTab::clearNaPresentation()
@@ -725,11 +737,19 @@ void SummaryTab::applyNaPresentation(const Mems16Na::SessionEvidence &na,bool do
   if(documentationOnly)refHelp=documentation(refHelp);
   for(int i=0;i<4;++i) {
     item(hi[i],0)->setText(I18n::text(29032).arg(i+1));
-    setValue(hi[i],throttleWord(m.throttleReference[i]),numeric(m.throttleReference[i],2,QStringLiteral(" TPS")));
+    setValue(hi[i],rawText(m.throttleReference[i]),numeric(m.throttleReference[i],2,QStringLiteral(" TPS")));
     setTooltip(hi[i],refHelp);
-    table(lo[i])->setRowHidden(lo[i]%m_rowsPerTable,true);
+    // Retain the original low byte as a separate received value.
+    const Value &v=m.throttleReference[i];
+    item(lo[i],0)->setText(I18n::text(29032).arg(i+1)+QStringLiteral(" (LSB)"));
+    setValue(lo[i],v.availability==Availability::Missing?QStringLiteral("--"):QString::number(v.raw&255),QStringLiteral("--"));
+    setTooltip(lo[i],refHelp);
+    table(lo[i])->setRowHidden(lo[i]%m_rowsPerTable,false);
   }
-  table(m_rowUk10)->setRowHidden(m_rowUk10%m_rowsPerTable,true);
+  item(m_rowUk10,0)->setText(I18n::text(29111));
+  setValue(m_rowUk10,rawText(m.idleError),QStringLiteral("--"));
+  setTooltip(m_rowUk10,I18n::text(29112));
+  table(m_rowUk10)->setRowHidden(m_rowUk10%m_rowsPerTable,false);
   row(m_rowUk1C,29033,m.learnCount,numeric(m.learnCount,0));
   const int rows[]={m_rowDtc0,m_rowDtc1,m_rowDtc2,m_rowDtc3,m_rowDtc4,m_rowDtc5,m_rowUk7};
   const Group groups[]={Group::Dtc0,Group::Dtc1,Group::Dtc2,Group::Dtc3,Group::Dtc4,Group::Dtc5,Group::Indirect7D10};

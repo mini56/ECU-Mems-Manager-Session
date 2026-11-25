@@ -1417,9 +1417,7 @@ private:
         view->setFocusPolicy(Qt::StrongFocus);
         view->setStyleSheet(QStringLiteral(
             "QTextBrowser{background:#0a1015;color:#dce3e8;border:1px solid #34414b;}"
-            "QScrollBar:vertical{background:#111a21;width:16px;border-left:1px solid #53616c;}"
-            "QScrollBar::handle:vertical{background:#7c8b96;min-height:38px;border:1px solid #a0abb3;border-radius:5px;margin:2px;}"
-            "QScrollBar::handle:vertical:hover{background:#ff8a22;}QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"));
+            ));
         layout->addWidget(view);
         dialog.exec();
     }

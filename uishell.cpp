@@ -773,21 +773,13 @@ static QString globalStyle()
         "QTableWidget::item:selected,QTableView::item:selected,QTreeWidget::item:selected,QListView::item:selected{background:#362514;color:white;}"
         "QHeaderView::section{background:#141b21;color:#dfe5e9;border:0;border-right:1px solid %3;border-bottom:1px solid %3;padding:5px 7px;font-weight:700;}"
         "QScrollArea{background:%1;border:0;}"
-        "QScrollBar:vertical{background:#080d12;width:9px;margin:0;}"
-        "QScrollBar::handle:vertical{background:#ff8a22;border-radius:3px;min-height:24px;}"
-        "QScrollBar::handle:vertical:hover{background:#ffb05a;}"
-        "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"
-        "QScrollBar:horizontal{background:#080d12;height:9px;margin:0;}"
-        "QScrollBar::handle:horizontal{background:#ff8a22;border-radius:3px;min-width:24px;}"
-        "QScrollBar::handle:horizontal:hover{background:#ffb05a;}"
-        "QScrollBar::add-line:horizontal,QScrollBar::sub-line:horizontal{width:0;}"
         "QCheckBox,QRadioButton{color:#dfe5e9;background:transparent;spacing:6px;}"
         "QSlider::groove:horizontal{height:4px;background:#27323b;border-radius:2px;}"
         "QSlider::handle:horizontal{width:12px;margin:-4px 0;background:%6;border:1px solid %5;border-radius:6px;}"
         "QProgressBar{background:#0a1117;color:#dfe5e9;border:1px solid %3;border-radius:3px;text-align:center;}"
         "QProgressBar::chunk{background:%6;border-radius:2px;}"
     ).arg(QString::fromLatin1(kBg), QString::fromLatin1(kText), QString::fromLatin1(kBorder), QString::fromLatin1(kPanel),
-          QString::fromLatin1(kOrange2), QString::fromLatin1(kOrange)) + helpTooltipStyle(true);
+          QString::fromLatin1(kOrange2), QString::fromLatin1(kOrange)) + sessionScrollBarStyle(true) + helpTooltipStyle(true);
 }
 
 static QFrame *makeCard(QWidget *parent, const QString &objectName)

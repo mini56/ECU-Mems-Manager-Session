@@ -46,35 +46,39 @@ inline bool unpack(const QByteArray &packet, QByteArray *payload)
 inline bool decodeMeasurement(quint8 id, const QByteArray &p, QVariantMap *values)
 {
     if (!values || p.size()<2 || byte(p,0)!=0x61 || byte(p,1)!=id) return false;
-    auto set=[values](const char *name, double value) {
-        values->insert(QString::fromLatin1(name),value);
+    auto set=[values](const char *name,double value,unsigned received) {
+        const QString key=QString::fromLatin1(name);
+        values->insert(key,value);
+        QVariantMap raw=values->value(QStringLiteral("_received")).toMap();
+        raw.insert(key,received);
+        values->insert(QStringLiteral("_received"),raw);
     };
     switch(id)
     {
     case 0x00:
         if (p.size()<12) return false;
-        set("coolant_c",(double(word(p,2))-2730.0)/10.0);
-        set("oil_c",(double(word(p,6))-2730.0)/10.0);
-        set("intake_c",(double(word(p,10))-2730.0)/10.0);
+        set("coolant_c",(double(word(p,2))-2730.0)/10.0,word(p,2));
+        set("oil_c",(double(word(p,6))-2730.0)/10.0,word(p,6));
+        set("intake_c",(double(word(p,10))-2730.0)/10.0,word(p,10));
         break;
     case 0x06:
         if (p.size()<12) return false;
-        set("map_kpa",double(word(p,2))/100.0);
-        set("throttle_mv",word(p,8)); // Millivolts per archived source.
-        set("rpm",word(p,10));
+        set("map_kpa",double(word(p,2))/100.0,word(p,2));
+        set("throttle_mv",word(p,8),word(p,8)); // Millivolts per archived source.
+        set("rpm",word(p,10),word(p,10));
         break;
     case 0x0A:
         if (p.size()<6) return false;
-        set("lambda_feedback_percent",double(word(p,2))/100.0);
-        set("lambda_mv",word(p,4));
+        set("lambda_feedback_percent",double(word(p,2))/100.0,word(p,2));
+        set("lambda_mv",word(p,4),word(p,4));
         break;
     case 0x0B:
         if (p.size()<6) return false;
-        set("coil1_us",word(p,2)); set("coil2_us",word(p,4));
+        set("coil1_us",word(p,2),word(p,2)); set("coil2_us",word(p,4),word(p,4));
         break;
     case 0x21:
         if (p.size()<4) return false;
-        set("rpm_deviation_raw",word(p,2)); // Sign/units not established.
+        set("rpm_deviation_raw",word(p,2),word(p,2)); // Sign/units not established.
         break;
     default: return false;
     }

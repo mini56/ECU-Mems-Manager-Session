@@ -149,30 +149,11 @@ static void makeTablesReadable(QMainWindow *w)
 
 static void styleScrollBars(QMainWindow *w)
 {
-    if(!w) return;
-    const QString qss=QStringLiteral(
-        "QScrollBar:vertical{background:#070c11;width:9px;margin:0;border:0;}"
-        "QScrollBar::handle:vertical{background:#ff8a22;border-radius:4px;min-height:28px;}"
-        "QScrollBar::handle:vertical:hover{background:#ffb05a;}"
-        "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"
-        "QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical{background:transparent;}"
-        "QScrollBar:horizontal{background:#070c11;height:9px;margin:0;border:0;}"
-        "QScrollBar::handle:horizontal{background:#ff8a22;border-radius:4px;min-width:28px;}"
-        "QScrollBar::handle:horizontal:hover{background:#ffb05a;}"
-        "QScrollBar::add-line:horizontal,QScrollBar::sub-line:horizontal{width:0;}"
-        "QScrollBar::add-page:horizontal,QScrollBar::sub-page:horizontal{background:transparent;}" );
-    // Conserver les styles explicites des deux ascenseurs d'Analyse.
-    // Sinon ce style global remplace leurs poignées orange à chaque redessin.
-    const QScrollArea *channels=w->findChild<QScrollArea*>(
-        QStringLiteral("analysisChannelsScroll"));
-    const QScrollArea *plots=w->findChild<QScrollArea*>(
-        QStringLiteral("analysisStackScroll"));
-    const QScrollBar *channelsBar=channels?channels->verticalScrollBar():nullptr;
-    const QScrollBar *plotsBar=plots?plots->verticalScrollBar():nullptr;
-    for(QScrollBar *bar:w->findChildren<QScrollBar*>()) {
-        if(bar==channelsBar || bar==plotsBar) continue;
-        bar->setStyleSheet(qss);
-    }
+    if(!w)return;
+    const bool dark=qApp && qApp->property("ecuDarkTheme").toBool();
+    const QString style=sessionScrollBarStyle(dark);
+    for(QScrollBar *bar:w->findChildren<QScrollBar*>())
+        if(bar->styleSheet()!=style)bar->setStyleSheet(style);
 }
 
 static void styleTables(QMainWindow *w)
@@ -260,7 +241,6 @@ static void apply(QMainWindow *w)
     styleControls(w);
     styleAnalysis(w);
     styleChrome(w);
-    styleScrollBars(w);
 }
 
 } // namespace
@@ -364,11 +344,6 @@ QPushButton#m_clearFaultsButton:hover:enabled,QPushButton#m_clearRecordedAnomali
 QPushButton#m_clearFaultsButton:disabled,QPushButton#m_clearRecordedAnomalies:disabled{
     background:#ffffff;color:#c26000;border:1px solid #ff8800;
 }
-QScrollBar:vertical{background:#edf1f5;width:10px;margin:0;border:0;}
-QScrollBar::handle:vertical{background:#aab9c8;border-radius:4px;min-height:28px;}
-QScrollBar:horizontal{background:#edf1f5;height:10px;margin:0;border:0;}
-QScrollBar::handle:horizontal{background:#aab9c8;border-radius:4px;min-width:28px;}
-QScrollBar::add-line,QScrollBar::sub-line{width:0;height:0;}
 )STYLE");
 }
 
@@ -421,6 +396,7 @@ void applyApplicationVisualStyle(QMainWindow *window)
         reflowOverview(window);
         applyLightVisualStyle(window);
     }
+    styleScrollBars(window);
     // Gauge container colours must be updated with the theme. The same size
     // routine is already used by the native page: no new overlay or widget.
     fitSettingsPage(window);

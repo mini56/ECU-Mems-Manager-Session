@@ -1,4 +1,5 @@
 #include "tooltipbubblemanager.h"
+#include "styles.h"
 
 #include <QApplication>
 #include <QEvent>
@@ -12,6 +13,7 @@
 #include <QAbstractItemModel>
 #include <QHelpEvent>
 #include <QToolTip>
+#include <QScrollBar>
 #include <QPalette>
 #include <QColor>
 #include <QScreen>
@@ -32,6 +34,20 @@ public:
 protected:
     bool eventFilter(QObject *watched,QEvent *event) override
     {
+        // Native tooltip windows inherit their source widget's local stylesheet.
+        // Assign the common style to the actual Qt tooltip, not its parent label.
+        if(event->type()==QEvent::Show || event->type()==QEvent::Polish) {
+            if(auto *surface=qobject_cast<QWidget*>(watched)) {
+                if(surface->windowType()==Qt::ToolTip && surface->inherits("QTipLabel")) {
+                    const QString style=helpTooltipStyle(qApp->property("ecuDarkTheme").toBool());
+                    if(surface->styleSheet()!=style)surface->setStyleSheet(style);
+                }
+                if(auto *bar=qobject_cast<QScrollBar*>(surface)) {
+                    const QString style=sessionScrollBarStyle(qApp->property("ecuDarkTheme").toBool());
+                    if(bar->styleSheet()!=style)bar->setStyleSheet(style);
+                }
+            }
+        }
         if(event->type()==QEvent::ApplicationDeactivate ||
            (watched==qApp && event->type()==QEvent::DynamicPropertyChange)) {
             QToolTip::hideText();
@@ -102,6 +118,11 @@ protected:
         palette.setColor(QPalette::ToolTipText,QColor(dark?Qt::white:Qt::black));
         QToolTip::setPalette(palette);
         QToolTip::showText(anchor,html,widget,region);
+        for(QWidget *surface:QApplication::topLevelWidgets())
+            if(surface->windowType()==Qt::ToolTip && surface->inherits("QTipLabel") && surface->isVisible()) {
+                const QString style=helpTooltipStyle(dark);
+                if(surface->styleSheet()!=style)surface->setStyleSheet(style);
+            }
         event->accept();return true;
     }
 };

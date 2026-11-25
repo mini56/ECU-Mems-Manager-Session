@@ -141,7 +141,7 @@ void OptionsDialog::setupWidgets()
   const QList<DetectedSerialAdapter> adapters =
       SerialAdapterDetector::availableAdapters(m_serialDeviceName);
   for (const DetectedSerialAdapter &adapter : adapters)
-    m_serialDeviceBox->addItem(adapter.displayName(), adapter.portName);
+    m_serialDeviceBox->addItem(adapter.detectedBySystem?adapter.displayName():adapter.portName+QStringLiteral(" — ")+I18n::text(29110), adapter.portName);
 
   const QString configuredPort = SerialAdapterDetector::stripWindowsDevicePrefix(m_serialDeviceName);
   const int configuredIndex = m_serialDeviceBox->findData(configuredPort, Qt::UserRole, Qt::MatchFixedString);
@@ -186,13 +186,16 @@ void OptionsDialog::setupWidgets()
 
   m_serialDeviceBox->setEditable(true);
   m_serialDeviceBox->setMinimumWidth(330);
-  m_serialDeviceBox->setMinimumHeight(30);
+  m_serialDeviceBox->setMinimumHeight(36);
   m_serialDeviceBox->setToolTip(I18n::text(6109));
   m_serialDeviceBox->setProperty("helpBubbleNoIcon",true);
   m_serialDeviceLabel->setObjectName(QStringLiteral("optionsSerialDeviceHelpLabel"));
   m_serialDeviceLabel->setToolTip(m_serialDeviceBox->toolTip());
   if (m_serialDeviceBox->lineEdit())
-    m_serialDeviceBox->lineEdit()->setMinimumHeight(22);
+  {
+    m_serialDeviceBox->lineEdit()->setFrame(false);
+    m_serialDeviceBox->lineEdit()->setStyleSheet(QStringLiteral("QLineEdit{border:0;padding:0;margin:0;background:transparent;}"));
+  }
 
   m_temperatureUnitsBox->setEditable(false);
   m_temperatureUnitsBox->addItem("Fahrenheit");
@@ -201,7 +204,7 @@ void OptionsDialog::setupWidgets()
 
   m_themeBox->setEditable(false);
   m_themeBox->addItem(I18n::text(6104) /* EN: Light */, "light");
-  m_themeBox->addItem(QStringLiteral("StyleDark"), "dark");
+  m_themeBox->addItem(I18n::text(6105), "dark");
   m_themeBox->setCurrentIndex(m_theme == "dark" || m_theme == "Sombre" ? 1 : 0);
 
   m_languageLabel = new QLabel(I18n::text(6106) /* EN: Language: */, this);

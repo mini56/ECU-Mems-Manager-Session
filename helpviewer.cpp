@@ -20,6 +20,27 @@
 #include <QSlider>
 #include <QPushButton>
 #include <QVector>
+#include <QStyledItemDelegate>
+#include <QStyleOptionViewItem>
+#include <QFontMetrics>
+
+namespace {
+class HelpChapterDelegate final : public QStyledItemDelegate {
+public:
+    explicit HelpChapterDelegate(QListWidget *list):QStyledItemDelegate(list),m_list(list){}
+    QSize sizeHint(const QStyleOptionViewItem &option,const QModelIndex &index) const override {
+        QStyleOptionViewItem opt(option);
+        initStyleOption(&opt,index);
+        const QFontMetrics metrics(opt.font);
+        const int width=qMax(80,m_list->viewport()->width()-32);
+        const QRect bounds=metrics.boundingRect(QRect(0,0,width,10000),
+            Qt::TextWordWrap|Qt::AlignLeft,opt.text);
+        return QSize(width,qMax(metrics.height(),bounds.height())+22);
+    }
+private:
+    QListWidget *m_list;
+};
+}
 
 HelpViewer::HelpViewer(const QString &title,QWidget *parent)
     :QDialog(parent)
@@ -33,8 +54,8 @@ HelpViewer::HelpViewer(const QString &title,QWidget *parent)
 
     QScreen *screen=QGuiApplication::primaryScreen();
     const QSize available=screen?screen->availableGeometry().size():QSize(1366,768);
-    resize(qMax(850,qMin(1180,available.width()-70)),
-           qMax(590,qMin(840,available.height()-55)));
+    resize(qMax(850,qMin(1500,available.width()-40)),
+           qMax(590,qMin(1000,available.height()-40)));
 
     m_vbox=new QVBoxLayout(this);
     m_vbox->setContentsMargins(17,15,17,14);
@@ -58,10 +79,15 @@ HelpViewer::HelpViewer(const QString &title,QWidget *parent)
 
     m_navigation=new QListWidget(body);
     m_navigation->setObjectName(QStringLiteral("memsHelpNavigation"));
-    m_navigation->setMinimumWidth(225);
-    m_navigation->setMaximumWidth(305);
+    m_navigation->setMinimumWidth(300);
+    m_navigation->setMaximumWidth(420);
     m_navigation->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_navigation->setWordWrap(true);
+    m_navigation->setTextElideMode(Qt::ElideNone);
+    m_navigation->setUniformItemSizes(false);
+    m_navigation->setResizeMode(QListView::Adjust);
+    m_navigation->setItemDelegate(new HelpChapterDelegate(m_navigation));
+    m_navigation->setFont(QFont(QStringLiteral("Segoe UI"),11));
     m_navigation->setSpacing(2);
 
     m_viewer=new QTextBrowser(body);
@@ -76,7 +102,7 @@ HelpViewer::HelpViewer(const QString &title,QWidget *parent)
     body->addWidget(m_viewer);
     body->setStretchFactor(0,0);
     body->setStretchFactor(1,1);
-    body->setSizes(QList<int>{255,805});
+    body->setSizes(QList<int>{350,1000});
     m_vbox->addWidget(body,1);
 
     connect(m_navigation,&QListWidget::currentItemChanged,this,
@@ -111,7 +137,7 @@ void HelpViewer::updateAppearance(bool dark)
             "#memsHelpSubtitle{color:#9fafbc;font-size:12px;}"
             "QLabel{color:#e6edf2;background:transparent;}"
             "QListWidget{background:#101920;color:#d6e0e7;border:1px solid #2e414b;"
-            "border-radius:6px;font-size:12px;padding:6px;outline:0;}"
+            "border-radius:6px;font-size:11pt;padding:6px;outline:0;}"
             "QListWidget::item{padding:9px 10px;border-bottom:1px solid #23323c;}"
             "QListWidget::item:selected{background:#302418;color:#ffaf60;"
             "border-left:3px solid #ff8200;font-weight:700;}"
@@ -126,7 +152,7 @@ void HelpViewer::updateAppearance(bool dark)
             "#memsHelpSubtitle{color:#677685;font-size:12px;}"
             "QLabel{color:#202936;background:transparent;}"
             "QListWidget{background:#f5f7fa;color:#202936;border:1px solid #cbd6e0;"
-            "border-radius:6px;font-size:12px;padding:6px;outline:0;}"
+            "border-radius:6px;font-size:11pt;padding:6px;outline:0;}"
             "QListWidget::item{padding:9px 10px;border-bottom:1px solid #e1e8ef;}"
             "QListWidget::item:selected{background:#fff0df;color:#a45100;"
             "border-left:3px solid #f07800;font-weight:700;}"

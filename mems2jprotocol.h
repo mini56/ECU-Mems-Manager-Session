@@ -139,8 +139,12 @@ inline bool decodeMeasurement(quint8 id, const QByteArray &p, QVariantMap *out)
 {
     if (!out || p.size() < 2 || byte(p,0)!=0x61 || byte(p,1)!=id)
         return false;
-    const auto set = [out](const char *name, double n) {
-        out->insert(QString::fromLatin1(name), n);
+    const auto set = [out](const char *name, double n, unsigned received) {
+        const QString key=QString::fromLatin1(name);
+        out->insert(key,n);
+        QVariantMap raw=out->value(QStringLiteral("_received")).toMap();
+        raw.insert(key,received);
+        out->insert(QStringLiteral("_received"),raw);
     };
     switch (id)
     {
@@ -153,50 +157,50 @@ inline bool decodeMeasurement(quint8 id, const QByteArray &p, QVariantMap *out)
     case 0x01: case 0x02: case 0x03:
         if (p.size()<4) return false;
         set(id==0x01?"coolant_c":id==0x02?"oil_c":"intake_c",
-            (double(u16(p,2))-2732.0)/10.0);
+            (double(u16(p,2))-2732.0)/10.0,u16(p,2));
         return true;
-    case 0x05: if (p.size()<4) return false; set("fuel_raw",u16(p,2)); return true;
-    case 0x07: if (p.size()<4) return false; set("map_kpa",u16(p,2)/100.0); return true;
-    case 0x08: if (p.size()<4) return false; set("throttle_deg",u16(p,2)/100.0); return true;
-    case 0x09: if (p.size()<4) return false; set("rpm",u16(p,2)); return true;
+    case 0x05: if (p.size()<4) return false; set("fuel_raw",u16(p,2),u16(p,2)); return true;
+    case 0x07: if (p.size()<4) return false; set("map_kpa",u16(p,2)/100.0,u16(p,2)); return true;
+    case 0x08: if (p.size()<4) return false; set("throttle_deg",u16(p,2)/100.0,u16(p,2)); return true;
+    case 0x09: if (p.size()<4) return false; set("rpm",u16(p,2),u16(p,2)); return true;
     case 0x0A:
         if (p.size()<6) return false;
-        set("lambda_feedback_percent",u16(p,2)/100.0);
-        set("lambda_o2_raw",u16(p,4)); // source Go: unit not independently established
+        set("lambda_feedback_percent",u16(p,2)/100.0,u16(p,2));
+        set("lambda_o2_raw",u16(p,4),u16(p,4)); // source Go: unit not independently established
         return true;
     case 0x0B:
         if (p.size()<4) return false;
-        set("coil1_raw",byte(p,2)); set("coil2_raw",byte(p,3));
+        set("coil1_raw",byte(p,2),byte(p,2)); set("coil2_raw",byte(p,3),byte(p,3));
         return true;
     case 0x0C:
         if (p.size()<6) return false;
         for(int i=0;i<4;++i)
             out->insert(QStringLiteral("injector%1_raw").arg(i+1),int(byte(p,i+2)));
         return true;
-    case 0x0D: if (p.size()<3) return false; set("speed_raw",byte(p,2)); return true;
+    case 0x0D: if (p.size()<3) return false; set("speed_raw",byte(p,2),byte(p,2)); return true;
     case 0x0F:
         if (p.size()<3) return false;
-        set("throttle_closed",(byte(p,2)&1u)?1:0);
-        set("ignition_on",(byte(p,2)&2u)?1:0);
-        set("ac_requested",(byte(p,2)&8u)?1:0);
+        set("throttle_closed",(byte(p,2)&1u)?1:0,byte(p,2));
+        set("ignition_on",(byte(p,2)&2u)?1:0,byte(p,2));
+        set("ac_requested",(byte(p,2)&8u)?1:0,byte(p,2));
         return true;
-    case 0x10: if (p.size()<6) return false; set("battery_v",u16(p,4)/1000.0); return true;
+    case 0x10: if (p.size()<6) return false; set("battery_v",u16(p,4)/1000.0,u16(p,4)); return true;
     case 0x11:
         if (p.size()<3) return false;
-        set("primary_sync",(byte(p,2)&1u)?0:1);
-        set("secondary_sync",(byte(p,2)&2u)?0:1);
+        set("primary_sync",(byte(p,2)&1u)?0:1,byte(p,2));
+        set("secondary_sync",(byte(p,2)&2u)?0:1,byte(p,2));
         return true;
-    case 0x12: if (p.size()<4) return false; set("idle_steps",u16(p,2)/2.0); return true;
-    case 0x13: if (p.size()<3) return false; set("closed_loop",(byte(p,2)&1u)?1:0); return true;
+    case 0x12: if (p.size()<4) return false; set("idle_steps",u16(p,2)/2.0,u16(p,2)); return true;
+    case 0x13: if (p.size()<3) return false; set("closed_loop",(byte(p,2)&1u)?1:0,byte(p,2)); return true;
     case 0x21:
         if (p.size()<4) return false;
-        set("rpm_error",int(qint16(u16(p,2)))); // signed 2's-complement; fixes Go boundary bug
+        set("rpm_error",int(qint16(u16(p,2))),u16(p,2)); // signed 2's-complement; fixes Go boundary bug
         return true;
-    case 0x25: if (p.size()<4) return false; set("cam_raw",u16(p,2)); return true;
+    case 0x25: if (p.size()<4) return false; set("cam_raw",u16(p,2),u16(p,2)); return true;
     case 0x3A:
         if (p.size()<6) return false;
-        set("idle_offset_raw10",u16(p,2)/10.0);
-        set("idle_target_rpm",u16(p,4));
+        set("idle_offset_raw10",u16(p,2)/10.0,u16(p,2));
+        set("idle_target_rpm",u16(p,4),u16(p,4));
         return true;
     default:
         return false;

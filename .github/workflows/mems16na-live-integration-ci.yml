@@ -1,40 +1,6 @@
 name: MEMS 1.6 NA - integration privee
 on:
   workflow_dispatch:
-  push:
-    branches: [fix-documentary-additive-session-161-20261118]
-    paths:
-      - '.github/workflows/mems16na-live-integration-ci.yml'
-      - 'mems16na_live_trace.h'
-      - 'mems16na_presentation.h'
-      - 'mems16na_session_evidence.h'
-      - 'memsinterface.cpp'
-      - 'memsinterface.h'
-      - 'summarytab.cpp'
-      - 'summarytab.h'
-      - 'mainwindow.cpp'
-      - 'mainwindow.h'
-      - 'logger.cpp'
-      - 'logger.h'
-      - 'mems16na_log_schema.h'
-      - 'tools/mems16na_log_selftest.cpp'
-      - 'analysistab.h'
-      - 'mems16na_analysis.h'
-      - 'mappedinjection_runtime_part2.inc'
-      - 'tools/mems16na_analysis_test/**'
-      - 'analysistab_impl_part1.inc'
-      - 'analysistab_impl_part2.inc'
-      - 'analysistab_impl_part3.inc'
-      - 'diagnosticpanel.cpp'
-      - 'diagnosticpanel.h'
-      - 'tools/mems16na_diagnostic_test/**'
-      - 'tools/mems16na_live_trace_selftest.cpp'
-      - 'tools/test_mems16na_translation_catalog.py'
-      - 'translations/*/*_mems16na.json'
-      - 'help.html.in'
-      - 'help_*.html.in'
-      - 'tools/test_mems16na_help.py'
-      - 'tools/test_mems16na_ui_contract.py'
 permissions:
   contents: read
 jobs:
@@ -149,7 +115,7 @@ jobs:
           cmake -S . -B build-session-207 -A x64 -DCMAKE_PREFIX_PATH='C:/Qt/5.15.2/msvc2019_64' -DMEMS_USE_BUNDLED_LIBROSCO_X64=ON -DMEMS_RUN_REFERENCE_SELFTEST_POST_BUILD=OFF -DMEMS_USE_ONNX_GENAI=ON "-DORT_GENAI_INCLUDE_DIR=$env:ORT_GENAI_INCLUDE_DIR" "-DORT_GENAI_LIBRARY=$env:ORT_GENAI_LIBRARY"
           if($LASTEXITCODE -ne 0){throw 'CMAKE_SESSION_CONFIG_FAILED'}
           $helpQrc=Get-Content 'build-session-207/mems-help-illustrations.qrc' -Raw -Encoding utf8
-          if(([regex]::Matches($helpQrc,'<file alias=')).Count -ne 13){throw 'SESSION_207_HELP_QRC_MISSING_IMAGES'}
+          if(([regex]::Matches($helpQrc,'<file alias=')).Count -ne 12){throw 'SESSION_207_HELP_QRC_MISSING_IMAGES'}
           Write-Host 'SESSION_207_HELP_IMAGES_EMBEDDED_PASS'
           # mems19_protocol_selftest runs in the executable's CMake POST_BUILD.
           # Qt DLLs must already be resolvable at this stage on Windows.

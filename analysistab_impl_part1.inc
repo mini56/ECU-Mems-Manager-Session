@@ -2,6 +2,7 @@
 #include "i18n.h"
 #include "mems16na_analysis.h"
 #include "tooltipbubblemanager.h"
+#include "styles.h"
 
 #include <QApplication>
 #include <QButtonGroup>
@@ -52,29 +53,10 @@ static void configureAnalysisVisibleScroll(QAbstractScrollArea *area, Qt::Scroll
     area->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     area->setHorizontalScrollBarPolicy(horizontalPolicy);
     QScrollBar *bar=area->verticalScrollBar();
-    bar->setFixedWidth(17);
+    bar->setFixedWidth(kSessionScrollBarExtent);
     bar->setSingleStep(36);
     bar->setPageStep(qMax(80,area->viewport()->height()-36));
-    bar->setStyleSheet((qApp && qApp->property("ecuDarkTheme").toBool()) ? QStringLiteral(
-        "QScrollBar:vertical{background:#192733;border:1px solid #526575;"
-        "border-radius:3px;width:17px;margin:0px;}"
-        "QScrollBar::handle:vertical{background:#ff8a1c;"
-        "border:1px solid #ffc078;border-radius:4px;"
-        "min-height:48px;margin:2px;}"
-        "QScrollBar::handle:vertical:hover{background:#ffb45f;}"
-        "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical"
-        "{height:0px;border:0;background:#192733;}"
-        "QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical"
-        "{background:#192733;}"
-    ) : QStringLiteral(
-        "QScrollBar:vertical{background:#f0f3f6;border:1px solid #c9d3dc;"
-        "border-radius:3px;width:17px;margin:0px;}"
-        "QScrollBar::handle:vertical{background:#ff8a1c;"
-        "border:1px solid #d77813;border-radius:4px;min-height:48px;margin:2px;}"
-        "QScrollBar::handle:vertical:hover{background:#ffb45f;}"
-        "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0px;border:0;background:#f0f3f6;}"
-        "QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical{background:#f0f3f6;}"
-    ));
+    bar->setStyleSheet(sessionScrollBarStyle(qApp && qApp->property("ecuDarkTheme").toBool()));
     // Mandatory scrollbar on the REAL Analysis panel, at every window height.
     // Qt updates the scroll range automatically when the viewport is resized.
     // Never hide/reparent the containing QScrollArea to "fix" a missing bar.

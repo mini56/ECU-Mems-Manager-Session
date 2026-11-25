@@ -415,6 +415,7 @@ void DiagnosticPanel::update2JData(const QVariantMap &values, const QStringList 
                : QStringLiteral("Session 10400 bauds, protocole 21/61"));
     for (auto it=values.cbegin();it!=values.cend();++it)
     {
+        if(it.key()==QStringLiteral("_received"))continue;
         addCheck(it.key(),it.value().toString(),QStringLiteral("Lecture ECU"),
                  it.key().endsWith(QStringLiteral("_raw"))
                     ? QStringLiteral("Valeur brute — unité / interprétation non établie")

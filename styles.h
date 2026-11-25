@@ -3,10 +3,26 @@
 
 #include <QString>
 
+// One geometry and palette for every native scrollbar, including dialogs.
+constexpr int kSessionScrollBarExtent=9;
+inline QString sessionScrollBarStyle(bool dark)
+{
+    return QStringLiteral(
+        "QScrollBar:vertical{background:%1;width:%2px;margin:0;border:0;padding:0;}"
+        "QScrollBar:horizontal{background:%1;height:%2px;margin:0;border:0;padding:0;}"
+        "QScrollBar::handle:vertical{background:#ff8a22;border:0;border-radius:4px;min-height:28px;margin:0;}"
+        "QScrollBar::handle:horizontal{background:#ff8a22;border:0;border-radius:4px;min-width:28px;margin:0;}"
+        "QScrollBar::handle:hover{background:#ffb05a;}"
+        "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"
+        "QScrollBar::add-line:horizontal,QScrollBar::sub-line:horizontal{width:0;}"
+        "QScrollBar::add-page,QScrollBar::sub-page{background:transparent;}"
+    ).arg(dark?QStringLiteral("#202a32"):QStringLiteral("#e0e5eb")).arg(kSessionScrollBarExtent);
+}
+
 // Shared native tooltip appearance, used by all shell variants.
 inline QString helpTooltipStyle(bool dark)
 {
-    return QStringLiteral("QToolTip {\n"
+    return QStringLiteral("QTipLabel, QToolTip {\n"
         "    background-color: %1;\n"
         "    color: %2;\n"
         "    border: 1px solid #ff8a22;\n"
@@ -157,28 +173,7 @@ QHeaderView::section {
     border: none;
     font-weight: 600;
 }
-QScrollBar:vertical {
-    background: transparent;
-    width: 10px;
-}
-QScrollBar::handle:vertical {
-    background: #c7cbd4;
-    border-radius: 5px;
-    min-height: 24px;
-}
-QScrollBar::handle:vertical:hover {
-    background: #a9adb8;
-}
-QScrollBar:horizontal {
-    background: transparent;
-    height: 10px;
-}
-QScrollBar::handle:horizontal {
-    background: #c7cbd4;
-    border-radius: 5px;
-    min-width: 24px;
-}
-)" + helpTooltipStyle(false);
+)" + sessionScrollBarStyle(false) + helpTooltipStyle(false);
 
 // Feuille de style moderne - thème sombre
 static const QString STYLE_DARK = R"(
@@ -325,27 +320,6 @@ QHeaderView::section {
     border: none;
     font-weight: 600;
 }
-QScrollBar:vertical {
-    background: transparent;
-    width: 10px;
-}
-QScrollBar::handle:vertical {
-    background: #ff8a22;
-    border-radius: 5px;
-    min-height: 24px;
-}
-QScrollBar::handle:vertical:hover {
-    background: #ffb05a;
-}
-QScrollBar:horizontal {
-    background: transparent;
-    height: 10px;
-}
-QScrollBar::handle:horizontal {
-    background: #ff8a22;
-    border-radius: 5px;
-    min-width: 24px;
-}
-)" + helpTooltipStyle(true);
+)" + sessionScrollBarStyle(true) + helpTooltipStyle(true);
 
 #endif // STYLES_H

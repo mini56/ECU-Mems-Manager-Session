@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     ok &= require(decodeMeasurement(0x08,QByteArray::fromHex("61080e74"),&v) &&
                   v.value("throttle_deg").toDouble()==37.0,"TPS 37 degrees");
     ok &= require(decodeMeasurement(0x10,QByteArray::fromHex("611000003039"),&v) &&
-                  v.value("battery_v").toDouble()==12.345,"battery position 4:5");
+                  v.value("battery_v").toDouble()==12.345 && v.value("_received").toMap().value("battery_v").toUInt()==12345,"battery position 4:5");
     ok &= require(decodeMeasurement(0x21,QByteArray::fromHex("6121ffff"),&v) &&
                   v.value("rpm_error").toInt()==-1,"signed FFFF");
     ok &= require(decodeMeasurement(0x21,QByteArray::fromHex("61218000"),&v) &&

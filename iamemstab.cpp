@@ -1,4 +1,5 @@
 #include "iamemstab.h"
+#include "styles.h"
 #include "i18n.h"
 
 #include "mainwindow.h"
@@ -154,8 +155,7 @@ IaMemsTab::IaMemsTab(MainWindow *mainWindow, QWidget *parent)
 
     QScrollBar *transcriptScroll = new QScrollBar(Qt::Vertical, transcriptPane);
     transcriptScroll->setObjectName(QStringLiteral("iaMemsTranscriptScroll"));
-    transcriptScroll->setMinimumWidth(18);
-    transcriptScroll->setMaximumWidth(18);
+    transcriptScroll->setFixedWidth(kSessionScrollBarExtent);
     transcriptLayout->addWidget(transcriptScroll);
 
     QScrollBar *internalScroll = m_transcript->verticalScrollBar();

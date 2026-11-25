@@ -34,7 +34,7 @@ int main(int argc,char **argv)
     ok&=check(decodeMeasurement(0x06,QByteArray::fromHex("610627100000000013880bb8"),&values)
               && values.value("map_kpa").toDouble()==100 &&
                  values.value("throttle_mv").toInt()==5000 &&
-                 values.value("rpm").toInt()==3000,"MAP TPS RPM");
+                 values.value("rpm").toInt()==3000 && values.value("_received").toMap().value("map_kpa").toUInt()==10000,"MAP TPS RPM");
     ok&=check(decodeMeasurement(0x0A,QByteArray::fromHex("6100271001f4"),&values)==false,
               "reject wrong response ID");
     ok&=check(decodeMeasurement(0x0A,QByteArray::fromHex("610a271001f4"),&values)

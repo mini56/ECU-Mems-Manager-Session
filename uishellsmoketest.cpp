@@ -257,6 +257,67 @@ bool verifyUi(MainWindow &window)
     if (!tabs || !navigation || tabs->count()!=16 || navigation->count()!=16)
         return false;
 
+    // Verify actual painted Qt tooltip borders, not only stylesheet strings.
+    auto renderedTooltip=[&](bool dark){
+        for(QWidget *tip:QApplication::topLevelWidgets()){
+            if(tip->windowType()!=Qt::ToolTip||!tip->inherits("QTipLabel")||!tip->isVisible())continue;
+            const QImage pixels=tip->grab().toImage();
+            if(pixels.isNull())continue;
+            int orange=0,background=0;
+            for(int y=0;y<pixels.height();++y)for(int x=0;x<pixels.width();++x){
+                const QColor c=pixels.pixelColor(x,y);
+                if(c.red()>190&&c.green()>80&&c.green()<190&&c.blue()<95&&
+                   (x<4||y<4||x>=pixels.width()-4||y>=pixels.height()-4))++orange;
+                if(dark?(c.red()<40&&c.green()<40&&c.blue()<40):
+                    (c.red()>235&&c.green()>235&&c.blue()>235))++background;
+            }
+            return orange>8&&background>pixels.width()&&tip->styleSheet()==helpTooltipStyle(dark);
+        }
+        return false;
+    };
+    auto verifyScrollbars=[&](QWidget *root,bool dark){
+        bool valid=true;
+        for(QScrollBar *bar:root->findChildren<QScrollBar*>()){
+            if(!bar->isVisibleTo(root))continue;
+            const int extent=bar->orientation()==Qt::Vertical?bar->width():bar->height();
+            if(extent!=kSessionScrollBarExtent||bar->styleSheet()!=sessionScrollBarStyle(dark)){
+                logSmoke(QStringLiteral("Scrollbar mismatch: %1 extent=%2").arg(bar->objectName()).arg(extent));
+                valid=false;
+            }
+        }
+        return valid;
+    };
+    if(SummaryTab *summary=window.findChild<SummaryTab*>()){
+        auto visibleRows=[summary](){
+            int rows=0;
+            for(QTableWidget *table:summary->findChildren<QTableWidget*>())
+                for(int r=0;r<table->rowCount();++r)if(!table->isRowHidden(r))++rows;
+            return rows;
+        };
+        ok=check(visibleRows()==56,"All 56 classic measurement rows must be visible offline")&&ok;
+        QVariantMap received;received.insert(QStringLiteral("battery_v"),12345);
+        QVariantMap sample;sample.insert(QStringLiteral("_received"),received);
+        sample.insert(QStringLiteral("battery_v"),12.345);
+        sample.insert(QStringLiteral("DATA_00_RAW"),QStringLiteral("61 00 AA BB"));
+        sample.insert(QStringLiteral("DATA_06_RAW"),QStringLiteral("61 06 01 02"));
+        summary->update2JData(sample,QStringLiteral("MEMS 2J"));
+        ok=check(visibleRows()==31,"Every acquired 2J field must have a row")&&ok;
+        bool raw1=false,raw2=false,rawBattery=false;
+        for(QTableWidget *table:summary->findChildren<QTableWidget*>())
+            for(int r=0;r<table->rowCount();++r)if(!table->isRowHidden(r)){
+                const QString raw=table->item(r,2)->text();
+                raw1|=raw==QStringLiteral("61 00 AA BB");
+                raw2|=raw==QStringLiteral("61 06 01 02");
+                rawBattery|=raw==QStringLiteral("12345");
+            }
+        ok=check(raw1&&raw2&&rawBattery,"2J raw groups and original numeric value are preserved")&&ok;
+        summary->update2JData(QVariantMap(),QStringLiteral("MEMS 3"));
+        ok=check(visibleRows()==12,"Every acquired MEMS 3 field must have a row")&&ok;
+        summary->showNaDocumentation();
+        ok=check(visibleRows()==56,"All 56 rows restored after family change")&&ok;
+    }
+
+
     // The ECU / ROSCO owner is restored byte-for-byte to SESSION 194.
     // In particular its single hexadecimal output must remain read-only,
     // and the misplaced SESSION 195 notepad must no longer be here.
@@ -746,6 +807,7 @@ bool verifyUi(MainWindow &window)
         auto *layout=new QVBoxLayout(&probe);
         auto *first=new QLabel(QStringLiteral("DTC 0"),&probe);
         auto *second=new QLabel(QStringLiteral("DTC 1"),&probe);
+        first->setStyleSheet(QStringLiteral("QLabel{background:transparent;border:0;}"));
         first->setToolTip(QStringLiteral("DTC zero unique"));
         second->setToolTip(QStringLiteral("DTC one unique\nDTC one unique"));
         for(auto *label:{first,second}){
@@ -774,6 +836,7 @@ bool verifyUi(MainWindow &window)
                 const QString other=label==first?QStringLiteral("DTC one unique"):QStringLiteral("DTC zero unique");
                 ok=check(text.contains(label->text())&&text.count(expected)==1&&!text.contains(other)
                     &&text.contains(QStringLiteral("<table width=")),"Correct row help, wrapped and deduplicated")&&ok;
+                ok=check(renderedTooltip(dark),"Actual Qt tooltip has orange border and contrasting background")&&ok;
             }
         }
         QToolTip::hideText();probe.hide();
@@ -1110,8 +1173,54 @@ bool verifyUi(MainWindow &window)
                      navigation->item(originalTab),
                  "Theme changes must not disturb 16 pages, sidebar geometry or selection") && ok;
 
+        // Test each actual page after its native layout is visible.
+        for(int page=0;page<tabs->count();++page){
+            tabs->setCurrentIndex(page);
+            QCoreApplication::processEvents();
+            ok=check(verifyScrollbars(tabs->widget(page),dark),"Every visible page scrollbar must use the common 9px style")&&ok;
+        }
+        tabs->setCurrentIndex(10);
+        QCoreApplication::processEvents();
+        if(QLabel *label=window.findChild<QLabel*>(QStringLiteral("label_0x0F"))){
+            auto *icon=label->findChild<QLabel*>(QStringLiteral("_ecuHelpBubble"),Qt::FindDirectChildrenOnly);
+            if(icon && icon->isVisible()){
+                const QPoint p=icon->geometry().center();
+                QHelpEvent e(QEvent::ToolTip,p,label->mapToGlobal(p));
+                QApplication::sendEvent(label,&e);
+                ok=check(renderedTooltip(dark),"Real All data tooltip uses the shared border")&&ok;
+            }else ok=check(false,"Real All data help icon not visible")&&ok;
+        }
+        QToolTip::hideText();
+        tabs->setCurrentIndex(8);
+        QCoreApplication::processEvents();
+        if(SummaryTab *summary=window.findChild<SummaryTab*>()){
+            bool checked=false;
+            for(QTableWidget *table:summary->findChildren<QTableWidget*>()){
+                for(int row=0;row<table->rowCount();++row){
+                    auto *item=table->item(row,1);
+                    if(!item||item->toolTip().isEmpty()||table->isRowHidden(row))continue;
+                    const QRect r=table->visualItemRect(item);
+                    if(!r.intersects(table->viewport()->rect()))continue;
+                    const QPoint p=r.center();
+                    QHelpEvent e(QEvent::ToolTip,p,table->viewport()->mapToGlobal(p));
+                    QApplication::sendEvent(table->viewport(),&e);
+                    checked=renderedTooltip(dark);break;
+                }
+                if(checked)break;
+            }
+            ok=check(checked,"Real All measurements tooltip uses the shared border")&&ok;
+        }
+        QToolTip::hideText();
+        tabs->setCurrentIndex(originalTab);
+        QCoreApplication::processEvents();
         manual.show();
         QCoreApplication::processEvents();
+        ok=check(verifyScrollbars(&manual,dark),"Help scrollbars must use the common 9px style")&&ok;
+        if(chapters){
+            ok=check(chapters->font().pointSizeF()>=10.9 && chapters->wordWrap() &&
+                     chapters->textElideMode()==Qt::ElideNone && chapters->width()>=300,
+                     "Help chapter navigation must be readable and wrapped")&&ok;
+        }
         ok=check(manual.styleSheet().contains(dark
                         ?QStringLiteral("#090e13")
                         :QStringLiteral("#ffffff")) &&
@@ -1356,7 +1465,7 @@ bool verifyUi(MainWindow &window)
                         QScrollBar *bar=area->verticalScrollBar();
                         const bool visible=bar && bar->isVisibleTo(&window);
                         const bool orange=bar && bar->styleSheet().contains(
-                            QStringLiteral("#ff8a1c"));
+                            QStringLiteral("#ff8a22"));
                         const bool mandatory=area->verticalScrollBarPolicy()
                             ==Qt::ScrollBarAlwaysOn;
                         const int contentH=area->widget()?area->widget()->height():-1;
@@ -1373,7 +1482,7 @@ bool verifyUi(MainWindow &window)
                             .arg(mandatory).arg(contentH)
                             .arg(viewportH).arg(range).arg(orange));
                         ok=check(mandatory && visible &&
-                                 bar->width()>=15,
+                                 bar->width()==kSessionScrollBarExtent && orange,
                                  "Mandatory Analysis vertical scrollbar not visible") && ok;
                         if(contentH>viewportH+1){
                             ok=check(range>0,
