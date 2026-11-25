@@ -1,5 +1,7 @@
 #include "../i18n.h"
 #include "MemsGlobalSearchIndex.h"
+#include "MemsPreparedReference.h"
+#include <QSaveFile>
 
 #include <QFile>
 #include <QFileInfo>
@@ -28,9 +30,9 @@ bool replaceFile(const QString &source,const QString &destination)
     QFile input(source);
     if(!input.open(QIODevice::ReadOnly)) return false;
     const QByteArray bytes=input.readAll();
-    QFile output(destination);
-    if(!output.open(QIODevice::WriteOnly|QIODevice::Truncate)) return false;
-    return output.write(bytes)==bytes.size();
+    QSaveFile output(destination);
+    if(!output.open(QIODevice::WriteOnly)) return false;
+    return output.write(bytes)==bytes.size() && output.commit();
 }
 
 void synchronizeReferenceLanguageFiles()
@@ -70,5 +72,8 @@ void synchronizeReferenceLanguageFiles()
 void synchronizeMemsReferenceLanguage()
 {
     // Called after the package has been extracted and before index creation.
+    if(QCoreApplication::instance())
+        QCoreApplication::instance()->setProperty("memsPreparedReferenceLanguage",referenceLanguage());
+    if(!memsPreparedReferenceRoot().isEmpty())return;
     synchronizeReferenceLanguageFiles();
 }

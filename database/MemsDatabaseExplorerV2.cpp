@@ -719,12 +719,8 @@ QString renderXml(const QString &path)
 
 QString xmlPath(const QString &generation)
 {
-    const QString root=QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)+QStringLiteral("/reference/fiches/");
-    if(generation==QStringLiteral("1.2")) return root+QStringLiteral("mems_1_2.xml");
-    if(generation==QStringLiteral("1.3")) return root+QStringLiteral("mems_1_3.xml");
-    if(generation==QStringLiteral("1.6")) return root+QStringLiteral("mems_1_6.xml");
-    if(generation==QStringLiteral("1.9")) return root+QStringLiteral("mems_1_9.xml");
-    return QString();
+    MemsReferenceDatabase reference;
+    return reference.generationXmlPath(generation);
 }
 
 QString pdfPath(const QString &generation)

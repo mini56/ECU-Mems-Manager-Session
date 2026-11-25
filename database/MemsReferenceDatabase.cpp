@@ -1,4 +1,5 @@
 #include "MemsReferenceDatabase.h"
+#include "MemsPreparedReference.h"
 
 #include <QByteArray>
 #include <QCoreApplication>
@@ -450,6 +451,19 @@ bool MemsReferenceDatabase::open()
 {
     if(m_database.isOpen()) return true;
 
+    const QString prepared=memsPreparedReferenceRoot();
+    if(!prepared.isEmpty()){
+        m_databasePath=prepared+QStringLiteral("/ecu_mems_reference_r5.sqlite");
+        const int revision=manifestDatabaseRevision(referenceRoot());
+        if(revision>0 && cachedDatabaseRevision(m_databasePath)!=revision)return false;
+        m_database=QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),m_connectionName);
+        m_database.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
+        m_database.setDatabaseName(m_databasePath);
+        if(!m_database.open())return false;
+        QSqlQuery query(m_database);
+        return query.exec(QStringLiteral("PRAGMA query_only = ON"));
+    }
+
     const QString cacheRoot=cacheReferenceRoot();
     QDir().mkpath(cacheRoot);
     m_databasePath=cacheRoot+QStringLiteral("/ecu_mems_reference_r5.sqlite");
@@ -670,7 +684,10 @@ int MemsReferenceDatabase::capabilityCount() const{return scalarInt(QStringLiter
 
 QString MemsReferenceDatabase::generationXmlPath(const QString &systemFamily) const
 {
-    const QString token=generationToken(systemFamily); const QString root=cacheReferenceRoot()+QStringLiteral("/fiches/");
+    const QString token=generationToken(systemFamily);
+    const QString prepared=memsPreparedReferenceRoot();
+    const QString root=prepared.isEmpty()?cacheReferenceRoot()+QStringLiteral("/fiches/"):
+        prepared+QStringLiteral("/fiches/")+memsPreparedReferenceLanguage()+QLatin1Char('/');
     if(token==QStringLiteral("1.2")) return root+QStringLiteral("mems_1_2.xml");
     if(token==QStringLiteral("1.3")) return root+QStringLiteral("mems_1_3.xml");
     if(token==QStringLiteral("1.6")) return root+QStringLiteral("mems_1_6.xml");

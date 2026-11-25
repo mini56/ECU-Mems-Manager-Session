@@ -16,6 +16,13 @@
 #include <QPushButton>
 #include <QIcon>
 #include <QFile>
+#include <QDir>
+#include <QFileInfo>
+#include <QElapsedTimer>
+#include <QTimer>
+#include <QStandardPaths>
+#include <QSaveFile>
+#include <QDebug>
 #include <QStringList>
 #include "splashprogress.h"
 
@@ -27,6 +34,7 @@
 #include "database/MemsReferenceLanguageSync.h"
 #include "database/MemsGlobalSearchIndex.h"
 #include "database/MemsReferencePackageRefresh.h"
+#include "database/MemsPreparedReference.h"
 #include "i18n.h"
 #include "singleinstance.h"
 #include "uishellsmoketest.h"
@@ -308,6 +316,44 @@ int main(int argc, char *argv[])
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling, true);
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true);
     QApplication app(argc, argv);
+    QElapsedTimer startupClock;
+    startupClock.start();
+    // Build-time only: isolated cache, no ECU, no user data and no UI.
+    if(app.arguments().contains(QStringLiteral("--prepare-reference-cache"))){
+        const QStringList args=app.arguments();
+        if(args.size()!=4)return 20;
+        const QString lang=args.at(2), output=args.at(3);
+        if(!QStringList{QStringLiteral("fr"),QStringLiteral("en"),QStringLiteral("es"),
+                         QStringLiteral("it"),QStringLiteral("pt"),QStringLiteral("de")}.contains(lang))return 21;
+        memsDisablePreparedReference();
+        QStandardPaths::setTestModeEnabled(true);
+        app.setOrganizationName(QStringLiteral("ECU Mems Reference Builder"));
+        app.setApplicationName(QStringLiteral("ECU Mems Reference Builder"));
+        if(!I18n::load(lang) || !refreshMemsReferencePackage())return 22;
+        MemsReferenceDatabase reference;
+        if(!reference.open())return 23;
+        const QString dbPath=reference.databasePath();
+        reference.close();
+        synchronizeMemsReferenceLanguage();
+        if(!MemsGlobalSearchIndex::ensureBuilt())return 24;
+        auto copy=[&](const QString &source,const QString &target){
+            if(!QDir().mkpath(QFileInfo(target).absolutePath()))return false;
+            if(QFileInfo::exists(target))return false;
+            return QFile::copy(source,target);
+        };
+        const QString database=output+QStringLiteral("/ecu_mems_reference_r5.sqlite");
+        if(!QFileInfo::exists(database) && !copy(dbPath,database))return 25;
+        for(const QString &g:{QStringLiteral("1.2"),QStringLiteral("1.3"),QStringLiteral("1.6"),QStringLiteral("1.9")}){
+            const QString source=reference.generationXmlPath(g);
+            if(!copy(source,output+QStringLiteral("/fiches/")+lang+QLatin1Char('/')+QFileInfo(source).fileName()))return 26;
+        }
+        if(!copy(MemsGlobalSearchIndex::indexPath(),output+QStringLiteral("/indexes/")+lang+QStringLiteral(".sqlite")))return 27;
+        qInfo().noquote()<<"REFERENCE_BUILD_READY"<<lang<<startupClock.elapsed();
+        return 0;
+    }
+    const QString startupProbe=app.arguments().contains(QStringLiteral("--session-startup-probe"))
+        ? qEnvironmentVariable("MEMS_STARTUP_READY_FILE"):QString();
+    if(!startupProbe.isEmpty())QStandardPaths::setTestModeEnabled(true);
     TooltipBubbleManager::install(nullptr);
     if (smokeRequested) {
         QFile trace(QStringLiteral("session_ui_smoke_trace.log"));
@@ -379,6 +425,7 @@ int main(int argc, char *argv[])
 
     I18n::load(language);
     I18n::install(&app);
+    app.setProperty("memsPreparedReferenceLanguage",language);
 
     DesktopShortcut::ensureIfEnabled();
 
@@ -391,62 +438,53 @@ int main(int argc, char *argv[])
     setStep(g_profileStep, StartupStepState::Done, I18n::text(16));
     setStartupProgress(12);
 
-    MemsReferencePackageAction referenceAction = memsReferencePackageAction();
-    if (referenceAction == MemsReferencePackageAction::Install)
-        setStep(g_databaseStep, StartupStepState::Active, I18n::text(18));
-    else if (referenceAction == MemsReferencePackageAction::Update)
-        setStep(g_databaseStep, StartupStepState::Active, I18n::text(19));
-    else
-        setStep(g_databaseStep, StartupStepState::Active, I18n::text(17));
+    setStep(g_databaseStep, StartupStepState::Active, I18n::text(17));
     setStartupProgress(20);
 
-    if (!refreshMemsReferencePackage(&referenceAction))
-    {
-        setStep(g_databaseStep, StartupStepState::Error, I18n::text(27));
-        QMessageBox::critical(nullptr, I18n::text(12), I18n::text(27));
-        splash->close();
-        delete splash;
-        return 1;
+    // Normal installed builds open the read-only prepared reference directly.
+    // If missing or invalid, preserve the existing local recovery path.
+    auto prepareReference=[&](){
+        MemsReferencePackageAction action=MemsReferencePackageAction::Unavailable;
+        if(!refreshMemsReferencePackage(&action))return false;
+        MemsReferenceDatabase reference;
+        if(!reference.open())return false;
+        reference.close();
+        synchronizeMemsReferenceLanguage();
+        qInfo()<<"STARTUP_REFERENCE_READY_MS"<<startupClock.elapsed();
+        return true;
+    };
+    bool referenceReady=prepareReference();
+    if(!referenceReady && !memsPreparedReferenceRoot().isEmpty()){
+        memsDisablePreparedReference();
+        referenceReady=prepareReference();
     }
-
-    MemsReferenceDatabase referenceDatabase;
-    if (!referenceDatabase.open())
-    {
-        setStep(g_databaseStep, StartupStepState::Error, I18n::text(27));
-        QMessageBox::critical(nullptr, I18n::text(12), I18n::text(27));
-        splash->close();
-        delete splash;
-        return 1;
+    if(!referenceReady){
+        setStep(g_databaseStep,StartupStepState::Error,I18n::text(27));
+        QMessageBox::critical(nullptr,I18n::text(12),I18n::text(27));
+        splash->close();delete splash;return 1;
     }
-    referenceDatabase.close();
-    synchronizeMemsReferenceLanguage();
-
     DatabaseManager database;
-    if (!database.open())
-    {
-        setStep(g_databaseStep, StartupStepState::Error, I18n::text(13));
-        QMessageBox::critical(nullptr, I18n::text(12), I18n::text(13));
-        splash->close();
-        delete splash;
-        return 1;
+    if(!database.open()){
+        setStep(g_databaseStep,StartupStepState::Error,I18n::text(13));
+        QMessageBox::critical(nullptr,I18n::text(12),I18n::text(13));
+        splash->close();delete splash;return 1;
     }
-
-    setStep(g_databaseStep, StartupStepState::Done, I18n::text(20));
+    setStep(g_databaseStep,StartupStepState::Done,I18n::text(20));
     setStartupProgress(42);
-
-    setStep(g_indexStep, StartupStepState::Active, I18n::text(21));
+    setStep(g_indexStep,StartupStepState::Active,I18n::text(21));
     setStartupProgress(50);
     QString indexError;
-    if (!MemsGlobalSearchIndex::ensureBuilt(&indexError))
-    {
-        Q_UNUSED(indexError);
-        setStep(g_indexStep, StartupStepState::Error, I18n::text(28));
-        QMessageBox::critical(nullptr, I18n::text(12), I18n::text(28));
-        database.close();
-        splash->close();
-        delete splash;
-        return 1;
+    bool indexReady=MemsGlobalSearchIndex::ensureBuilt(&indexError);
+    if(!indexReady && !memsPreparedReferenceRoot().isEmpty()){
+        memsDisablePreparedReference();
+        indexReady=prepareReference() && MemsGlobalSearchIndex::ensureBuilt(&indexError);
     }
+    if(!indexReady){
+        setStep(g_indexStep,StartupStepState::Error,I18n::text(28));
+        QMessageBox::critical(nullptr,I18n::text(12),I18n::text(28));
+        database.close();splash->close();delete splash;return 1;
+    }
+    qInfo()<<"STARTUP_INDEX_READY_MS"<<startupClock.elapsed();
     setStep(g_indexStep, StartupStepState::Done, I18n::text(22));
     setStartupProgress(68);
 
@@ -506,6 +544,17 @@ int main(int argc, char *argv[])
             QStringLiteral("Windows n'a pas accepté le masquage automatique. "
                 "Cette option a été désactivée sans modifier vos autres réglages."));
     }
+    QTimer::singleShot(0,&window,[&](){
+        qInfo()<<"STARTUP_WINDOW_READY_MS"<<startupClock.elapsed();
+        if(!startupProbe.isEmpty() && window.isVisible()){
+            QSaveFile marker(startupProbe);
+            if(marker.open(QIODevice::WriteOnly)){
+                const QByteArray payload=QByteArray::number(startupClock.elapsed())+"\n"+
+                    (memsPreparedReferenceRoot().isEmpty()?"fallback":"prepared")+"\n";
+                if(marker.write(payload)==payload.size())marker.commit();
+            }
+        }
+    });
     const int result = app.exec();
     database.close();
     return result;

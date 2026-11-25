@@ -1,5 +1,6 @@
 #include "MemsGlobalSearchIndex.h"
 #include "MemsReferenceDatabase.h"
+#include "MemsPreparedReference.h"
 
 #include <QDateTime>
 #include <QDir>
@@ -495,9 +496,6 @@ QString sourceSignature(const QString &databasePath, const QStringList &xmlPaths
     parts << QStringLiteral("global-search-v5")
           << QString::number(databaseInfo.size())
           << QString::number(databaseInfo.lastModified().toMSecsSinceEpoch());
-#ifdef APP_BUILD_NUMBER
-    parts << QStringLiteral(APP_BUILD_NUMBER);
-#endif
     for (const QString &path : xmlPaths) {
         QFileInfo info(path);
         parts << QString::number(info.size())
@@ -773,12 +771,33 @@ QVariantList queryIndex(const QString &path,
 
 QString MemsGlobalSearchIndex::indexPath()
 {
+    const QString prepared=memsPreparedReferenceIndex();
+    if(!prepared.isEmpty())return prepared;
     return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
         + QStringLiteral("/reference/mems_global_search_r1.sqlite");
 }
 
 bool MemsGlobalSearchIndex::ensureBuilt(QString *errorMessage)
 {
+    const QString prepared=memsPreparedReferenceIndex();
+    if(!prepared.isEmpty()){
+        const QString connection=QStringLiteral("MEMS_PREPARED_INDEX_%1").arg(QUuid::createUuid().toString());
+        bool valid=false;
+        {
+            QSqlDatabase db=QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),connection);
+            db.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
+            db.setDatabaseName(prepared);
+            if(db.open()){
+                QSqlQuery query(db);
+                valid=query.exec(QStringLiteral("SELECT value FROM search_meta WHERE key='schema_version'"))
+                    && query.next() && query.value(0).toString()==QStringLiteral("5");
+                if(valid)valid=query.exec(QStringLiteral("SELECT id FROM search_documents LIMIT 1")) && query.next();
+            }
+        }
+        QSqlDatabase::removeDatabase(connection);
+        if(!valid && errorMessage)*errorMessage=QStringLiteral("prepared-reference-index-invalid");
+        return valid;
+    }
     MemsReferenceDatabase reference;
     if (!reference.open()) {
         if (errorMessage)

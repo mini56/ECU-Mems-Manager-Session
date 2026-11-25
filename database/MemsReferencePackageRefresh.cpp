@@ -1,4 +1,5 @@
 #include "MemsReferencePackageRefresh.h"
+#include "MemsPreparedReference.h"
 
 #include <QCoreApplication>
 #include <QCryptographicHash>
@@ -49,11 +50,8 @@ QByteArray referencePackageSignature(const QString &root)
 
     QCryptographicHash hash(QCryptographicHash::Sha256);
 
-    // The cache belongs to one packaged reference set. The GitHub Actions
-    // build number remains part of the signature so two executable builds
-    // never accidentally share stale generated data.
-    hash.addData("build:",6);
-    hash.addData(QByteArray(APP_BUILD_NUMBER));
+    // The cache follows the reference content, not the executable release.
+    hash.addData("reference-cache-schema-1");
     hash.addData("\0",1);
 
     // IMPORTANT: hash every file below database/reference. No resource is
@@ -119,10 +117,8 @@ void removeMatching(const QString &directory,const QStringList &patterns)
 
 }
 
-MemsReferencePackageAction memsReferencePackageAction()
+static MemsReferencePackageAction actionForSignature(const QByteArray &signature)
 {
-    const QString sourceRoot=referenceRoot();
-    const QByteArray signature=referencePackageSignature(sourceRoot);
     if(signature.isEmpty())
         return MemsReferencePackageAction::Unavailable;
 
@@ -139,9 +135,19 @@ MemsReferencePackageAction memsReferencePackageAction()
     return MemsReferencePackageAction::Install;
 }
 
+MemsReferencePackageAction memsReferencePackageAction()
+{
+    if(!memsPreparedReferenceRoot().isEmpty())return MemsReferencePackageAction::None;
+    return actionForSignature(referencePackageSignature(referenceRoot()));
+}
 bool refreshMemsReferencePackage(MemsReferencePackageAction *detectedAction)
 {
-    const MemsReferencePackageAction action=memsReferencePackageAction();
+    if(!memsPreparedReferenceRoot().isEmpty()){
+        if(detectedAction)*detectedAction=MemsReferencePackageAction::None;
+        return true;
+    }
+    const QByteArray signature=referencePackageSignature(referenceRoot());
+    const MemsReferencePackageAction action=actionForSignature(signature);
     if(detectedAction)
         *detectedAction=action;
 
@@ -149,11 +155,6 @@ bool refreshMemsReferencePackage(MemsReferencePackageAction *detectedAction)
         return false;
     if(action==MemsReferencePackageAction::None)
         return true;
-
-    const QString sourceRoot=referenceRoot();
-    const QByteArray signature=referencePackageSignature(sourceRoot);
-    if(signature.isEmpty())
-        return false;
 
     const QString destinationRoot=cacheRoot();
     QDir().mkpath(destinationRoot);
