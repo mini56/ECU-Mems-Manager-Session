@@ -23,6 +23,10 @@
 #include <QStandardPaths>
 #include <QSaveFile>
 #include <QDebug>
+#include <QProcess>
+#include <QEventLoop>
+#include <QLayout>
+#include "uishell.h"
 #include <QStringList>
 #include "splashprogress.h"
 
@@ -364,6 +368,16 @@ int main(int argc, char *argv[])
     // or alter normal user settings. This runs the actual MainWindow and UI code.
     if (app.arguments().contains(QStringLiteral("--session-ui-smoke-test")))
         return runUiShellSmokeTest(app);
+    QStringList restartArgs=app.arguments().mid(1);
+    const int parentArg=restartArgs.indexOf(QStringLiteral("--session-restart-parent"));
+    if(parentArg>=0){
+        if(parentArg+1>=restartArgs.size())return 29;
+        bool valid=false;
+        const quint32 pid=restartArgs.at(parentArg+1).toUInt(&valid);
+        if(!valid || !waitForRestartParent(pid))return 29;
+        restartArgs.removeAt(parentArg+1);
+        restartArgs.removeAt(parentArg);
+    }
     installSingleInstanceManager(&app);
     // Recover any interrupted session before reapplying the user's current
     // preference. This is independent of the installed documentary packs.
@@ -494,6 +508,7 @@ int main(int argc, char *argv[])
     g_splashProgressCallback = updateStartupProgress;
 
     MainWindow window;
+    qInfo()<<"STARTUP_WINDOW_CONSTRUCTED_MS"<<startupClock.elapsed();
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &window, [&window]() {
         if (window.isVisible())
             window.close();
@@ -506,20 +521,31 @@ int main(int argc, char *argv[])
     }
 
     setStep(g_portsStep, StartupStepState::Done, I18n::text(24));
+    setStep(g_interfaceStep, StartupStepState::Active, I18n::text(25));
+    setStartupProgress(94);
+    // Build the full native shell while the splash still covers startup.
+    // Give responsive layout its final screen dimensions before first show.
+    if (QScreen *screen=QGuiApplication::primaryScreen()) {
+        const QRect available=screen->availableGeometry();
+        window.resize(available.size());
+        window.move(available.topLeft());
+    }
+    window.ensurePolished();
+    if(window.centralWidget() && window.centralWidget()->layout())
+        window.centralWidget()->layout()->activate();
+    buildUiShell(&window);
+    qInfo()<<"STARTUP_SHELL_READY_MS"<<startupClock.elapsed();
+    window.showMaximized();
+    app.processEvents(QEventLoop::ExcludeUserInputEvents);
+    if(window.centralWidget()){
+        if(window.centralWidget()->layout())window.centralWidget()->layout()->activate();
+        window.centralWidget()->repaint();
+    }
+    window.repaint();
+    app.processEvents(QEventLoop::ExcludeUserInputEvents);
+    qInfo()<<"STARTUP_FIRST_RENDER_MS"<<startupClock.elapsed();
     setStep(g_interfaceStep, StartupStepState::Done, I18n::text(26));
     setStartupProgress(100);
-
-    // Standard resizable, maximized Qt window managed by Windows.
-    QScreen *screen = QGuiApplication::primaryScreen();
-    if (screen)
-    {
-        const QRect available = screen->availableGeometry();
-        window.resize(qMin(1300, available.width()), qMin(690, available.height()));
-        window.move(available.center() -
-                    QPoint(window.width() / 2, window.height() / 2));
-    }
-
-    app.processEvents();
     splash->finish(&window);
     delete splash;
     g_startupSplash = nullptr;
@@ -531,7 +557,6 @@ int main(int argc, char *argv[])
     g_interfaceStep = nullptr;
     g_splashProgressCallback = nullptr;
 
-    window.showMaximized();
     // Defaults off. An already hidden taskbar belongs to Windows and is
     // never forcibly unhidden by the application.
     const bool taskbarRequested=languageSettings.value(
@@ -546,7 +571,7 @@ int main(int argc, char *argv[])
     }
     QTimer::singleShot(0,&window,[&](){
         qInfo()<<"STARTUP_WINDOW_READY_MS"<<startupClock.elapsed();
-        if(!startupProbe.isEmpty() && window.isVisible()){
+        if(!startupProbe.isEmpty() && window.isVisible() && window.property("uiShellReady").toBool()){
             QSaveFile marker(startupProbe);
             if(marker.open(QIODevice::WriteOnly)){
                 const QByteArray payload=QByteArray::number(startupClock.elapsed())+"\n"+
@@ -557,5 +582,14 @@ int main(int argc, char *argv[])
     });
     const int result = app.exec();
     database.close();
+    if(app.property("ecuRestartRequested").toBool()){
+#ifdef Q_OS_WIN
+        restartArgs<<QStringLiteral("--session-restart-parent")<<QString::number(QCoreApplication::applicationPid());
+#endif
+        if(!QProcess::startDetached(QCoreApplication::applicationFilePath(),restartArgs)){
+            QMessageBox::critical(nullptr,I18n::text(29100),I18n::text(29102));
+            return 30;
+        }
+    }
     return result;
 }

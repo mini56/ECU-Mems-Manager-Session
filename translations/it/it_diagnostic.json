@@ -16,8 +16,8 @@
   "6814": "DTC0=%1  DTC1=%2  DTC2=%3",
   "6815": "anomalia",
   "6816": "OK",
-  "6817": "Leggere i bit interessati prima di qualsiasi cancellazione.",
-  "6818": "Nessun bit di guasto attivo nelle trame 0x7D/0x80.",
+  "6817": "Consultare i guasti segnalati prima di cancellarli.",
+  "6818": "Nessun guasto attivo identificato nei gruppi sorvegliati.",
   "6819": "Tensione batteria",
   "6820": "%1 V",
   "6821": "Tensione bassa: controllare batteria, masse e alimentazione ECU.",
@@ -36,7 +36,7 @@
   "6834": "Valore decodificato fuori intervallo: controllare la misura MAP.",
   "6835": "TPS",
   "6836": "È segnalato un guasto TPS/alimentazione TPS: controllare alimentazione, massa e progressione del sensore.",
-  "6837": "Nessun guasto TPS noto attivo nei bit monitorati.",
+  "6837": "Nessun guasto TPS noto attivo nei circuiti sorvegliati.",
   "6838": "lambda",
   "6839": "U=%1  freq=%2  duty=%3  stato=%4",
   "6840": "anomalia",
@@ -97,5 +97,6 @@
   "6895": "Diagnostica",
   "6896": "Impossibile scrivere il rapporto.",
   "6897": "Decodifica: (7D14-15 grezzo - 32768) - correzione della posizione minimo a caldo. La correzione segue il valore configurato nella scheda Impostazioni; non è codificata in modo fisso. Il valore indicativo è coerente quando rimane vicino a zero.",
-"18121":"Tempo di carica superiore a 3,5 ms e fino a 4,0 ms a circa 14 V: monitorare. Controllare misura e circuito primario se persiste.","18122":"Motore fermo: misura visualizzata solo per informazione, senza diagnosi automatica della bobina."
+  "18121": "Tempo di carica superiore a 3,5 ms e fino a 4,0 ms a circa 14 V: monitorare. Controllare misura e circuito primario se persiste.",
+  "18122": "Motore fermo: misura visualizzata solo per informazione, senza diagnosi automatica della bobina."
 }

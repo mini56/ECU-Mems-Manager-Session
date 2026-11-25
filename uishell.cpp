@@ -159,7 +159,6 @@ static void applySidebarState(QMainWindow *w)
 
     if(utils) {
         if(QLabel *title=utils->findChild<QLabel*>(QStringLiteral("darkUtilitiesTitle"))) title->setVisible(!collapsed);
-        if(QLineEdit *file=w->findChild<QLineEdit*>(QStringLiteral("m_logFileNameBox"))) file->setVisible(!collapsed);
         for(QPushButton *b:utils->findChildren<QPushButton*>(QString(),Qt::FindDirectChildrenOnly)) {
             rememberButtonText(b);
             const QString original=b->property("darkOriginalText").toString();
@@ -281,7 +280,6 @@ static void ensureSidebar(QMainWindow *w)
     QVBoxLayout *uv=utils?qobject_cast<QVBoxLayout*>(utils->layout()):nullptr;
     if(!utils || !uv) return;
 
-    QLineEdit *file=w->findChild<QLineEdit*>(QStringLiteral("m_logFileNameBox"));
     QPushButton *start=w->findChild<QPushButton*>(QStringLiteral("m_startLoggingButton"));
     QPushButton *stop=w->findChild<QPushButton*>(QStringLiteral("m_stopLoggingButton"));
     QPushButton *snapshot=w->findChild<QPushButton*>(QStringLiteral("darkSnapshotButton"));
@@ -291,13 +289,6 @@ static void ensureSidebar(QMainWindow *w)
     if(snapshot) snapshot->setObjectName(QStringLiteral("darkSnapshotButton"));
     if(view) view->setObjectName(QStringLiteral("darkViewCapturesButton"));
 
-    if(file) {
-        file->setParent(utils);
-        file->setMinimumHeight(27); file->setMaximumHeight(29);
-        file->setMinimumWidth(0); file->setMaximumWidth(QWIDGETSIZE_MAX);
-        file->setStyleSheet(QStringLiteral("QLineEdit{background:#071016;color:#e2e9ed;border:1px solid #34434e;border-radius:5px;padding:3px 7px;}QLineEdit:focus{border-color:#ff7a00;}"));
-        if(uv->indexOf(file)<0) uv->addWidget(file);
-    }
     if(start) { start->setParent(utils); styleSidebarButton(start,QStringLiteral("record")); if(uv->indexOf(start)<0) uv->addWidget(start); }
     if(stop) { stop->setParent(utils); styleSidebarButton(stop,QStringLiteral("stop")); if(uv->indexOf(stop)<0) uv->addWidget(stop); }
     if(snapshot) { snapshot->setParent(utils); styleSidebarButton(snapshot,QStringLiteral("camera")); if(uv->indexOf(snapshot)<0) uv->addWidget(snapshot); }
@@ -795,13 +786,8 @@ static QString globalStyle()
         "QSlider::handle:horizontal{width:12px;margin:-4px 0;background:%6;border:1px solid %5;border-radius:6px;}"
         "QProgressBar{background:#0a1117;color:#dfe5e9;border:1px solid %3;border-radius:3px;text-align:center;}"
         "QProgressBar::chunk{background:%6;border-radius:2px;}"
-        // QToolTip is a separate top-level widget. Specify BOTH colors:
-        // on Windows the generic QWidget rule otherwise yielded black text
-        // against a dark tooltip background for multiple help bubbles.
-        "QToolTip{background-color:#000000;color:#ffffff;"
-        "border:1px solid #ff8a22;border-radius:8px;padding:6px 9px;}"
     ).arg(QString::fromLatin1(kBg), QString::fromLatin1(kText), QString::fromLatin1(kBorder), QString::fromLatin1(kPanel),
-          QString::fromLatin1(kOrange2), QString::fromLatin1(kOrange));
+          QString::fromLatin1(kOrange2), QString::fromLatin1(kOrange)) + helpTooltipStyle(true);
 }
 
 static QFrame *makeCard(QWidget *parent, const QString &objectName)
@@ -970,11 +956,7 @@ static QFrame *buildBottomStatus(QMainWindow *window)
     h->setContentsMargins(0,0,0,0);
     h->setSpacing(0);
 
-    QString fileName=QStringLiteral("--");
-    if(QLineEdit *f=window->findChild<QLineEdit*>(QStringLiteral("m_logFileNameBox"))){
-        const QString current=f->text().trimmed();
-        if(!current.isEmpty())fileName=current;
-    }
+    QLineEdit *file=window->findChild<QLineEdit*>(QStringLiteral("m_logFileNameBox"));
 
     QSettings settings(QSettings::IniFormat,QSettings::UserScope,PROJECTNAME);
     settings.beginGroup(QStringLiteral("Settings"));
@@ -982,8 +964,25 @@ static QFrame *buildBottomStatus(QMainWindow *window)
     settings.endGroup();
     if(portName.isEmpty())portName=QStringLiteral("--");
 
-    QLabel *file=new QLabel(I18n::text(7115).arg(fileName),bar);
-    file->setObjectName(QStringLiteral("statusFile"));
+    auto *fileGroup=new QWidget(bar);
+    fileGroup->setObjectName(QStringLiteral("statusFileEditor"));
+    auto *fileLayout=new QHBoxLayout(fileGroup);
+    fileLayout->setContentsMargins(3,0,3,0);
+    fileLayout->setSpacing(2);
+    auto *fileLabel=new QLabel(I18n::text(7115).arg(QString()).trimmed(),fileGroup);
+    fileLabel->setAlignment(Qt::AlignVCenter|Qt::AlignLeft);
+    fileLayout->addWidget(fileLabel);
+    if(file){
+        file->setParent(fileGroup);
+        file->setMinimumWidth(80);
+        file->setMaximumWidth(QWIDGETSIZE_MAX);
+        file->setMinimumHeight(20);
+        file->setMaximumHeight(27);
+        file->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+        fileLabel->setBuddy(file);
+        fileLayout->addWidget(file,1);
+        file->show();
+    }
     QLabel *mode=new QLabel(I18n::text(7909).arg(I18n::text(7912)),bar);
     mode->setObjectName(QStringLiteral("statusReadMode"));
     QLabel *port=new QLabel(QStringLiteral("%1 : %2").arg(I18n::text(7114),portName),bar);
@@ -991,13 +990,13 @@ static QFrame *buildBottomStatus(QMainWindow *window)
     QLabel *firmware=new QLabel(I18n::text(7916).arg(QStringLiteral("--")),bar);
     firmware->setObjectName(QStringLiteral("statusFirmware"));
 
-    for(QLabel *label:{file,mode,port,firmware}){
+    for(QLabel *label:{mode,port,firmware}){
         label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
         label->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
     }
     mode->setStyleSheet(QStringLiteral("color:#8d99a3;background:transparent;border-right:1px solid %1;padding:0 10px;font-weight:700;").arg(QString::fromLatin1(kBorder)));
 
-    h->addWidget(file,3);
+    h->addWidget(fileGroup,3);
     h->addWidget(mode,2);
     h->addWidget(port,1);
     h->addWidget(firmware,1);

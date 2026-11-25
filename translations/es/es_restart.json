@@ -1,0 +1,5 @@
+{
+  "29100": "Reiniciar Manager",
+  "29101": "Hay una ECU conectada o una grabación activa. El reinicio cerrará la sesión y los registros. ¿Continuar?",
+  "29102": "El reinicio automático ha fallado. Inicie Manager manualmente."
+}

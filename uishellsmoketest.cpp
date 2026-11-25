@@ -35,6 +35,7 @@
 #include <QPushButton>
 #include <QToolButton>
 #include <QLabel>
+#include <QLineEdit>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QImage>
@@ -779,6 +780,12 @@ bool verifyUi(MainWindow &window)
         qApp->setStyleSheet(previousStyle);
         QCoreApplication::processEvents();
     }
+    auto *fileEditor=window.findChild<QLineEdit*>(QStringLiteral("m_logFileNameBox"));
+    auto *statusEditor=window.findChild<QWidget*>(QStringLiteral("statusFileEditor"));
+    ok=check(fileEditor&&statusEditor&&statusEditor->isAncestorOf(fileEditor)&&
+             window.findChildren<QLineEdit*>(QStringLiteral("m_logFileNameBox")).size()==1&&
+             !window.findChild<QLabel*>(QStringLiteral("statusFile")),
+             "Single editable recording filename is in the bottom status")&&ok;
     OptionsDialog *options=window.findChild<OptionsDialog*>();
     QCheckBox *autoHide=options?options->findChild<QCheckBox*>(
         QStringLiteral("taskbarAutoHideCheckbox")):nullptr;

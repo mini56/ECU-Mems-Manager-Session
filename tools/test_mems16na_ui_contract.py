@@ -41,10 +41,9 @@ assert 'IaMemsNa::observation(na,data' in service and 'm_naReport+' in service
 assert 'naAnswer(trimmed)' in route
 assert 'documentedUnusedDtc(r.group)' in source and 'documentedUnusedDtc(groups[i])' in summary
 styles=Path('styles.h').read_text(encoding='utf-8')
-for index,background,foreground in [(1,'#ffffff','#000000'),(2,'#000000','#ffffff')]:
-    part=styles.split('QToolTip {')[index].split('}')[0]
-    assert 'background-color: '+background+';' in part and 'color: '+foreground+';' in part
-    assert 'border: 1px solid #ff8a22;' in part and 'border-radius: 8px;' in part
+assert 'inline QString helpTooltipStyle(bool dark)' in styles
+assert 'helpTooltipStyle(false)' in styles and 'helpTooltipStyle(true)' in styles
+assert 'border: 1px solid #ff8a22;' in styles and 'border-radius: 8px;' in styles
 print('SESSION_209_SHARED_DIAGNOSTIC_AND_HELP_CONTRACT_OK')
 
 # SESSION 210: one source of the small orange help pictogram.
@@ -64,5 +63,17 @@ assert 'TooltipBubbleManager::install(dialog)' in manager
 assert 'TooltipBubbleManager::helpIconSize()' in summary
 assert 'HELP' not in Path('helpbubble.svg').read_text(encoding='utf-8')
 assert '<file>helpbubble.png</file>' in Path('resources.qrc').read_text(encoding='utf-8')
-assert 'QToolTip{background-color:#000000;color:#ffffff;' in Path('uishell.cpp').read_text(encoding='utf-8')
+assert '+ helpTooltipStyle(true)' in Path('uishell.cpp').read_text(encoding='utf-8')
 print('SESSION_210_SHARED_SMALL_HELP_ICON_SOURCE_CONTRACT_OK')
+
+shell=Path('uishell.cpp').read_text(encoding='utf-8')
+main=Path('main.cpp').read_text(encoding='utf-8')
+options=Path('optionsdialog.cpp').read_text(encoding='utf-8')
+assert 'file->setParent(fileGroup)' in shell and 'file->setParent(utils)' not in shell
+assert 'file->setVisible(!collapsed)' not in shell and 'statusFileEditor' in shell
+assert main.index('buildUiShell(&window)') < main.index('window.showMaximized()') < main.index('splash->finish(&window)')
+assert main.index('STARTUP_FIRST_RENDER_MS') < main.index('splash->finish(&window)')
+assert 'm_options->getThemeChanged() || m_options->getLanguageChanged()' in source
+assert 'waitForRestartParent(pid)' in main and 'ecuRestartRequested' in main
+assert 'confirm.exec()!=QMessageBox::Yes' in options and 'settings.sync();' in options
+print('SESSION_212_STARTUP_RESTART_STATUS_CONTRACT_OK')

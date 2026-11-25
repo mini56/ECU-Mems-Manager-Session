@@ -51,7 +51,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-4">4. Einstellungen</h2>
-<p>Enthält je nach ECU Serviceeinstellungen für Leerlauf, Kraftstoff und Zündung. Lesen Sie Hinweise und Risiken, bevor Sie Werte ändern. Für andere Profile bleibt die bisherige Interpretation von 7D14-15 erhalten. Beim identifizierten MEMS 1.6 Saugmotor ist die Leerlaufdrehzahlabweichung das Rohwort minus 32768, ohne Korrektur der Warmleerlaufposition.</p>
+<p>Die Leerlaufdrehzahlabweichung wird in U/min angezeigt; ihre Interpretation hängt vom erkannten Steuergerät ab.</p>
 
 
 <p>Die große Anzeige zeigt die Motordrehzahl. Darunter befinden sich die vom Steuergerät unterstützten Leerlauf-, Kraftstoff- und Zündzeitpunkt-Einstellungen. Prüfen Sie die angezeigten Werte vor einer Änderung.</p><p><b>ECU-Einstellungen</b></p>
@@ -59,7 +59,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-5">5. Fehler</h2>
-<p><a href="#chapter-mems16na">Firmwareabhängige Einheiten, DTC-Masken und Aufzeichnungen siehe Kapitel MEMS 1.6 Saugmotor.</a></p>
+<p><a href="#chapter-mems16na">Messwerte, Fehler und Aufzeichnungen siehe Kapitel MEMS 1.6 Saugmotor.</a></p>
 <p>Zeigt ECU-Fehler, gespeicherte Auffälligkeiten und Statusinformationen. Fehler erst lesen und verstehen, dann löschen. Einige Zähler benötigen einen vollständigen ECU-Neustart.</p>
 
 
@@ -76,11 +76,11 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-7">7. Alle Messwerte</h2>
-<p><a href="#chapter-mems16na">Firmwareabhängige Einheiten, DTC-Masken und Aufzeichnungen siehe Kapitel MEMS 1.6 Saugmotor.</a></p>
-<p>Zeigt Parameter mit Hilfetext, empfangenem Rohwert und interpretiertem Wert, soweit die Umrechnung dokumentiert ist. Beispielsweise können 138 bei einer dokumentierten Batteriespannung 13,8 V bedeuten. Unbekannte Felder werden nicht erfunden.</p>
+<p><a href="#chapter-mems16na">Messwerte, Fehler und Aufzeichnungen siehe Kapitel MEMS 1.6 Saugmotor.</a></p>
+<p>Die Spalten ECU-Empfangswert und Interpretiert unterscheiden Rohwerte und physikalische Messwerte. Hilfesymbole erklären die Parameter; unbekannte Informationen bleiben gekennzeichnet.</p>
 
 
-<p>Die tatsächliche Ansicht hat die Spalten Parameter, ECU-Empfangswert und Interpretiert. Beispielsweise entspricht der Rohwert 137 in der Abbildung 13,7 V Batteriespannung. Hilfesymbole geben ergänzende Erläuterungen.</p><p><b>Alle Messwerte</b></p>
+<p>Die Spalten ECU-Empfangswert und Interpretiert unterscheiden Rohwerte und physikalische Messwerte. Hilfesymbole erklären die Parameter; unbekannte Informationen bleiben gekennzeichnet.</p><p><b>Alle Messwerte</b></p>
 <p><img src=":/help/images/Capture d’écran (899).png" width="550"></p>
 
 
@@ -93,45 +93,44 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-mems16na">MEMS 1.6 Saugmotor — firmwareabhängige Messwerte und Fehler</h2>
-<p>Diese Regeln gelten nur für MEMS 1.6 Saugmotor mit übereinstimmendem vollständigem Firmwarenamen und ECU-Kennung (123 dokumentierte Profile). Die vorhandene D1-Identifikation wird verwendet, sofern verfügbar; die numerische Kennung allein reicht nicht aus. Sonst bleibt die bisherige Decodierung erhalten. Keine Profilauswahl und kein neuer ECU-Befehl erforderlich.</p>
-<h3>Messwerte: Positionen, Einheiten und Verfügbarkeit</h3>
+<p>Manager passt Messwerte und Fehler an das erkannte Steuergerät an. Eine manuelle Profilauswahl ist nicht nötig. Nicht verfügbare oder unbestätigte Informationen werden gekennzeichnet.</p>
+<h3>Messwerte: Einheiten und Verfügbarkeit</h3>
 <table>
-<tr><th>Position</th><th>Messwert / Interpretation</th></tr>
-<tr><td>80/04</td><td>Umgebungstemperatur: FF nicht verfügbar.</td></tr>
-<tr><td>80/06</td><td>Kraftstofftemperatur: FF bei Nichtverwendung; bei Unterstützung bisherige Umrechnung.</td></tr>
-<tr><td>80/0B</td><td>Automatik-P/N-Kontakt: AANMP002 0 = P/N, 32 = außerhalb P/N; andere Polaritäten unbestätigt.</td></tr>
-<tr><td>80/0C</td><td>Klimaanforderung: AANMP002 0 = vorhanden, 1 = nicht vorhanden.</td></tr>
-<tr><td>80/09 — r × 5 / 255</td><td>Spannung Drosselklappenpotentiometer (V).</td></tr>
-<tr><td>80/0F — r × 6,25</td><td>Betrag der Leerlaufdrehzahlkorrektur (RPM); Vorzeichen aus 7D/13 nur bei Übereinstimmung.</td></tr>
-<tr><td>80/10</td><td>Warmleerlauf-Schrittmotorposition (Schritte).</td></tr>
-<tr><td>80/11 — r × 0,1</td><td>Maximale Leerlauf-Lernspannung (V).</td></tr>
-<tr><td>80/1B</td><td>Zündung aus: AANMP002 1 = ja, 0 = nein.</td></tr>
-<tr><td>7D/02 — r × 0,5</td><td>Drosselklappenwinkel (°).</td></tr>
-<tr><td>7D/0B — (r − 128) × 8</td><td>Einspritzzeitkorrektur (µs).</td></tr>
-<tr><td>7D/0F</td><td>Grundposition des Schrittmotors (Schritte).</td></tr>
-<tr><td>7D/13 — (r − 128) × 25</td><td>Vorzeichenbehaftete Korrektur (RPM); gemeinsames Vorzeichen nur bei Übereinstimmung.</td></tr>
-<tr><td>7D/14–15 — W − 32768</td><td>Leerlaufdrehzahlabweichung (RPM), ohne Warmleerlaufpositionskorrektur.</td></tr>
-<tr><td>7D/17–1E — W / 256</td><td>Vier Drosselklappenreferenzen (TPS): Zwei-Byte-Wörter, höchstwertiges Byte zuerst; alle acht Bytes bleiben sichtbar. Einige Firmwarevarianten wiederholen dieselbe Referenz viermal.</td></tr>
-<tr><td>7D/1F</td><td>Anzahl der Drosselklappen-Lernvorgänge.</td></tr>
+<tr><th>Messwert</th><th>Einheit / Zustand</th></tr>
+<tr><td>Umgebungstemperatur</td><td>°C</td></tr>
+<tr><td>Kraftstofftemperatur</td><td>°C</td></tr>
+<tr><td>Automatikgetriebeschalter (P/N)</td><td>Je nach Ausstattung und Verfügbarkeit</td></tr>
+<tr><td>Klimaanlagenschalter</td><td>Je nach Ausstattung und Verfügbarkeit</td></tr>
+<tr><td>Drosselklappenpotentiometerspannung (V)</td><td>V</td></tr>
+<tr><td>Betrag der Leerlaufkorrektur</td><td>RPM</td></tr>
+<tr><td>Warme Schrittmotorposition</td><td>Schritte</td></tr>
+<tr><td>Maximale Leerlauf-Lernspannung (V)</td><td>V</td></tr>
+<tr><td>Zündung aus</td><td>Je nach Ausstattung und Verfügbarkeit</td></tr>
+<tr><td>Drosselklappenwinkel (°)</td><td>°</td></tr>
+<tr><td>Einspritzzeitkorrektur (µs)</td><td>µs</td></tr>
+<tr><td>Schrittmotor-Grundposition</td><td>Schritte</td></tr>
+<tr><td>Leerlaufdrehzahlkorrektur mit Vorzeichen</td><td>RPM</td></tr>
+<tr><td>Leerlaufdrehzahlabweichung (RPM)</td><td>RPM</td></tr>
+<tr><td>Drosselklappen-Referenzposition 1–4</td><td>TPS</td></tr>
+<tr><td>Anzahl Drosselklappen-Lernvorgänge</td><td>Anzahl der Lernvorgänge</td></tr>
 </table>
-<p>Fehlende, nicht verwendete (FF je nach Profil) oder ungeprüfte Werte sind keine Nullmessungen. Lambdaspannung bleibt in mV (×5), die bisherige Zündwinkelumrechnung bleibt erhalten. Keine neuen Fehlergrenzwerte.</p>
+<p>Fehlende, nicht verwendete oder ungeprüfte Werte sind keine Nullmessungen. Die Einheiten erlauben den Vergleich; es werden keine zusätzlichen Fehlergrenzwerte abgeleitet.</p>
 <h3>Fehler und dauerhafte Kontexthilfe</h3>
 <p>Jede DTC-Gruppe hat eine dauerhafte Kontexthilfe mit den überwachten Stromkreisen, auch ohne Fehler. Der Empfangswert bleibt roh; die Interpretation zeigt alle Fehler und Zustände. Ein gespeicherter elektrischer Fehler bezeichnet den Stromkreis, nicht zwingend ein defektes Bauteil oder eine aktuelle Störung. Unbekannte Indikatoren sind keine bekannten Fehler.</p>
 <table>
-<tr><th>Position</th><th>Messwert / Interpretation</th></tr>
-<tr><td>DTC 0 — 80/0D</td><td>01 Kühlmitteltemperatursensor; 02 Ansaugluftsensor; 20 Kraftstofftemperatursensor nur bei Unterstützung.</td></tr>
-<tr><td>DTC 1 — 80/0E</td><td>02 Kraftstoffpumpe; 10 Aktivkohlebehälter; 20 MAP; 80 Drosselklappenpotentiometer. 04/08: Varianten unten.</td></tr>
-<tr><td>DTC 2 — 7D/05</td><td>04 Lambdaheizung bei AANMP002 bestätigt (sonst unbekannter Stromkreis); 10 Motorsynchronisation; 40 Drosselklappenkontaktprüfung (beide Zustände erkannt, Information, kein Fehler).</td></tr>
-<tr><td>DTC 3, 4, 5 — 7D/0E, 11, 16 ; 7D/10</td><td>FF = von dieser Firmware nicht verwendet; weder acht Fehler noch Nachweis der Fehlerfreiheit.</td></tr>
+<tr><th>Gruppe</th><th>Mögliche Stromkreise / Zustände</th></tr>
+<tr><td>DTC 0</td><td>Fehler Ansauglufttemperatursensor ; Fehler Kraftstofftemperatursensor ; Fehler Kühlmitteltemperatursensor</td></tr>
+<tr><td>DTC 1</td><td>Fehler Ansaugheizung ; Fehler Drosselklappenpotentiometer ; Fehler Klimaanlagenkreis ; Fehler Kraftstoffpumpenkreis ; Fehler Kühlerlüftersteuerung ; Fehler MAP-Sensor ; Fehler PTC-Steuerausgang ; Fehler Tankentlüftungsventil</td></tr>
+<tr><td>DTC 2</td><td>Drosselklappenschalter: beide Zustände erkannt (Information) ; Fehler Lambdasondenheizung ; Fehler Motorsynchronisation</td></tr>
+<tr><td>DTC 3, 4, 5</td><td>Diese Gruppe wird bei den dokumentierten Varianten nicht verwendet. Das beweist keine Fehlerfreiheit.</td></tr>
 </table>
-<p>DTC 1: 04/08 stehen bei 51 Profilen für Ansaugheizung/Klimaanlage, bei EKDMF002 für Klimaanlage/Heizung, bei 13 für Kühlgebläse/Klimaanlage, bei 56 für PTC-Steuerausgang/Klimaanlage und bei EKDMF000 sowie EKDMF003 für Klimaanlage/PTC-Steuerausgang. Die tatsächliche Ausstattung der 58 PTC-Steuerausgänge ist nicht bestätigt.</p>
-<p>Beispiele AANMP002: DTC 0 = 0 → kein Fehler; DTC 1 = 160 → MAP und Drosselklappenpotentiometer; DTC 2 = 64 → kein Fehler, Drosselklappenkontaktprüfung. Die automatische Diagnose nutzt dieselben Masken ohne unvereinbare alte Heuristiken. Kein automatisches Löschen.</p>
+<p>Tatsächliche Ausstattung nicht bestätigt. Der Fehler bezeichnet einen Steuerausgang, nicht zwingend eine eingebaute Heizung. Die überwachten Stromkreise hängen vom Steuergerät und der Ausstattung ab. Kein automatisches Löschen.</p>
 <h3>Aufzeichnung und Analyse</h3>
-<p>TXT/CSV V2 mit MEMS16NA_SCHEMA=2 speichert ECU-Kennung, Firmware, Datum und Uhrzeit, beide Rohframes, berechnete Werte und Verfügbarkeit. Alte Dateien bleiben ohne erneute Umrechnung bereits berechneter Werte lesbar. Kurven lassen fehlende Messwerte aus; Spalten zeigen Rohwerte, Zustände und Fehler. Vier getrennte TPS-Referenzen. ECU-Kommunikationsprotokolle bleiben getrennt, das übliche Verzeichnis bleibt erhalten. Die Abbildungen zeigen frühere Oberflächenversionen.</p>
+<p>TXT/CSV-Aufzeichnungen speichern Steuergerätekennung, Messwerte und Verfügbarkeit. Alte Dateien bleiben lesbar. Kurven lassen fehlende Werte aus; Spalten zeigen Messwerte und Fehler. ECU-Kommunikationsprotokolle bleiben getrennt.</p>
 
 <h2 id="chapter-9">9. ECU / ROSCO</h2>
-<p><b>Kommunikationsbibliothek des Projekts:</b> ECU MEMS Manager SESSION verwendet unsere eigene native Windows-64-Bit-DLL <code>mems_manager_x64.dll</code>, die für dieses Projekt entwickelt wurde. Sie übernimmt die serielle Kommunikation mit MEMS-Steuergeräten (Verbindung, Initialisierung, Datenabfrage und unterstützte Diagnosebefehle) und bleibt mit den historischen ROSCO-Funktionen kompatibel. Spezielle Berechnungen im Bereich <b>Einspritzung</b> und einige RAM-Abfragen im Modus 4 erfolgen im SESSION-Programm selbst, nicht direkt in der DLL.</p>
-<p>Bietet Lese- und Sitzungsbefehle wie D0, D1, D2, F0 sowie F2–F5. TX/RX-Daten werden hexadezimal angezeigt. Die ECU-Neucodierung D3 bleibt absichtlich deaktiviert.</p>
+<p><b>Kommunikationsbibliothek des Projekts:</b> Manager verwendet seine eigene Windows-64-Bit-Bibliothek <code>mems_manager_x64.dll</code>, kompatibel mit den historischen ROSCO-Funktionen.</p>
+<p>ECU / ROSCO zeigt unterstützte Lese- und Sitzungsfunktionen. TX/RX-Daten werden hexadezimal angezeigt. Die ECU-Neucodierung bleibt deaktiviert.</p>
 
 
 <h2 id="chapter-interactive">Interaktiver Modus — erweiterte Befehle</h2><p>Diese Seite zeigt Hinweise zur interaktiven ROSCO-Befehlsausführung. Sie richtet sich an Anwender, die das Protokoll und den seriellen Anschluss kennen. Für normale Messwertabfragen verwenden Sie <b>Verbinden</b> und die Diagnoseseiten.</p>
@@ -142,15 +141,15 @@ small{color:#aebcc5}
 <p>Nach Erkennung von <b>MEMS 2J</b> erscheinen verfügbare Werte auf den Seiten <b>Übersicht</b> und <b>Alle Messwerte</b>; gelesene Fehler stehen unter <b>Automatische Diagnose</b>. Nicht dokumentierte Werte bleiben Rohdaten. Einige Fehlercodes gelten speziell für den Mini MPi.</p>
 <p><b>Teststatus:</b> Leser und automatische Tests wurden mit SESSION 178 integriert; ein Test an einem echten MEMS-2J-Steuergerät steht noch aus. Seit SESSION 184 ist das Löschen der Fehlercodes auf ausdrücklichen Benutzerwunsch möglich; Programmierung, Kalibrierung und Wegfahrsperrenfunktionen wurden nicht hinzugefügt.</p>
 
-<p><b>Fehlercodes beim MEMS 2J löschen:</b> Nach einer bestätigten Verbindung verwenden Sie die vorhandene Funktion zum Fehlerlöschen. SESSION sendet den MEMS-2J-Dienst <code>31 CB</code> und erwartet <code>71 CB</code>. Dabei wird der Fehlerspeicher verändert. Der Befehl wird niemals automatisch beim Verbinden ausgeführt. ROSCO-Einstell- und Aktorbefehle gelten nicht für MEMS 2J.</p>
+<p><b>Fehlercodes beim MEMS 2J löschen:</b> Nach bestätigter Verbindung die vorhandene Löschfunktion verwenden. Der Fehlerspeicher wird verändert, niemals automatisch. ROSCO-Einstell- und Aktorbefehle gelten nicht für MEMS 2J.</p>
 <h3>MEMS 3 — automatische Verbindung, Messwerte und Fehlercodes</h3>
-<p>Schließen Sie das passende Diagnosekabel an, schalten Sie die Zündung ein und klicken Sie wie gewohnt auf <b>Verbinden</b>. SESSION prüft den eigenen MEMS-3-Dialog mit <b>9.600 Baud, 8 Datenbits, gerader Parität und 1 Stoppbit (8E1)</b>. Die Anfragen verwenden <code>B8 13 F7</code> und eine XOR-Prüfsumme. Erst die tatsächliche ECU-Antwort bestätigt die Verbindung; eine manuelle Protokollauswahl ist nicht nötig.</p>
+<p>Das passende Diagnosekabel anschließen, die Zündung einschalten und auf <b>Verbinden</b> klicken. Manager erkennt MEMS 3 anhand der ECU-Antwort ohne manuelle Protokollauswahl.</p>
 <p>Bei erfolgreicher MEMS-3-Verbindung werden je nach Steuergerät Motordrehzahl, Kühlmittel-, Öl- und Ansauglufttemperatur, MAP, Drosselklappe, Lambda und Spulenzeiten angezeigt. Unklare Einheiten bleiben als Rohwerte erkennbar. Die Diagnose zeigt <b>16-Bit-Motorfehlercodes</b>, bekannte Zustände und empfangene Hexadezimaldaten.</p>
-<p><b>Fehlercodes beim MEMS 3 löschen:</b> Die vorhandene Löschfunktion sendet <code>14 00 00</code> und prüft die Bestätigung <code>54 00 00</code>. Dies geschieht nur auf Benutzerwunsch, nie bei der automatischen Erkennung oder Messung. Experimentelle Wegfahrsperren- und Kalibrierungsbefehle sind nicht aktiviert.</p>
+<p><b>Fehlercodes beim MEMS 3 löschen:</b> Nach Verbindung die vorhandene Löschfunktion verwenden. Nur auf Benutzerwunsch, niemals bei automatischer Erkennung oder Messung. Experimentelle Wegfahrsperren- und Kalibrierungsbefehle sind nicht aktiviert.</p>
 <p><b>Prüfstatus:</b> SESSION 184 enthält automatische Prüfungen der Telegramme und Decoder. Verbindungs- und Löschtests an echten MEMS-2J- und MEMS-3-Steuergeräten stehen noch aus. Das RC5-Airbagsteuergerät gehört nicht zur Motorsteuergerät-Erkennung.</p>
 
 <h2 id="chapter-10">10. Automatische Diagnose</h2>
-<p><a href="#chapter-mems16na">Firmwareabhängige Einheiten, DTC-Masken und Aufzeichnungen siehe Kapitel MEMS 1.6 Saugmotor.</a></p>
+<p><a href="#chapter-mems16na">Messwerte, Fehler und Aufzeichnungen siehe Kapitel MEMS 1.6 Saugmotor.</a></p>
 <p>Bewertet aktuelle ECU-Messwerte und unterscheidet Normalzustände, Warnungen und Abweichungen. Referenzaufnahmen und Berichtexporte sind möglich. Auch die Spulenladezeit wird geprüft.</p>
 
 
@@ -159,7 +158,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-11">11. Protokollanalyse</h2>
-<p><a href="#chapter-mems16na">Firmwareabhängige Einheiten, DTC-Masken und Aufzeichnungen siehe Kapitel MEMS 1.6 Saugmotor.</a></p>
+<p><a href="#chapter-mems16na">Messwerte, Fehler und Aufzeichnungen siehe Kapitel MEMS 1.6 Saugmotor.</a></p>
 <p>Öffnet unterstützte CSV/TXT-Messprotokolle, zeigt gewählte Kanäle und überlagert Kurven zum zeitlichen Vergleich.</p>
 
 

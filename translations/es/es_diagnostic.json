@@ -16,8 +16,8 @@
   "6814": "DTC0=%1  DTC1=%2  DTC2=%3",
   "6815": "anomalía",
   "6816": "OK",
-  "6817": "Lea los bits correspondientes antes de borrar nada.",
-  "6818": "No hay ningún bit de fallo activo en las tramas 0x7D/0x80.",
+  "6817": "Consultar los fallos indicados antes de borrarlos.",
+  "6818": "Ningún fallo identificado activo en los grupos vigilados.",
   "6819": "Tensión de la batería",
   "6820": "%1 V",
   "6821": "Tensión baja: compruebe la batería, las masas y la alimentación de la ECU.",
@@ -36,7 +36,7 @@
   "6834": "Valor decodificado fuera de rango: compruebe la medición MAP.",
   "6835": "TPS",
   "6836": "Se ha detectado un fallo TPS/alimentación TPS: compruebe alimentación, masa y progresión del sensor.",
-  "6837": "No hay ningún fallo TPS conocido activo en los bits supervisados.",
+  "6837": "Ningún fallo TPS conocido activo en los circuitos vigilados.",
   "6838": "lambda",
   "6839": "U=%1  frec=%2  ciclo=%3  estado=%4",
   "6840": "anomalía",
@@ -97,5 +97,6 @@
   "6895": "Diagnóstico",
   "6896": "No se puede escribir el informe.",
   "6897": "Decodificación: (7D14-15 bruto - 32768) - corrección de la posición de ralentí en caliente. La corrección sigue el valor configurado en la pestaña Ajustes; no está codificada de forma fija. El valor indicativo es coherente cuando permanece próximo a cero.",
-"18121":"Tiempo de carga superior a 3,5 ms y hasta 4,0 ms cerca de 14 V: vigilar. Compruebe medición y circuito primario si persiste.","18122":"Motor parado: medición mostrada solo como información, sin diagnóstico automático de la bobina."
+  "18121": "Tiempo de carga superior a 3,5 ms y hasta 4,0 ms cerca de 14 V: vigilar. Compruebe medición y circuito primario si persiste.",
+  "18122": "Motor parado: medición mostrada solo como información, sin diagnóstico automático de la bobina."
 }

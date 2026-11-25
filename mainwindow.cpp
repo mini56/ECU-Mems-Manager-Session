@@ -1473,8 +1473,7 @@ void MainWindow::onDataReady()
  const int idleHotCorrection = static_cast<int>(data->idle_hot) - 35;
  const int idleErrorHotCorrected = (raw7d1415 - 32768) - idleHotCorrection;
  m_ui->m_7D_15->setText(QString::number(idleErrorHotCorrected));
- m_ui->m_7D_15->setToolTip(I18n::text(7033) /* EN: 7D14-15 brut = %1 ; correction idle hot = %2 ; valeur corrected = %3. Formule : (brut - 32768) - correction. */
-                             .arg(raw7d1415).arg(idleHotCorrection).arg(idleErrorHotCorrected));
+ m_ui->m_7D_15->setToolTip(I18n::text(7033));
  m_ui->m_7D_16->setText(QString::number(data->dtc5));
      if ((data->dtc5)!= 255)
     {m_ui->r_7D_16->setText(I18n::text(7034) /* EN: FAULTS */);}
@@ -1569,23 +1568,13 @@ void MainWindow::onEditOptionsClicked()
   // if the user doesn't cancel the options dialog...
   if (m_options->exec() == QDialog::Accepted)
   {
-    if (m_options->getThemeChanged())
+    if (m_options->getThemeChanged() || m_options->getLanguageChanged())
     {
-      qApp->setProperty("ecuDarkTheme", m_options->getTheme() == "dark");
-      // applyApplicationVisualStyle owns the global stylesheet and restores
-      // the previous native widget styles in the same switch.
-      applyNativeTitleBar(this, m_options->getTheme() == "dark");
-      applyApplicationVisualStyle(this);
-      const QList<WidgetWithBackground*> meters = findChildren<WidgetWithBackground*>();
-      for (WidgetWithBackground *meter : meters)
-        meter->updateWithBackground();
-    }
-
-    if (m_options->getLanguageChanged())
-    {
-      SessionInformationMessage::information(this, I18n::text(7048) /* EN: Language */,
-                               I18n::text(7049) /* EN: The language has been changed. The software will restart to apply the complete translation. */);
-      QProcess::startDetached(QCoreApplication::applicationFilePath(), QCoreApplication::arguments());
+      // Options confirmed any active session before saving. Use the normal
+      // shutdown path, then launch a single replacement after the event loop.
+      qApp->setProperty("ecuRestartRequested", true);
+      setProperty("ecuSkipExitConfirmation", true);
+      close();
       qApp->quit();
       return;
     }
@@ -1647,8 +1636,10 @@ void MainWindow::showEvent(QShowEvent* event)
   if (!m_uiShellScheduled)
   {
     m_uiShellScheduled = true;
-    // Initial geometry is available after the window has received Show.
-    QTimer::singleShot(0, this, [this]() { buildUiShell(this); });
+    // Normal startup already constructs the shell behind the splash.
+    // Keep the standalone UI smoke-test and other callers working.
+    if (!property("uiShellReady").toBool())
+      QTimer::singleShot(0, this, [this]() { buildUiShell(this); });
   }
 }
 
@@ -2801,9 +2792,10 @@ void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na,bool documentat
       QLabel *label=faultLabels[g*8+i];
       rememberNaLabel(label);
       const bool supported=((def.faultMask|def.stateMask)&mask)!=0;
-      const QString name=supported?describe(circuit(p,group,mask),mask):
-        maskText(mask)+QStringLiteral(" : ")+I18n::text(29004);
+      const QString name=supported?describe(circuit(p,group,mask),mask):I18n::text(29004);
       QString detail=name;
+      if(supported && circuit(p,group,mask)==Circuit::AuxiliaryPtc)
+        detail+=QStringLiteral("\n")+I18n::text(29020);
       if(d.availability==Availability::Missing)detail+=QStringLiteral("\n")+I18n::text(29048);
       else if(def.stateMask&mask)detail+=QStringLiteral("\n")+I18n::text((d.stateBits&mask)?29038:29039);
       else if(def.faultMask&mask)detail+=QStringLiteral("\n")+I18n::text((d.faultBits&mask)?circuitKey(circuit(p,group,mask)):29003);

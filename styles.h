@@ -3,6 +3,19 @@
 
 #include <QString>
 
+// Shared native tooltip appearance, used by all shell variants.
+inline QString helpTooltipStyle(bool dark)
+{
+    return QStringLiteral("QToolTip {\n"
+        "    background-color: %1;\n"
+        "    color: %2;\n"
+        "    border: 1px solid #ff8a22;\n"
+        "    padding: 6px 9px;\n"
+        "    border-radius: 8px;\n"
+        "}\n").arg(dark?QStringLiteral("#000000"):QStringLiteral("#ffffff"),
+                   dark?QStringLiteral("#ffffff"):QStringLiteral("#000000"));
+}
+
 // Feuille de style moderne - thème clair
 static const QString STYLE_LIGHT = R"(
 QWidget {
@@ -165,14 +178,7 @@ QScrollBar::handle:horizontal {
     border-radius: 5px;
     min-width: 24px;
 }
-QToolTip {
-    background-color: #ffffff;
-    color: #000000;
-    border: 1px solid #ff8a22;
-    padding: 6px 9px;
-    border-radius: 8px;
-}
-)";
+)" + helpTooltipStyle(false);
 
 // Feuille de style moderne - thème sombre
 static const QString STYLE_DARK = R"(
@@ -340,13 +346,6 @@ QScrollBar::handle:horizontal {
     border-radius: 5px;
     min-width: 24px;
 }
-QToolTip {
-    background-color: #000000;
-    color: #ffffff;
-    border: 1px solid #ff8a22;
-    padding: 6px 9px;
-    border-radius: 8px;
-}
-)";
+)" + helpTooltipStyle(true);
 
 #endif // STYLES_H

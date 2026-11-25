@@ -32,7 +32,7 @@
   "7030": "aucun défaut",
   "7031": "DÉFAUTS",
   "7032": "aucun défaut",
-  "7033": "7D14-15 brut = %1 ; correction ralenti chaud = %2 ; valeur corrigée = %3. Formule : (brut - 32768) - correction.",
+  "7033": "Écart de régime de ralenti tenant compte du réglage de position à chaud. Exprimé en tr/min.",
   "7034": "DÉFAUTS",
   "7035": "aucun défaut",
   "7036": "Off",

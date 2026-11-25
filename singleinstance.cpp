@@ -191,3 +191,18 @@ void installSingleInstanceManager(QApplication *app)
     Q_UNUSED(app);
 #endif
 }
+
+bool waitForRestartParent(quint32 pid)
+{
+#ifdef Q_OS_WIN
+    if(!pid || pid==GetCurrentProcessId())return false;
+    HANDLE parent=OpenProcess(SYNCHRONIZE,FALSE,pid);
+    if(!parent)return GetLastError()==ERROR_INVALID_PARAMETER;
+    const DWORD result=WaitForSingleObject(parent,60000);
+    CloseHandle(parent);
+    return result==WAIT_OBJECT_0;
+#else
+    Q_UNUSED(pid);
+    return true;
+#endif
+}

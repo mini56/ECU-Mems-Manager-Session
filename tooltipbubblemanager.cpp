@@ -12,6 +12,8 @@
 #include <QAbstractItemModel>
 #include <QHelpEvent>
 #include <QToolTip>
+#include <QPalette>
+#include <QColor>
 #include <QScreen>
 #include <QTextDocument>
 #include <QStringList>
@@ -94,6 +96,11 @@ protected:
         // Prefer the adjacent side; Qt clamps the tooltip to the active screen.
         if(screen && anchor.x()+width+30>screen->availableGeometry().right())
             anchor.setX(qMax(screen->availableGeometry().left(),widget->mapToGlobal(region.topLeft()).x()-width-24));
+        const bool dark=qApp->property("ecuDarkTheme").toBool();
+        QPalette palette=QToolTip::palette();
+        palette.setColor(QPalette::ToolTipBase,QColor(dark?Qt::black:Qt::white));
+        palette.setColor(QPalette::ToolTipText,QColor(dark?Qt::white:Qt::black));
+        QToolTip::setPalette(palette);
         QToolTip::showText(anchor,html,widget,region);
         event->accept();return true;
     }

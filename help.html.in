@@ -72,7 +72,7 @@ small{color:#aebcc5}
 
 <h2 id="chapter-4">4. Onglet Réglage</h2>
 <p>L’onglet Réglage contient les ajustements de service disponibles, notamment les corrections liées au ralenti, au carburant ou à l’allumage selon l’ECU. Les bulles d’aide expliquent le rôle et les risques des réglages.</p>
-<p>Pour les autres profils, l’interprétation historique de 7D14-15 est conservée. Pour le MEMS 1.6 atmosphérique identifié, l’écart de régime est le mot brut moins 32768, sans correction liée au réglage de position à chaud.</p>
+<p>L’écart de régime de ralenti est affiché en tr/min ; son interprétation dépend du calculateur identifié.</p>
 
 
 <p>Le grand cadran central indique le régime moteur. Les commandes situées au bas de la page permettent de modifier les corrections prévues par l'ECU ; prenez connaissance des valeurs affichées avant une action. Les indicateurs <b>Contact ralenti</b> et <b>Boucle fermée</b> fournissent un contexte supplémentaire.</p>
@@ -81,7 +81,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-5">5. Onglet Erreurs</h2>
-<p><a href="#chapter-mems16na">Voir le chapitre MEMS 1.6 atmosphérique pour les unités, masques DTC et enregistrements spécifiques au firmware.</a></p>
+<p><a href="#chapter-mems16na">Voir le chapitre MEMS 1.6 atmosphérique pour les mesures, défauts et enregistrements.</a></p>
 <p>Cet onglet affiche les informations de défaut ECU, les anomalies enregistrées et les états associés. Les défauts doivent être lus et compris avant d’être effacés. Certains compteurs ou états peuvent nécessiter une réinitialisation complète de l’ECU avant de revenir à leur valeur initiale.</p>
 
 
@@ -100,16 +100,12 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-7">7. Toutes les mesures</h2>
-<p><a href="#chapter-mems16na">Voir le chapitre MEMS 1.6 atmosphérique pour les unités, masques DTC et enregistrements spécifiques au firmware.</a></p>
+<p><a href="#chapter-mems16na">Voir le chapitre MEMS 1.6 atmosphérique pour les mesures, défauts et enregistrements.</a></p>
 <p>L’onglet <b>Toutes les mesures</b> présente les paramètres détaillés et leur aide, avec la valeur reçue de l’ECU et la valeur interprétée lorsque le décodage est connu.</p>
-<table>
-<tr><th>Paramètre</th><th>Reçu ECU</th><th>Interprété</th></tr>
-<tr><td>Exemple : tension batterie</td><td>137</td><td>13,7 V</td></tr>
-</table>
 <p>Les champs non documentés restent visibles sans inventer de conversion.</p>
 
 
-<p>La page juxtapose trois tableaux avec les colonnes <b>Paramètre</b>, <b>Reçu ECU</b> et <b>Interprété</b>. Le nombre brut peut être différent de la valeur physique calculée (par exemple 137 pour 13,7 V). Les petites icônes d'aide signalent les paramètres possédant une explication contextuelle.</p>
+<p>Les colonnes Reçu ECU et Interprété distinguent les valeurs reçues des mesures physiques. Les icônes d’aide expliquent les paramètres ; les informations inconnues restent signalées.</p>
 <p><b>Capture — Toutes les mesures : valeurs reçues et décodées.</b></p>
 <p><img src=":/help/images/Capture d’écran (899).png" width="550"></p>
 
@@ -124,45 +120,44 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-mems16na">MEMS 1.6 atmosphérique — mesures et défauts par firmware</h2>
-<p>Ces règles s’appliquent seulement aux firmwares MEMS 1.6 atmosphériques identifiés par leur nom complet et leur identifiant ECU concordants (123 profils documentés). L’identification D1 existante est utilisée lorsqu’elle est disponible ; l’identifiant numérique seul ne suffit pas. Sinon, Manager conserve le décodage historique. Aucun choix de profil ni nouvelle commande ECU n’est imposé.</p>
-<h3>Mesures : positions, unités et disponibilités</h3>
+<p>Manager adapte les mesures et les défauts au calculateur identifié. Aucun choix manuel de profil n’est nécessaire. Les informations indisponibles ou non confirmées sont signalées.</p>
+<h3>Mesures : unités et disponibilités</h3>
 <table>
-<tr><th>Position</th><th>Mesure / interprétation</th></tr>
-<tr><td>80/04</td><td>Température ambiante : FF non disponible.</td></tr>
-<tr><td>80/06</td><td>Température carburant : FF non disponible si non utilisée ; conversion historique conservée si prise en charge.</td></tr>
-<tr><td>80/0B</td><td>Contact boîte automatique P/N : sur AANMP002, 0 = P/N, 32 = hors P/N ; autres polarités non confirmées.</td></tr>
-<tr><td>80/0C</td><td>Demande climatisation : sur AANMP002, 0 = présente, 1 = absente.</td></tr>
-<tr><td>80/09 — r × 5 / 255</td><td>Tension potentiomètre papillon (V).</td></tr>
-<tr><td>80/0F — r × 6,25</td><td>Amplitude de correction de régime (RPM) ; signe de 7D/13 uniquement si les deux valeurs concordent.</td></tr>
-<tr><td>80/10</td><td>Position moteur pas à pas à chaud (pas).</td></tr>
-<tr><td>80/11 — r × 0,1</td><td>Tension maximale d’apprentissage du ralenti (V).</td></tr>
-<tr><td>80/1B</td><td>Contact coupé : sur AANMP002, 1 = oui, 0 = non.</td></tr>
-<tr><td>7D/02 — r × 0,5</td><td>Angle papillon (°).</td></tr>
-<tr><td>7D/0B — (r − 128) × 8</td><td>Correction du temps d’injection (µs).</td></tr>
-<tr><td>7D/0F</td><td>Position de base du moteur pas à pas (pas).</td></tr>
-<tr><td>7D/13 — (r − 128) × 25</td><td>Correction signée (RPM) ; cohérence requise pour le signe combiné.</td></tr>
-<tr><td>7D/14–15 — W − 32768</td><td>Écart de régime de ralenti (RPM), sans correction de position à chaud.</td></tr>
-<tr><td>7D/17–1E — W / 256</td><td>Quatre références papillon (TPS) : mots de deux octets, octet fort en premier ; les huit octets restent visibles. Certains firmwares répètent quatre fois la même référence.</td></tr>
-<tr><td>7D/1F</td><td>Nombre d’apprentissages du papillon.</td></tr>
+<tr><th>Mesure</th><th>Unité / état</th></tr>
+<tr><td>Température ambiante</td><td>°C</td></tr>
+<tr><td>Température carburant</td><td>°C</td></tr>
+<tr><td>Contact boîte automatique (P/N)</td><td>Selon équipement et disponibilité</td></tr>
+<tr><td>Contact climatisation</td><td>Selon équipement et disponibilité</td></tr>
+<tr><td>Tension potentiomètre papillon (V)</td><td>V</td></tr>
+<tr><td>Amplitude de correction du ralenti</td><td>RPM</td></tr>
+<tr><td>Position moteur pas à pas à chaud</td><td>pas</td></tr>
+<tr><td>Tension maxi d’apprentissage du ralenti (V)</td><td>V</td></tr>
+<tr><td>Contact coupé</td><td>Selon équipement et disponibilité</td></tr>
+<tr><td>Angle papillon (°)</td><td>°</td></tr>
+<tr><td>Correction temps d’injection (µs)</td><td>µs</td></tr>
+<tr><td>Position de base du moteur pas à pas</td><td>pas</td></tr>
+<tr><td>Correction signée du régime de ralenti</td><td>RPM</td></tr>
+<tr><td>Écart régime de ralenti (RPM)</td><td>RPM</td></tr>
+<tr><td>Position de référence papillon 1–4</td><td>TPS</td></tr>
+<tr><td>Nombre d’apprentissages du papillon</td><td>Nombre d’apprentissages</td></tr>
 </table>
-<p>Une valeur absente, non utilisée (FF selon le profil) ou non vérifiée n’est pas une mesure zéro. La tension lambda reste en mV (×5) et l’avance à l’allumage conserve sa conversion actuelle. Aucun nouveau seuil de panne n’est déduit de ces conversions.</p>
+<p>Une valeur absente, non utilisée ou non vérifiée n’est pas une mesure zéro. Les unités affichées permettent de comparer les mesures ; aucun seuil de panne supplémentaire n’est déduit.</p>
 <h3>Défauts et bulles d’aide</h3>
 <p>Chaque groupe DTC possède une bulle permanente indiquant les circuits surveillés, même sans défaut. Reçu garde la valeur brute ; Calculé / Interprété détaille tous les défauts et états. Les défauts mémorisés concernent un circuit, pas nécessairement un composant défectueux ou une panne actuelle. Les indicateurs non identifiés ne sont pas assimilés à des pannes connues.</p>
 <table>
-<tr><th>Position</th><th>Mesure / interprétation</th></tr>
-<tr><td>DTC 0 — 80/0D</td><td>01 sonde température moteur ; 02 sonde air admission ; 20 sonde carburant uniquement si prise en charge.</td></tr>
-<tr><td>DTC 1 — 80/0E</td><td>02 pompe à essence ; 10 canister ; 20 MAP ; 80 potentiomètre papillon. 04/08 : voir variantes ci-dessous.</td></tr>
-<tr><td>DTC 2 — 7D/05</td><td>04 chauffage lambda confirmé sur AANMP002 (sinon circuit non identifié) ; 10 synchronisation moteur ; 40 contrôle du contact papillon (deux états détectés, information et non défaut).</td></tr>
-<tr><td>DTC 3, 4, 5 — 7D/0E, 11, 16 ; 7D/10</td><td>FF = non utilisé par ce firmware ; ni huit défauts ni preuve d’absence de panne.</td></tr>
+<tr><th>Groupe</th><th>Circuits / états possibles</th></tr>
+<tr><td>DTC 0</td><td>Défaut sonde température air admission ; Défaut sonde température carburant ; Défaut sonde température moteur</td></tr>
+<tr><td>DTC 1</td><td>Défaut capteur MAP ; Défaut circuit climatisation ; Défaut circuit pompe à essence ; Défaut commande ventilateurs de refroidissement ; Défaut électrovanne canister ; Défaut potentiomètre papillon ; Défaut réchauffeur d’admission ; Défaut sortie de commande PTC</td></tr>
+<tr><td>DTC 2</td><td>Contrôle du contact papillon : deux états détectés (information) ; Défaut chauffage sonde lambda ; Défaut synchronisation moteur</td></tr>
+<tr><td>DTC 3, 4, 5</td><td>Ce groupe n’est pas utilisé sur les variantes documentées. Cela ne prouve pas l’absence de panne.</td></tr>
 </table>
-<p>DTC 1 : 04/08 désignent réchauffeur d’admission/climatisation pour 51 profils, climatisation/réchauffeur pour EKDMF002, ventilateurs/climatisation pour 13 profils, sortie de commande PTC/climatisation pour 56 profils, climatisation/sortie de commande PTC pour EKDMF000 et EKDMF003. Pour les 58 sorties de commande PTC, l’équipement physique n’est pas confirmé.</p>
-<p>Exemples AANMP002 : DTC 0 = 0 → aucun défaut ; DTC 1 = 160 → MAP et potentiomètre papillon ; DTC 2 = 64 → aucun défaut, contrôle du contact papillon. Le diagnostic automatique utilise les mêmes masques et n’évalue pas les anciennes heuristiques incompatibles. Aucun effacement automatique.</p>
+<p>Montage physique non confirmé. Ce défaut désigne une sortie de commande, pas nécessairement un réchauffeur monté. Les circuits surveillés varient selon le calculateur et son équipement. Aucun effacement automatique.</p>
 <h3>Enregistrements et Analyse</h3>
-<p>Le format TXT/CSV V2 identifié par MEMS16NA_SCHEMA=2 conserve l’identité ECU, le firmware, la date et l’heure, les deux trames brutes, les valeurs calculées et leur disponibilité. Les anciens fichiers restent lisibles sans reconversion des valeurs déjà calculées. En Analyse, les courbes omettent les mesures absentes ; les colonnes détaillent les données brutes, les états et les défauts. Les quatre références TPS sont distinctes. Les fichiers Communications ECU restent séparés. Le dossier habituel des journaux est conservé. Les captures du guide illustrent les versions antérieures de l’interface.</p>
+<p>Les journaux TXT/CSV conservent l’identité du calculateur, les mesures et leur disponibilité. Les anciens fichiers restent lisibles. Les courbes omettent les mesures absentes ; les colonnes présentent les valeurs et les défauts. Les journaux Communications ECU restent séparés.</p>
 
 <h2 id="chapter-9">9. ECU / ROSCO</h2>
-<p><b>Bibliothèque de communication du projet :</b> ECU MEMS Manager SESSION utilise notre propre DLL native Windows 64 bits, <code>mems_manager_x64.dll</code>, créée pour le projet. Elle assure la communication série avec les calculateurs MEMS (connexion, initialisation, lecture des données et commandes de diagnostic prises en charge). Elle conserve une compatibilité avec les fonctions historiques ROSCO. Les calculs spécialisés de l'onglet <b>Injection</b> et certaines lectures RAM en Mode 4 sont réalisés par le code de SESSION, et non directement par la DLL.</p>
-<p>L’onglet ECU / ROSCO expose les commandes de lecture et de session prises en charge, notamment D0, D1, D2, F0 et les commandes de session F2 à F5. Les échanges TX/RX sont affichés en hexadécimal. La recodification ECU D3 reste volontairement désactivée.</p>
+<p><b>Bibliothèque de communication du projet :</b> Manager utilise sa propre bibliothèque de communication Windows 64 bits <code>mems_manager_x64.dll</code>, compatible avec les fonctions historiques ROSCO.</p>
+<p>L’onglet ECU / ROSCO présente les fonctions de lecture et de session prises en charge. Les échanges TX/RX sont affichés en hexadécimal. La recodification ECU reste désactivée.</p>
 
 
 <h2 id="chapter-interactive">Mode interactif — commandes avancées</h2>
@@ -175,15 +170,15 @@ small{color:#aebcc5}
 <p>Une fois le <b>MEMS 2J</b> identifié, les mesures disponibles apparaissent dans les pages habituelles <b>Aperçu</b> et <b>Toutes les mesures</b>. Les défauts lus figurent dans <b>Diagnostic automatique</b>. Les valeurs non documentées restent brutes. Certains codes de défaut concernent spécifiquement la Mini MPi et ne doivent pas être appliqués sans vérification aux autres variantes.</p>
 <p><b>Validation :</b> la lecture et les tests automatiques ont été intégrés à SESSION 178 ; un essai sur un véritable calculateur MEMS 2J reste nécessaire. Depuis SESSION 184, l'effacement des défauts peut être demandé par l'utilisateur ; aucune fonction de programmation, de calibration ou d'antidémarrage n'est ajoutée.</p>
 
-<p><b>Effacer les défauts sur MEMS 2J :</b> après une connexion confirmée, utilisez la commande d'effacement des défauts déjà présente dans SESSION. Le programme envoie alors le service propre au MEMS 2J (<code>31 CB</code>) et attend sa réponse (<code>71 CB</code>). Cette opération modifie la mémoire des défauts et ne se lance jamais automatiquement lors de la connexion. Les réglages et les tests d'actionneurs ROSCO ne sont pas des commandes MEMS 2J.</p>
+<p><b>Effacer les défauts sur MEMS 2J :</b> après une connexion confirmée, utilisez la commande d’effacement existante. Cette opération modifie la mémoire des défauts et ne se lance jamais automatiquement. Les réglages et tests d’actionneurs ROSCO ne sont pas des commandes MEMS 2J.</p>
 <h3>MEMS 3 — connexion automatique, mesures et défauts</h3>
-<p>Connectez le câble de diagnostic compatible, mettez le contact puis cliquez sur <b>CONNECTER</b> comme pour les autres calculateurs. SESSION essaie le dialogue propre au <b>MEMS 3</b> à <b>9 600 bauds, 8 bits, parité paire, 1 bit d'arrêt (8E1)</b>, avec ses trames <code>B8 13 F7</code> et un contrôle XOR. Seules les réponses effectives du calculateur valident la connexion ; aucun réglage manuel du protocole n'est demandé.</p>
+<p>Branchez le câble de diagnostic compatible, mettez le contact et cliquez sur <b>CONNECTER</b>. Manager reconnaît le MEMS 3 à partir de la réponse du calculateur, sans choix manuel du protocole.</p>
 <p>Lorsque le MEMS 3 répond, le programme affiche les mesures décodées disponibles : régime, températures liquide, huile et admission, pression MAP, papillon, lambda et temps de bobines. Les valeurs de signification incertaine restent indiquées comme brutes. Le panneau de diagnostic présente les défauts moteur <b>sur 16 bits</b> avec leur état lorsqu'il est connu, ainsi que les données hexadécimales reçues.</p>
-<p><b>Effacer les défauts sur MEMS 3 :</b> le bouton d'effacement existant transmet le service MEMS 3 <code>14 00 00</code> et vérifie la réponse <code>54 00 00</code>. L'effacement n'est effectué que sur demande de l'utilisateur ; il n'est jamais envoyé pendant la reconnaissance ou l'acquisition automatique. Les commandes d'antidémarrage, de calibration et les services expérimentaux ne sont pas intégrés.</p>
+<p><b>Effacer les défauts sur MEMS 3 :</b> utilisez le bouton d’effacement après connexion. L’opération n’est effectuée que sur demande ; jamais lors de la reconnaissance ou de l’acquisition automatique. Les commandes expérimentales d’antidémarrage et de calibration ne sont pas activées.</p>
 <p><b>Validation matérielle :</b> SESSION 184 comporte des tests automatiques de trames et de décodage, mais les connexions et les commandes d'effacement MEMS 2J et MEMS 3 restent à vérifier sur des calculateurs réels. Le diagnostic airbag RC5 ne fait pas partie de la connexion moteur.</p>
 
 <h2 id="chapter-10">10. Diagnostic automatique</h2>
-<p><a href="#chapter-mems16na">Voir le chapitre MEMS 1.6 atmosphérique pour les unités, masques DTC et enregistrements spécifiques au firmware.</a></p>
+<p><a href="#chapter-mems16na">Voir le chapitre MEMS 1.6 atmosphérique pour les mesures, défauts et enregistrements.</a></p>
 <p>Le panneau de diagnostic automatique contrôle les valeurs ECU courantes et signale les valeurs normales, avertissements et anomalies. Il peut capturer une référence et produire un rapport. Le temps de charge bobine est notamment contrôlé selon la plage utilisée par l’application.</p>
 
 
@@ -193,7 +188,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-11">11. Analyse des journaux</h2>
-<p><a href="#chapter-mems16na">Voir le chapitre MEMS 1.6 atmosphérique pour les unités, masques DTC et enregistrements spécifiques au firmware.</a></p>
+<p><a href="#chapter-mems16na">Voir le chapitre MEMS 1.6 atmosphérique pour les mesures, défauts et enregistrements.</a></p>
 <p>L’onglet Analyse peut lire les journaux de diagnostic CSV/TXT pris en charge, afficher les canaux sélectionnés et superposer leurs courbes. Utilisez la liste des canaux pour choisir les mesures à comparer dans le temps.</p>
 
 

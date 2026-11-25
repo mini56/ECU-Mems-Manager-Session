@@ -1,0 +1,5 @@
+{
+  "29100": "Restart Manager",
+  "29101": "An ECU is connected or recording is active. Restarting will close the session and logs. Continue?",
+  "29102": "Automatic restart failed. Start Manager manually."
+}

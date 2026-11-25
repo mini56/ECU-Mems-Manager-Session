@@ -23,25 +23,34 @@ inline int circuitKey(Circuit c) {
     default:return 29004;
     }
 }
+// Internal raw formatter remains available to non-UI consumers.
 inline QString maskText(unsigned mask) {
     return QStringLiteral("0x%1").arg(mask,2,16,QLatin1Char('0')).toUpper();
 }
-inline QString describe(Circuit c,unsigned mask) {
-    QString t=I18n::text(circuitKey(c));
-    if(c==Circuit::AuxiliaryPtc)t+=QStringLiteral(" — ")+I18n::text(29020);
-    return maskText(mask)+QStringLiteral(" : ")+t;
+// Display labels only; the decoder and raw data remain unchanged.
+inline QString describe(Circuit c,unsigned) {
+    return I18n::text(circuitKey(c));
 }
 inline QString dtcHelp(const Profile *p,Group g) {
     if(!p)return I18n::text(29002);
     const auto d=definition(p,g);
     if(d.constant)return I18n::text(29001);
-    QStringList lines;
+    QStringList names;
+    bool auxiliary=false;
     for(unsigned mask=1;mask<=128;mask<<=1)
-        if((d.faultMask|d.stateMask)&mask)lines<<describe(circuit(p,g,mask),mask);
-    lines<<I18n::text(29021);
-    return lines.join(QLatin1Char('\n'));
+        if((d.faultMask|d.stateMask)&mask){
+            const auto c=circuit(p,g,mask);
+            names<<describe(c,mask);
+            auxiliary|=c==Circuit::AuxiliaryPtc;
+        }
+    names.removeDuplicates();
+    names.sort(Qt::CaseInsensitive);
+    if(auxiliary)names<<I18n::text(29020);
+    names<<I18n::text(29021);
+    return names.join(QLatin1Char('\n'));
 }
-// A reference is not a selected ECU profile. List all documented variants.
+// A reference is not a selected ECU profile. List all documented circuits,
+// without exposing the mapping or the order of its underlying fields.
 inline QString dtcDocumentation(Group g) {
     QStringList lines{I18n::text(29074)};
     std::size_t n=0;const auto *profiles=catalog(n);
@@ -49,19 +58,21 @@ inline QString dtcDocumentation(Group g) {
         lines<<I18n::text(29075);
         return lines.join(QLatin1Char('\n'));
     }
-    for(unsigned mask=1;mask<=128;mask<<=1) {
-        QStringList alternatives;
-        for(std::size_t i=0;i<n;++i) {
-            const auto def=definition(&profiles[i],g);
+    QStringList names;
+    bool auxiliary=false;
+    for(std::size_t i=0;i<n;++i){
+        const auto def=definition(&profiles[i],g);
+        for(unsigned mask=1;mask<=128;mask<<=1){
             if(!((def.faultMask|def.stateMask)&mask))continue;
             const auto c=circuit(&profiles[i],g,mask);
-            QString label=I18n::text(circuitKey(c));
-            if(c==Circuit::AuxiliaryPtc)label+=QStringLiteral(" — ")+I18n::text(29020);
-            if(!alternatives.contains(label))alternatives<<label;
+            names<<describe(c,mask);
+            auxiliary|=c==Circuit::AuxiliaryPtc;
         }
-        if(!alternatives.isEmpty())
-            lines<<maskText(mask)+QStringLiteral(" : ")+alternatives.join(QStringLiteral(" / "));
     }
+    names.removeDuplicates();
+    names.sort(Qt::CaseInsensitive);
+    lines<<names;
+    if(auxiliary)lines<<I18n::text(29020);
     lines<<I18n::text(29021);
     return lines.join(QLatin1Char('\n'));
 }
@@ -88,6 +99,7 @@ inline QString dtcText(const Profile *p,Group g,const DtcResult &d) {
     for(unsigned mask=1;mask<=128;mask<<=1)
         if(d.stateBits&mask)lines<<describe(circuit(p,g,mask),mask);
     if(lines.isEmpty())lines<<I18n::text(29002);
+    lines.removeDuplicates();
     return lines.join(QStringLiteral(" ; "));
 }
 inline QString statusText(const Value &v) {

@@ -155,6 +155,17 @@ int main(int argc,char **argv) {
                 }
                 auto *dtc=find(6658);CHECK(dtc);
                 CHECK(dtc->toolTip().contains(I18n::text(29015))&&dtc->toolTip().contains(I18n::text(29016)));
+                CHECK(value(6658,2)==QStringLiteral("160"));
+                CHECK(value(6658,3)==I18n::text(29015)+QStringLiteral(" ; ")+I18n::text(29016));
+                CHECK(!dtc->toolTip().contains(QStringLiteral("0x"),Qt::CaseInsensitive));
+                CHECK(!dtcDocumentation(Group::Dtc1).contains(QStringLiteral("0x"),Qt::CaseInsensitive));
+                auto simple=evidence("AANMP002",0x98,0,2,0x20,0);
+                summary.updateData(&d,&simple);
+                CHECK(value(6658,2)==QStringLiteral("32")&&value(6658,3)==I18n::text(29015));
+                auto none=evidence("AANMP002",0x98,0,2,0,0);
+                summary.updateData(&d,&none);
+                CHECK(value(6658,3)==I18n::text(29003));
+                summary.updateData(&d,&good);
                 for(int id:{5198,29079,29080,6632,6633,6639,29081,6642,6647})CHECK(find(id));
                 auto missing=good;missing.discardPair();summary.updateData(&d,&missing);
                 CHECK(value(6603,2)==QStringLiteral("--")&&value(6603,3)==I18n::text(29048));

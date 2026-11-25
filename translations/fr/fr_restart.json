@@ -1,0 +1,5 @@
+{
+  "29100": "Redémarrage de Manager",
+  "29101": "Un calculateur est connecté ou un enregistrement est actif. Le redémarrage fermera la session et les journaux. Continuer ?",
+  "29102": "Le redémarrage automatique a échoué. Relancez Manager manuellement."
+}

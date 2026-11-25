@@ -1,5 +1,6 @@
 #include <QSettings>
 #include "optionsdialog.h"
+#include "mainwindow.h"
 #include "serialadapterdetector.h"
 #include "desktopshortcut.h"
 #include "taskbarautohide.h"
@@ -298,6 +299,22 @@ void OptionsDialog::setupWidgets()
  */
 void OptionsDialog::accept()
 {
+  const QString newTheme=m_themeBox->currentData().toString();
+  const QString newLanguage=m_languageBox->currentData().toString();
+  if(newTheme!=m_theme || newLanguage!=m_language){
+      auto *window=qobject_cast<MainWindow*>(parentWidget());
+      auto *stop=window?window->findChild<QPushButton*>(QStringLiteral("m_stopLoggingButton")):nullptr;
+      if(window && (!window->isEcuDisconnected() ||
+                    window->property("ecuConnectInProgress").toBool() ||
+                    (stop && stop->isEnabled()))){
+          QMessageBox confirm(QMessageBox::Question,I18n::text(29100),I18n::text(29101),
+                             QMessageBox::Yes|QMessageBox::No,this);
+          confirm.setDefaultButton(QMessageBox::No);
+          confirm.setEscapeButton(QMessageBox::No);
+          applyNativeTitleBar(&confirm,m_theme==QStringLiteral("dark"));
+          if(confirm.exec()!=QMessageBox::Yes)return;
+      }
+  }
   QString newSerialDeviceName;
   if (m_serialDeviceBox->currentIndex() >= 0 && m_serialDeviceBox->currentData().isValid())
     newSerialDeviceName = m_serialDeviceBox->currentData().toString().trimmed();
@@ -325,9 +342,7 @@ void OptionsDialog::accept()
   m_tempUnits = (TemperatureUnits) (m_temperatureUnitsBox->currentIndex());
   // m_lambdaScale = (LambdaScale) (m_lambdaScaleBox->currentIndex());
 
-  QString newTheme = m_themeBox->currentData().toString();
-  QString newLanguage = m_languageBox->currentData().toString();
-  m_languageChanged = (m_language != newLanguage);
+   m_languageChanged = (m_language != newLanguage);
   m_language = newLanguage;
   m_desktopShortcut = m_desktopShortcutBox->isChecked();
 
@@ -403,6 +418,7 @@ void OptionsDialog::writeSettings()
   settings.setValue(QStringLiteral("TaskbarAutoHide"), m_taskbarAutoHide);
 
   settings.endGroup();
+  settings.sync();
 }
 
 /**
