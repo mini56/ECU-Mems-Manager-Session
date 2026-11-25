@@ -77,3 +77,13 @@ assert 'm_options->getThemeChanged() || m_options->getLanguageChanged()' in sour
 assert 'waitForRestartParent(pid)' in main and 'ecuRestartRequested' in main
 assert 'confirm.exec()!=QMessageBox::Yes' in options and 'settings.sync();' in options
 print('SESSION_212_STARTUP_RESTART_STATUS_CONTRACT_OK')
+
+# SESSION 214: deterministic page creation before first shell build.
+installer=Path('mappedinjection_runtime_part3.inc').read_text(encoding='utf-8')
+assert 'bool ensureMappedInjectionPage(MainWindow *window)' in installer
+assert 'MappedInjectionInstaller' not in installer and 'QTimer::singleShot(0,window,[window,tabs,analysis]' not in installer
+assert 'Q_COREAPP_STARTUP_FUNCTION(installMappedInjectionUi)' not in Path('mappedinjection_runtime_part4.inc').read_text(encoding='utf-8')
+assert shell.index('if(!ensureMappedInjectionPage(') < shell.index('rebuild(window, central, root, tabs, legacy);')
+assert 'uiShellNavigationReady(&window,true)' in main and 'menu=16' in main
+assert 'uiShellNavigationReady(&window,true)' in Path('uishellsmoketest.cpp').read_text(encoding='utf-8')
+print('SESSION_214_STARTUP_NAVIGATION_CONTRACT_OK')

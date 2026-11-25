@@ -1,3 +1,4 @@
+#include "uishell.h"
 #include "uishellsmoketest.h"
 
 #include "mainwindow.h"
@@ -1668,14 +1669,18 @@ int runUiShellSmokeTest(QApplication &app)
     window.setAttribute(Qt::WA_QuitOnClose,false);
     window.setProperty("ecuSkipExitConfirmation",true);
     window.resize(1280,768);
+    // Exercise the same pre-show initialization order as the real startup.
+    window.ensurePolished();
+    buildUiShell(&window);
     window.show();
     logSmoke(QStringLiteral("After show()"));
 
-    // The real showEvent schedules the native shell on the next event turn.
-    // No test-only mutation of the page layouts is performed.
+    // Check the first rendered menu before any page navigation.
     QTimer::singleShot(350,&window,[&app,&window](){
         logSmoke(QStringLiteral("Enter timer / start checks"));
-        const bool ok=verifyUi(window);
+        const bool startupMenu=uiShellNavigationReady(&window,true);
+        if(!startupMenu)logSmoke(QStringLiteral("FAIL first rendered startup navigation"));
+        const bool ok=verifyUi(window)&&startupMenu;
         logSmoke(ok?QStringLiteral("Checks PASS"):QStringLiteral("Checks FAIL"));
         window.close();
         logSmoke(QStringLiteral("After close"));

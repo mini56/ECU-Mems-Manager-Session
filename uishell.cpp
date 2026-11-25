@@ -1116,12 +1116,15 @@ static void applyResponsive(QMainWindow *window)
         QFrame *workspace=new QFrame(central);workspace->setObjectName(QStringLiteral("uiRebuildWorkspace"));workspace->setAttribute(Qt::WA_StyledBackground,true);workspace->setStyleSheet(QStringLiteral("#uiRebuildWorkspace{background:%1;border:0;}").arg(QString::fromLatin1(kBg)));QHBoxLayout *wh=new QHBoxLayout(workspace);wh->setContentsMargins(0,0,0,0);wh->setSpacing(0);
         QListWidget *nav=new QListWidget(workspace);nav->setObjectName(QStringLiteral("uiRebuildNav"));nav->setFocusPolicy(Qt::NoFocus);nav->setSelectionMode(QAbstractItemView::SingleSelection);nav->setUniformItemSizes(true);nav->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         // The official 16 entries are created once by applyDeterministicNavigation().
-        tabs->tabBar()->hide();
         tabs->setStyleSheet(QStringLiteral("QTabWidget::pane{border:0;background:%1;}").arg(QString::fromLatin1(kBg)));
         wh->addWidget(nav);wh->addWidget(tabs,1);root->insertWidget(oldIndex<0?1:oldIndex,workspace,1);
         for(int i=0;i<tabs->count();++i){QWidget *page=realPage(tabs->widget(i));if(!page)continue;if(QScrollArea *scroll=qobject_cast<QScrollArea*>(tabs->widget(i))){scroll->setWidgetResizable(true);scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);page->setMinimumSize(0,0);}const QString title=titleForIndex(tabs,i);if(!usesDedicatedLayout(page,i))composeGenericPage(page,title,i);}
-        if(!applyDeterministicNavigation(qobject_cast<MainWindow*>(window)))
-            qWarning() << "SESSION official navigation could not initialize all 16 pages";
+        const bool mapped=applyDeterministicNavigation(qobject_cast<MainWindow*>(window));
+        if(mapped)tabs->tabBar()->hide();
+        else {
+            tabs->tabBar()->show();
+            qCritical() << "SESSION official navigation could not initialize all 16 pages";
+        }
         buildOverviewPage(window);
         buildEcuControlPages(window);
         buildSettingsPage(window);
@@ -1152,10 +1155,35 @@ void buildUiShell(QMainWindow *window)
     if (!tabs || !root || !legacy)
         return;
 
+    // Create the Injection page synchronously before rebuilding or hiding tabs.
+    if(!ensureMappedInjectionPage(qobject_cast<MainWindow*>(window))) {
+        qCritical() << "SESSION Injection page initialization failed";
+        return;
+    }
     window->setProperty("uiRebuildInstalled", true);
     rebuild(window, central, root, tabs, legacy);
-    window->setProperty("uiShellReady", true);
-    new SessionProgramUpdate(window);
+    const bool ready=uiShellNavigationReady(window,false);
+    window->setProperty("uiShellReady",ready);
+    if(ready)new SessionProgramUpdate(window);
+}
+
+bool uiShellNavigationReady(QMainWindow *window, bool requireVisible)
+{
+    if(!window||!window->property("deterministicNavigationApplied").toBool())return false;
+    QTabWidget *tabs=window->findChild<QTabWidget*>(QStringLiteral("Tab_main"));
+    QListWidget *nav=window->findChild<QListWidget*>(QStringLiteral("uiRebuildNav"));
+    if(!tabs||!nav||tabs->count()!=kFinalTabCount||nav->count()!=kFinalTabCount||
+       tabs->currentIndex()!=nav->currentRow()||nav->selectedItems().size()!=1)return false;
+    for(int i=0;i<kFinalTabCount;++i){
+        QListWidgetItem *item=nav->item(i);
+        if(!item||rankForTab(tabs->widget(i))!=i||item->text().trimmed().isEmpty()||
+           item->text()!=tabs->tabText(i))return false;
+        if(requireVisible && (item->isHidden()||!nav->visualItemRect(item).intersects(nav->viewport()->rect())))
+            return false;
+    }
+    if(requireVisible && (!window->isVisible()||!nav->isVisibleTo(window)||
+                          !nav->viewport()->isVisible()||nav->viewport()->height()<=0))return false;
+    return true;
 }
 
 void resizeUiShell(QMainWindow *window)

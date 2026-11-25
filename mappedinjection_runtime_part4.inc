@@ -141,4 +141,4 @@
     }
 }
 
-Q_COREAPP_STARTUP_FUNCTION(installMappedInjectionUi)
+

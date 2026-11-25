@@ -76,31 +76,24 @@
     MainWindow *m_window=nullptr;MEMSInterface *m_mems=nullptr;QTabWidget *m_tabs=nullptr;AnalysisTab *m_analysis=nullptr;InjectionDashboard *m_dashboard=nullptr;QWidget *m_injectionTab=nullptr,*m_previous=nullptr;QString m_firmware;InjectionRamMap m_map{0,0,0};bool m_ecuConnected=false,m_hasKnownInjectionMap=false,m_statusBound=false;
 };
 
-class MappedInjectionInstaller : public QObject
-{
-public:
-    explicit MappedInjectionInstaller(QObject *parent=nullptr):QObject(parent){}
-protected:
-    bool eventFilter(QObject *watched,QEvent *event) override
-    {
-        if(!watched||(event->type()!=QEvent::Show&&event->type()!=QEvent::Polish))return QObject::eventFilter(watched,event);
-        MainWindow *window=qobject_cast<MainWindow*>(watched);if(!window||window->objectName()!=QStringLiteral("MainWindow")||window->property("mappedInjectionUiInstalled").toBool()||!window->memsInterface())return QObject::eventFilter(watched,event);
-        QTabWidget *tabs=window->findChild<QTabWidget*>(QStringLiteral("Tab_main"));AnalysisTab *analysis=window->findChild<AnalysisTab*>();if(!tabs||!analysis)return QObject::eventFilter(watched,event);
-        window->setProperty("mappedInjectionUiInstalled",true);
-        QTimer::singleShot(0,window,[window,tabs,analysis](){
-            InjectionDashboard *dashboard=new InjectionDashboard(tabs);tabs->insertTab(1,dashboard,I18n::text(7900));
-            new InjectionModeController(window,window->memsInterface(),tabs,analysis,dashboard,dashboard);
-        });
-        return QObject::eventFilter(watched,event);
-    }
-};
-
-static void installMappedInjectionUi()
-{
-    QApplication *app=qobject_cast<QApplication*>(QCoreApplication::instance());if(app)app->installEventFilter(new MappedInjectionInstaller(app));
-}
-
 } // namespace
+
+// The shell owns page creation. Do not defer this page to Show/Polish:
+// the official navigation requires every page before its first construction.
+bool ensureMappedInjectionPage(MainWindow *window)
+{
+    if(!window||!window->memsInterface())return false;
+    QTabWidget *tabs=window->findChild<QTabWidget*>(QStringLiteral("Tab_main"));
+    AnalysisTab *analysis=window->findChild<AnalysisTab*>();
+    if(!tabs||!analysis)return false;
+    if(window->property("mappedInjectionUiInstalled").toBool())
+        return tabs->findChild<QWidget*>(QStringLiteral("injection_tab"))!=nullptr;
+    InjectionDashboard *dashboard=new InjectionDashboard(tabs);
+    tabs->insertTab(1,dashboard,I18n::text(7900));
+    new InjectionModeController(window,window->memsInterface(),tabs,analysis,dashboard,dashboard);
+    window->setProperty("mappedInjectionUiInstalled",true);
+    return true;
+}
 
 void MEMSInterface::onMappedInjectionRequestState(bool enabled)
 {

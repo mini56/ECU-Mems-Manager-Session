@@ -571,11 +571,18 @@ int main(int argc, char *argv[])
     }
     QTimer::singleShot(0,&window,[&](){
         qInfo()<<"STARTUP_WINDOW_READY_MS"<<startupClock.elapsed();
-        if(!startupProbe.isEmpty() && window.isVisible() && window.property("uiShellReady").toBool()){
+        if(!startupProbe.isEmpty()){
+            if(!window.property("uiShellReady").toBool()||!uiShellNavigationReady(&window,true)){
+                qCritical()<<"REAL_STARTUP_NAVIGATION_FAILED";
+                window.setProperty("ecuSkipExitConfirmation",true);
+                app.exit(31);
+                return;
+            }
+            qInfo()<<"REAL_STARTUP_NAVIGATION_PASS"<<16;
             QSaveFile marker(startupProbe);
             if(marker.open(QIODevice::WriteOnly)){
                 const QByteArray payload=QByteArray::number(startupClock.elapsed())+"\n"+
-                    (memsPreparedReferenceRoot().isEmpty()?"fallback":"prepared")+"\n";
+                    (memsPreparedReferenceRoot().isEmpty()?"fallback":"prepared")+"\nmenu=16\n";
                 if(marker.write(payload)==payload.size())marker.commit();
             }
         }
