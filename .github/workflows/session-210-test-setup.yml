@@ -25,6 +25,7 @@ jobs:
           python tools/test_mems16na_translation_catalog.py
           python tools/test_mems16na_help.py
           python tools/test_mems16na_ui_contract.py
+          python -c "from pathlib import Path; s=Path('aboutbox.cpp').read_text(encoding='utf-8'); p=[s.index(n) for n in ('Andrew Revill','Leopold Gunther','Colin Bourassa','haro78','James Portman')]; assert p==sorted(p), 'Incorrect acknowledgements order'; print('SESSION_210_ACKNOWLEDGEMENTS_ORDER_PASS')"
           python tools/test_save81_source.py
           python tools/test_adjustment_buttons_source.py
   windows:
