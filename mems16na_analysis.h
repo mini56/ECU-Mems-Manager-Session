@@ -57,7 +57,8 @@ inline QString label(const QString &key) {
         if(key==QStringLiteral("na_")+QString::fromLatin1(c[i].value)+QStringLiteral("_value")) {
             QString unit=QString::fromUtf8(c[i].unit);
             if(unit==QStringLiteral("steps"))unit=I18n::text(29065);
-            if(!unit.isEmpty()&&!name.contains(QStringLiteral("("+unit+")")))return name+QStringLiteral(" (")+unit+QLatin1Char(')');
+            const QString suffix=QStringLiteral(" (")+unit+QLatin1Char(')');
+            if(!unit.isEmpty()&&!name.contains(suffix.trimmed()))return name+suffix;
             return name;
         }
     }

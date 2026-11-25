@@ -12,3 +12,8 @@ Base dff2edb5a76f8e27d1ec0f65e5c3afe85d4f9018. Run 45474093612 vert (tests et Wi
 - Run de référence [45476618873](https://github.com/mini56/ECU-Mems-Manager-Session/actions/runs/45476618873).
 - tests : in_progress / non terminé (Valider les trois tests autonomes et les six langues)
 - Pas de workflow de publication déclenché pour ce lot au contrôle. Tests de relecture et compilation Windows en attente de résultat. Aucun test sur véhicule.
+
+## Correction compilation — 25 novembre 2026
+- Runs 45476587409, 45476618873 et 45476769392 : tests autonomes réussis ; échec Windows à l'étape « Tester la relecture et les voies MEMS 1.6 NA ». C3493/C2668 dans mems16na_analysis.h:60 : argument de QStringLiteral contenant une concaténation avec la variable unit. QStringLiteral doit recevoir uniquement un littéral. Construction du suffixe dynamique en QString, contrôle de doublon préservé. Tests renforcés sur V, µs, TPS, pas et °C.
+- Run 45476769392 : C1083 QAbstractButton dans i18n.cpp ; la branche actuelle contient déjà find_package(Qt5 COMPONENTS Widgets) et target_link_libraries(... Qt5::Widgets), vérifiés dans le CMake du test. Ne pas réintroduire la configuration Core seule.
+- Correction directe des sources, sans nouveau lot, sans changement DLL/commandes ECU, sans publication. Ne pas considérer le lot 2D validé tant que le test Qt et la compilation Windows complète ne sont pas verts.

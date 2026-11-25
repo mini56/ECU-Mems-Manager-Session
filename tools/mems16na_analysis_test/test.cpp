@@ -38,5 +38,11 @@ int main(int argc,char **argv) {
     CHECK(qIsNaN(invalid.numbers.at(col("na_lambda_mv_value"))));
     for(const QString &key:k)if(key.startsWith(QStringLiteral("na_")))CHECK(!label(key).isEmpty());
     CHECK(label(QStringLiteral("na_tps_ref4_tps_value")).contains(QStringLiteral("TPS")));
+    // A localized label already containing its unit must not duplicate it.
+    CHECK(label(QStringLiteral("na_learn_voltage_v_value")).count(QStringLiteral("(V)"))==1);
+    CHECK(label(QStringLiteral("na_injection_time_us_value")).count(QStringLiteral("(µs)"))==1);
+    CHECK(label(QStringLiteral("na_tps_ref4_tps_value")).endsWith(QStringLiteral(" (TPS)")));
+    CHECK(label(QStringLiteral("na_idle_hot_steps_value")).endsWith(QStringLiteral(" (")+I18n::text(29065)+QLatin1Char(')')));
+    CHECK(label(QStringLiteral("na_ambient_c_value")).endsWith(QStringLiteral(" (°C)")));
     std::cout<<"MEMS16NA_ANALYSIS_QT_OK: V2 replay, identity, 13.8 V, 840 mV, TPS, gaps, DTC state, labels\n";
 }
