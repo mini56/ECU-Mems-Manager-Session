@@ -72,5 +72,13 @@
   "29070": "Historische Interpretation: Firmware nicht verifiziert. Originalwerte beibehalten.",
   "29071": "MEMS 1.6 V2-Aufzeichnung: ungültiger Kopf oder Identität.",
   "29072": "Werte nur aus validierten Rohrahmen neu berechnet; Datei unverändert.",
-  "29073": "Einspr. korr. (µs)"
+  "29073": "Einspr. korr. (µs)",
+  "29074": "Dokumentationsreferenz MEMS 1.6 Saugmotor. Varianten und Ausstattung müssen durch die ECU-Identifikation bestätigt werden.",
+  "29075": "In den 123 untersuchten Saugmotor-Firmwares ist dieses Byte eine ungenutzte FF-Konstante. Weder acht Fehler noch ein Nachweis der Fehlerfreiheit.",
+  "29076": "Bei AANMP002 überträgt 80/19 den 180°-Synchronisationszustand des Motors (Maske 10h). Die bisherige Bezeichnung bleibt erhalten.",
+  "29077": "Bei AANMP002 ist 80/1A eine ungenutzte 00-Konstante. Nicht auf andere Firmware übertragen.",
+  "29078": "Bei AANMP002 ist dieses Byte eine ungenutzte FF-Konstante. Andere Varianten müssen überprüft werden.",
+  "29079": "Byte 80/1A",
+  "29080": "Byte 7D/03",
+  "29081": "DTC ? (7D/10)"
 }

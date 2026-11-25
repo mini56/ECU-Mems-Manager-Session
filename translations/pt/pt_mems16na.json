@@ -72,5 +72,13 @@
   "29070": "Interpretação histórica: firmware não verificado. Valores originais conservados.",
   "29071": "Registo MEMS 1.6 V2: cabeçalho ou identidade inválida.",
   "29072": "Valores recalculados apenas a partir de tramas brutas validadas; ficheiro inalterado.",
-  "29073": "Corr. inj. (µs)"
+  "29073": "Corr. inj. (µs)",
+  "29074": "Referência documental MEMS 1.6 atmosférico. As variantes e o equipamento devem ser confirmados identificando a ECU.",
+  "29075": "Nos 123 firmwares atmosféricos estudados, este byte é uma constante FF não utilizada. Não indica oito avarias nem prova a ausência de avarias.",
+  "29076": "No AANMP002, 80/19 transmite o estado de sincronização do motor a 180° (máscara 10h). A designação existente é mantida.",
+  "29077": "No AANMP002, 80/1A é uma constante 00 não utilizada. Não generalizar a outros firmwares.",
+  "29078": "No AANMP002, este byte é uma constante FF não utilizada. As outras variantes devem ser verificadas.",
+  "29079": "Byte 80/1A",
+  "29080": "Byte 7D/03",
+  "29081": "DTC ? (7D/10)"
 }

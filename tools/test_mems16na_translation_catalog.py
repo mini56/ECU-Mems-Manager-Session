@@ -1,6 +1,6 @@
 from pathlib import Path
 import json
-keys={str(n) for n in range(29000,29074)}
+keys={str(n) for n in range(29000,29082)}
 for lang in ('fr','en','de','es','it','pt'):
     root=Path('translations',lang)
     target=root/f'{lang}_mems16na.json'
@@ -10,4 +10,4 @@ for lang in ('fr','en','de','es','it','pt'):
         if p!=target:
             assert not(keys & set(json.loads(p.read_text(encoding='utf-8-sig')))),p
     for k in ('29032','29034','29040','29053','29062','29063','29064','29066','29067','29068'): assert d[k].count('%1')==1,(lang,k)
-print('MEMS16NA_TRANSLATIONS_OK: 74 keys, six languages, no ID collisions')
+print('MEMS16NA_TRANSLATIONS_OK: 82 keys, six languages, no ID collisions')

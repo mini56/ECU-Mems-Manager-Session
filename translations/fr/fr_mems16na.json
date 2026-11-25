@@ -72,5 +72,13 @@
   "29070": "Interprétation historique : firmware non vérifié. Valeurs d'origine conservées.",
   "29071": "Enregistrement MEMS 1.6 V2 : en-tête ou identité non valide.",
   "29072": "Valeurs recalculées uniquement depuis les trames brutes validées ; aucune modification du fichier.",
-  "29073": "Corr. inj. (µs)"
+  "29073": "Corr. inj. (µs)",
+  "29074": "Référence documentaire MEMS 1.6 atmosphérique. Les variantes et l'équipement doivent être confirmés par l'identification du calculateur.",
+  "29075": "Dans les 123 firmwares atmosphériques étudiés, cet octet est une constante FF non utilisée. Ce n'est ni huit défauts ni une preuve d'absence de panne.",
+  "29076": "Sur AANMP002, 80/19 transmet l'état de synchronisation moteur à 180° (masque 10h). Le libellé existant est conservé.",
+  "29077": "Sur AANMP002, 80/1A est une constante 00, non utilisée. Ne pas généraliser aux autres firmwares.",
+  "29078": "Sur AANMP002, cet octet est une constante FF non utilisée. Les autres variantes doivent être vérifiées.",
+  "29079": "Octet 80/1A",
+  "29080": "Octet 7D/03",
+  "29081": "DTC ? (7D/10)"
 }

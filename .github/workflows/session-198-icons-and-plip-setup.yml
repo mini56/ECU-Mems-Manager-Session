@@ -2,12 +2,6 @@ name: "SESSION 198 - Icones menus et alignement PLIP - Setup Windows"
 run-name: SESSION 198 - ICONES MENUS ET ALIGNEMENT PLIP - ${{ github.sha }}
 on:
   workflow_dispatch:
-  push:
-    branches: [fix-documentary-additive-session-161-20261118]
-    paths:
-      - '.github/workflows/session-198-icons-and-plip-setup.yml'
-      - 'othercontrolunitstab.h'
-      - 'uishellsmoketest.cpp'
 permissions:
   contents: write
 concurrency:

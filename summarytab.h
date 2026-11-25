@@ -30,6 +30,7 @@ public:
     explicit SummaryTab(QWidget *parent = 0);
     void updateData(mems_data *data, const Mems16Na::SessionEvidence *na = nullptr);
     void clearNaPresentation();
+    void showNaDocumentation();
     void update2JData(const QVariantMap &values,
                       const QString &family = QStringLiteral("MEMS 2J"));
     void applyVisualTheme(bool dark);
@@ -49,7 +50,7 @@ private:
     bool m_showing2J = false;
     bool m_showingNa = false;
     QStringList m_naSavedLabels, m_naSavedTooltips;
-    void applyNaPresentation(const Mems16Na::SessionEvidence &na);
+    void applyNaPresentation(const Mems16Na::SessionEvidence &na,bool documentationOnly=false);
     QStringList m_savedRowLabels;
     QStringList m_savedRowTooltips;
     int m_rowsPerTable;

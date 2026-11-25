@@ -110,6 +110,43 @@ bool verifyApprovedVisualRules(MainWindow &window)
         }
     }
 
+    // Regression SESSION 207: even before connecting an ECU, the two
+    // data pages must contain the documented NA reference names and help.
+    // No firmware or received value may be fabricated.
+    struct NaLabel { const char *name; int key; };
+    const NaLabel naLabels[]={
+        {"label_80x0B",29022},{"label_80x0C",29023},{"label_80x0F",29024},
+        {"label_80x10",29025},{"label_80x11",29026},{"label_80x09",29027},
+        {"label_80x1B",29028},{"label_0x0B",29029},{"label_0x0F",29030},
+        {"label_0x15",29031},{"label_0x1F",29033},
+        {"label_80x1A",29079},{"label_0x03",29080},{"label_0x10",29081}};
+    for(const auto &entry:naLabels) {
+        auto *label=window.findChild<QLabel*>(QString::fromLatin1(entry.name));
+        ok=check(label&&label->text()==I18n::text(entry.key)&&!label->toolTip().isEmpty(),
+                 entry.name)&&ok;
+    }
+    const char *refNames[]={"label_0x17","label_0x19","label_0x1B","label_0x1D"};
+    for(int i=0;i<4;++i){
+        auto *label=window.findChild<QLabel*>(QString::fromLatin1(refNames[i]));
+        ok=check(label&&label->text()==I18n::text(29032).arg(i+1)&&!label->toolTip().isEmpty(),
+                 refNames[i])&&ok;
+    }
+    for(const char *name:{"label_80x0D","label_80x0E","label_0x05",
+                         "label_0x0E","label_0x11","label_0x16","label_0x10"}){
+        auto *label=window.findChild<QLabel*>(QString::fromLatin1(name));
+        auto *bubble=label?label->findChild<QLabel*>(QStringLiteral("_ecuHelpBubble"),Qt::FindDirectChildrenOnly):nullptr;
+        ok=check(label&&label->toolTip().contains(I18n::text(29074))&&bubble&&!bubble->isHidden(),name)&&ok;
+    }
+    auto *dtc1=window.findChild<QLabel*>(QStringLiteral("label_80x0E"));
+    ok=check(dtc1&&dtc1->toolTip().contains(I18n::text(29012))&&
+        dtc1->toolTip().contains(I18n::text(29013))&&dtc1->toolTip().contains(I18n::text(29015)),
+        "DTC1 offline variant help")&&ok;
+    for(const char *name:{"m_80_0D","m_80_0E","m_7D_05","m_7D_17","m_80_11","r_7D_05"}){
+        auto *label=window.findChild<QLabel*>(QString::fromLatin1(name));
+        ok=check(label&&label->text()==QStringLiteral("--"),name)&&ok;
+    }
+    if(ok)logSmoke(QStringLiteral("MEMS16NA_RAW_OFFLINE_HELP_AND_LABELS_PASS"));
+
     // The three measurement tables must preserve typography and a
     // sufficiently wide Interpreted column.
     SummaryTab *summary=window.findChild<SummaryTab*>();

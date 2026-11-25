@@ -196,6 +196,7 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
   setTooltip(m_rowIgnitionAdvance2,
     I18n::text(6707) /* EN: MEMS ECU function intended to compensate for certain conditions over the vehicle's life (low-octane fuel, engine wear) by slightly advancing ignition at idle. */);
 
+  showNaDocumentation();
   applyVisualTheme(qApp && qApp->property("ecuDarkTheme").toBool());
   for (QTableWidget *table : {m_table0,m_table1,m_table2})
     sizeSummaryTable(table);
@@ -648,11 +649,29 @@ void SummaryTab::clearNaPresentation()
   for(QTableWidget *t:{m_table0,m_table1,m_table2})sizeSummaryTable(t);
 }
 
-void SummaryTab::applyNaPresentation(const Mems16Na::SessionEvidence &na)
+void SummaryTab::showNaDocumentation()
+{
+  if(m_showing2J) {
+    for(int i=0;i<m_rowCount;++i) {
+      QTableWidget *table=i/m_rowsPerTable==0?m_table0:i/m_rowsPerTable==1?m_table1:m_table2;
+      const int row=i%m_rowsPerTable;
+      table->setRowHidden(row,false);
+      table->item(row,0)->setText(m_savedRowLabels.value(i));
+      const QString tip=m_savedRowTooltips.value(i);
+      for(int col=0;col<4;++col)table->item(row,col)->setToolTip(tip);
+      table->item(row,1)->setIcon(tip.isEmpty()?QIcon():QIcon(":/icons/helpbubble.png"));
+    }
+    m_showing2J=false;
+  }
+  clearNaPresentation();
+  applyNaPresentation(Mems16Na::SessionEvidence(),true);
+}
+
+void SummaryTab::applyNaPresentation(const Mems16Na::SessionEvidence &na,bool documentationOnly)
 {
   using namespace Mems16Na;
   const auto *p=na.identifiedProfile();
-  if(!p)return;
+  if(!p&&!documentationOnly)return;
   auto table=[this](int i){return i/m_rowsPerTable==0?m_table0:i/m_rowsPerTable==1?m_table1:m_table2;};
   auto item=[&](int i,int col){return table(i)->item(i%m_rowsPerTable,col);};
   const bool first=!m_showingNa;
@@ -673,12 +692,9 @@ void SummaryTab::applyNaPresentation(const Mems16Na::SessionEvidence &na)
   auto row=[&](int i,int key,const Value &v,const QString &out,const QString &tip=QString()){
     item(i,0)->setText(I18n::text(key));
     setValue(i,rawText(v),out);
-    if(!tip.isEmpty())setTooltip(i,tip);
-    else {
-      item(i,0)->setToolTip(QString());item(i,1)->setToolTip(QString());
-      item(i,1)->setIcon(QIcon());item(i,2)->setToolTip(QString());
-    }
-    item(i,3)->setToolTip(out+(tip.isEmpty()?QString():QStringLiteral("\n")+tip));
+    const QString detail=tip.isEmpty()?I18n::text(key):tip;
+    setTooltip(i,documentationOnly?documentation(detail):detail);
+    item(i,3)->setToolTip(documentationOnly?documentation(detail):out+QStringLiteral("\n")+detail);
   };
   const auto m=na.measurements();
   row(m_rowAmbientTemp,29046,m.ambient,numeric(m.ambient,0,QStringLiteral(" °C")));
@@ -704,7 +720,8 @@ void SummaryTab::applyNaPresentation(const Mems16Na::SessionEvidence &na)
   const int hi[]={m_rowUk11,m_rowUk13,m_rowUk15,m_rowUk1A};
   const int lo[]={m_rowUk12,m_rowUk14,m_rowUk16,m_rowUk1B};
   QString refHelp=I18n::text(29041);
-  if(p->repeatedThrottleReference)refHelp+=QStringLiteral("\n")+I18n::text(29042);
+  if(p&&p->repeatedThrottleReference)refHelp+=QStringLiteral("\n")+I18n::text(29042);
+  if(documentationOnly)refHelp=documentation(refHelp);
   for(int i=0;i<4;++i) {
     item(hi[i],0)->setText(I18n::text(29032).arg(i+1));
     setValue(hi[i],throttleWord(m.throttleReference[i]),numeric(m.throttleReference[i],2,QStringLiteral(" TPS")));
@@ -717,9 +734,22 @@ void SummaryTab::applyNaPresentation(const Mems16Na::SessionEvidence &na)
   const Group groups[]={Group::Dtc0,Group::Dtc1,Group::Dtc2,Group::Dtc3,Group::Dtc4,Group::Dtc5,Group::Indirect7D10};
   for(int i=0;i<7;++i) {
     const auto d=na.dtc(groups[i]);
-    const QString help=dtcHelp(p,groups[i]),result=dtcText(p,groups[i],d);
+    const QString help=documentationOnly?dtcDocumentation(groups[i]):dtcHelp(p,groups[i]);
+    const QString result=documentationOnly?QStringLiteral("--"):dtcText(p,groups[i],d);
     setValue(rows[i],rawDtc(d),result);
-    setTooltip(rows[i],result+QStringLiteral("\n\n")+help);
+    setTooltip(rows[i],documentationOnly?help:result+QStringLiteral("\n\n")+help);
   }
+  // Keep the established readable descriptions, replacing only generic
+  // placeholders with the matching raw-view name or exact byte position.
+  item(m_rowUk3,0)->setText(I18n::text(5198));
+  item(m_rowUk4,0)->setText(I18n::text(29079));
+  item(m_rowUk6,0)->setText(I18n::text(29080));
+  item(m_rowUk7,0)->setText(I18n::text(29081));
+  setTooltip(m_rowUk3,documentation(I18n::text(29076)));
+  setTooltip(m_rowUk4,documentation(I18n::text(29077)));
+  for(int i:{m_rowUk6,m_rowLambdaFrequency,m_rowLambdaDutycycle})
+    setTooltip(i,documentation(I18n::text(29078)));
+  if(documentationOnly)for(int i=0;i<m_rowCount;++i)
+    setValue(i,QStringLiteral("--"),QStringLiteral("--"));
   if(first)for(QTableWidget *t:{m_table0,m_table1,m_table2})sizeSummaryTable(t);
 }

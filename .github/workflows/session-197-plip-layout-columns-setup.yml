@@ -2,12 +2,6 @@ name: "SESSION 197 - Alignement boutons et colonnes PLIP - Setup Windows"
 run-name: SESSION 197 - ALIGNEMENT PLIP ET COLONNES - ${{ github.sha }}
 on:
   workflow_dispatch:
-  push:
-    branches: [fix-documentary-additive-session-161-20261118]
-    paths:
-      - '.github/workflows/session-197-plip-layout-columns-setup.yml'
-      - 'othercontrolunitstab.h'
-      - 'uishellsmoketest.cpp'
 permissions:
   contents: write
 concurrency:

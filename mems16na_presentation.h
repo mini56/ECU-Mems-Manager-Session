@@ -41,6 +41,33 @@ inline QString dtcHelp(const Profile *p,Group g) {
     lines<<I18n::text(29021);
     return lines.join(QLatin1Char('\n'));
 }
+// A reference is not a selected ECU profile. List all documented variants.
+inline QString dtcDocumentation(Group g) {
+    QStringList lines{I18n::text(29074)};
+    std::size_t n=0;const auto *profiles=catalog(n);
+    if(n&&definition(profiles,g).constant) {
+        lines<<I18n::text(29075);
+        return lines.join(QLatin1Char('\n'));
+    }
+    for(unsigned mask=1;mask<=128;mask<<=1) {
+        QStringList alternatives;
+        for(std::size_t i=0;i<n;++i) {
+            const auto def=definition(&profiles[i],g);
+            if(!((def.faultMask|def.stateMask)&mask))continue;
+            const auto c=circuit(&profiles[i],g,mask);
+            QString label=I18n::text(circuitKey(c));
+            if(c==Circuit::AuxiliaryPtc)label+=QStringLiteral(" — ")+I18n::text(29020);
+            if(!alternatives.contains(label))alternatives<<label;
+        }
+        if(!alternatives.isEmpty())
+            lines<<maskText(mask)+QStringLiteral(" : ")+alternatives.join(QStringLiteral(" / "));
+    }
+    lines<<I18n::text(29021);
+    return lines.join(QLatin1Char('\n'));
+}
+inline QString documentation(const QString &detail) {
+    return I18n::text(29074)+QStringLiteral("\n")+detail;
+}
 inline QString dtcText(const Profile *p,Group g,const DtcResult &d) {
     if(d.availability==Availability::Missing)return I18n::text(29048);
     if(d.availability==Availability::NotUsed)return I18n::text(29001);

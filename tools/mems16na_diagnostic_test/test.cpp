@@ -88,6 +88,30 @@ int main(int argc,char **argv) {
         auto value=[&](int id,int column)->QString {
             auto *it=find(id);return it?it->tableWidget()->item(it->row(),column)->text():QString();
         };
+        // Regression: initial disconnected view must show the documented
+        // fields and all permanent DTC bubbles, with no fake measurements.
+        auto checkOffline=[&]()->bool {
+            for(int id:{29022,29023,29024,29025,29026,29027,29028,29029,29030,29031,29033}) {
+                auto *it=find(id);if(!it||value(id,2)!=QStringLiteral("--")||value(id,3)!=QStringLiteral("--"))return false;
+            }
+            for(int i=1;i<=4;++i) {
+                bool found=false;
+                for(auto *tbl:summary.findChildren<QTableWidget*>())
+                    for(int row=0;row<tbl->rowCount();++row)
+                        if(tbl->item(row,0)->text()==I18n::text(29032).arg(i)&&!tbl->isRowHidden(row)
+                           &&!tbl->item(row,1)->icon().isNull())found=true;
+                if(!found)return false;
+            }
+            for(int id:{6657,6658,6630,6639,6642,6647,29081,5198,29079,29080,6632,6633}) {
+                auto *it=find(id);if(!it)return false;
+                auto *bubble=it->tableWidget()->item(it->row(),1);
+                if(bubble->icon().isNull()||bubble->toolTip().isEmpty())return false;
+            }
+            auto *dtc=find(6658);
+            return dtc&&dtc->toolTip().contains(I18n::text(29010))&&dtc->toolTip().contains(I18n::text(29012))
+                &&dtc->toolTip().contains(I18n::text(29013))&&dtc->toolTip().contains(I18n::text(29015));
+        };
+        CHECK(checkOffline());
         for(bool dark:{false,true}) {
             summary.applyVisualTheme(dark);
             for(int width:{1200,1366,1920}) {
@@ -96,19 +120,20 @@ int main(int argc,char **argv) {
                 CHECK(value(6644,3)==QStringLiteral("-50 RPM"));
                 CHECK(value(6631,3)==QStringLiteral("840 mV"));
                 CHECK(value(6635,3)==I18n::text(6673));
-                for(int id:{6657,6658,6630,6639,6642,6647,6641}) {
+                for(int id:{6657,6658,6630,6639,6642,6647,29081}) {
                     auto *it=find(id);CHECK(it);
                     auto *bubble=it->tableWidget()->item(it->row(),1);
                     CHECK(!bubble->icon().isNull()&&!bubble->toolTip().isEmpty());
                 }
                 auto *dtc=find(6658);CHECK(dtc);
                 CHECK(dtc->toolTip().contains(I18n::text(29015))&&dtc->toolTip().contains(I18n::text(29016)));
-                for(int id:{6623,6624,6628,6632,6633,6639,6641,6642,6647})CHECK(find(id));
+                for(int id:{5198,29079,29080,6632,6633,6639,29081,6642,6647})CHECK(find(id));
                 auto missing=good;missing.discardPair();summary.updateData(&d,&missing);
                 CHECK(value(6603,2)==QStringLiteral("--")&&value(6603,3)==I18n::text(29048));
                 CHECK(value(6631,3)==I18n::text(29048)&&value(6644,3)==I18n::text(29048));
                 CHECK(value(6657,3)==I18n::text(29048));
                 summary.updateData(&d);CHECK(value(6603,2)==QStringLiteral("900"));
+                summary.showNaDocumentation();CHECK(checkOffline());
             }
         }
     }

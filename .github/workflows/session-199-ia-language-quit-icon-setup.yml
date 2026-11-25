@@ -2,12 +2,6 @@ name: "SESSION 199 - Traduction IA MEMS et icone Quitter - Setup Windows"
 run-name: SESSION 199 - TRADUCTION IA MEMS ET QUITTER - ${{ github.sha }}
 on:
   workflow_dispatch:
-  push:
-    branches: [fix-documentary-additive-session-161-20261118]
-    paths:
-      - '.github/workflows/session-199-ia-language-quit-icon-setup.yml'
-      - 'othercontrolunitstab.h'
-      - 'uishellsmoketest.cpp'
 permissions:
   contents: write
 concurrency:

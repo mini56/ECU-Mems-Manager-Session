@@ -72,5 +72,13 @@
   "29070": "Historical interpretation: firmware not verified. Original values retained.",
   "29071": "MEMS 1.6 V2 recording: invalid header or identity.",
   "29072": "Values recalculated only from validated raw frames; file unchanged.",
-  "29073": "Inj. corr. (µs)"
+  "29073": "Inj. corr. (µs)",
+  "29074": "Naturally aspirated MEMS 1.6 documentary reference. Variants and equipment must be confirmed by identifying the ECU.",
+  "29075": "In the 123 studied naturally aspirated firmwares this byte is an unused FF constant. It means neither eight faults nor proof of no fault.",
+  "29076": "On AANMP002, 80/19 transmits the 180° engine synchronization state (mask 10h). The existing description is retained.",
+  "29077": "On AANMP002, 80/1A is an unused 00 constant. Do not generalize to other firmwares.",
+  "29078": "On AANMP002, this byte is an unused FF constant. Other variants must be verified.",
+  "29079": "Byte 80/1A",
+  "29080": "Byte 7D/03",
+  "29081": "DTC ? (7D/10)"
 }

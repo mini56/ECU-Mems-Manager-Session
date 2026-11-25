@@ -2,12 +2,6 @@ name: "SESSION 200 - Fenetres et listes deroulantes - Setup Windows"
 run-name: SESSION 200 - FENETRES ET CHEVRONS ORANGE - ${{ github.sha }}
 on:
   workflow_dispatch:
-  push:
-    branches: [fix-documentary-additive-session-161-20261118]
-    paths:
-      - '.github/workflows/session-200-dialogs-dropdown-setup.yml'
-      - 'othercontrolunitstab.h'
-      - 'uishellsmoketest.cpp'
 permissions:
   contents: write
 concurrency:

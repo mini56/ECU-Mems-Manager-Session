@@ -24,3 +24,11 @@ for label in ('label_80x0D','label_80x0E','label_0x05','label_0x0E','label_0x11'
 assert 'm_naFaultHistoryIdentity.clear()' in source
 assert 'if(!m_naFaultHistoryIdentity.isEmpty())m_prevFaultMaskValid=false;' in source
 print('MEMS16NA_UI_CONTRACT_OK: nine calculated cells available; seven DTC help targets; context reset')
+
+assert 'showNaPages(Mems16Na::SessionEvidence(),true);\n  TooltipBubbleManager::install(this);' in source
+assert source.count('showNaPages(Mems16Na::SessionEvidence(),true);')==2
+summary=Path('summarytab.cpp').read_text(encoding='utf-8')
+assert 'showNaDocumentation();\n  applyVisualTheme' in summary
+assert 'dtcDocumentation(groups[i])' in summary
+assert 'dtcDocumentation(r.group)' in source
+print('MEMS16NA_OFFLINE_SOURCE_CONTRACT_OK')

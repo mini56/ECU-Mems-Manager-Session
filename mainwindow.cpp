@@ -458,6 +458,8 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
   makeFixedTabsScrollable();
   m_ui->Tab_main->setCurrentIndex(0); // Toujours démarrer sur Aperçu
   initializeInjectionRamTestUi(this);
+  I18n::apply(this); // save translated baseline before showing offline reference
+  showNaPages(Mems16Na::SessionEvidence(),true);
   TooltipBubbleManager::install(this);
   initializeOverviewLive(this);
   refreshConnectionHeader();
@@ -1786,7 +1788,8 @@ void MainWindow::onDisconnect()
   restoreNaPages();
   clearNaIdentityStatus();
   if(m_logger)m_logger->endNaSession();
-  if(m_summaryTab)m_summaryTab->clearNaPresentation();
+  if(m_summaryTab)m_summaryTab->showNaDocumentation();
+  showNaPages(Mems16Na::SessionEvidence(),true);
   if(m_diagnosticPanel)m_diagnosticPanel->endNaSession();
   EcuCommunicationLog::finish();
   m_ui->m_saveAdjustmentsButton->setEnabled(false);
@@ -2618,11 +2621,11 @@ void MainWindow::clearNaIdentityStatus()
   m_naIdentityTipActive=false;
 }
 
-void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na)
+void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na,bool documentationOnly)
 {
   using namespace Mems16Na;
   const Profile *p=na.identifiedProfile();
-  if(!p)return;
+  if(!p&&!documentationOnly)return;
   const auto m=na.measurements();
   if(!na.ready()) {
     // Clear every received/calculated cell before the qualified NA rendering.
@@ -2666,7 +2669,9 @@ void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na)
     if(result)result->setText(calculated);
     // Full text remains accessible through the existing permanent bubble.
     // No extra row or global scroll for multiple simultaneous faults.
-    if(!help.isEmpty() || !result)
+    if(documentationOnly) {
+      name->setToolTip(help.isEmpty()?documentation(title.isEmpty()?name->text():title):documentation(help));
+    } else if(!help.isEmpty() || !result)
       name->setToolTip(calculated+(help.isEmpty()?QString():QStringLiteral("\n\n")+help));
   };
   auto row=[&](QLabel *name,QLabel *raw,QLabel *result,int key,
@@ -2693,6 +2698,7 @@ void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na)
       state(m.lambdaFault,7023,7024),I18n::text(29053).arg(state(m.lambdaFault,29038,29039)));
   cell(m_ui->label_0x0A,m_ui->m_7D_0A,m_ui->r_7D_0A,QString(),rawText(m.closedLoop),
       state(m.closedLoop,7025,7026));
+  if(!documentationOnly) {
   // Overview is a physical reading, not the service adjustment scale.
   rememberNaLabel(m_ui->m_long_trim_label);
   m_ui->m_long_trim_label->setText(I18n::text(29073));
@@ -2706,6 +2712,7 @@ void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na)
   m_ui->m_LambdaSensorLabel->setToolTip(I18n::text(29053).arg(state(m.lambdaFault,29038,29039)));
   rememberNaLabel(m_ui->m_engineerrorLabel);
   m_ui->m_engineerrorLabel->setToolTip(na.ready()?I18n::text(29021):I18n::text(29048));
+  }
   row(m_ui->label_0x0B,m_ui->m_7D_0B,m_ui->r_7D_0B,29029,m.injectionTime,numeric(m.injectionTime,0,QStringLiteral(" µs")),I18n::text(29044));
   row(m_ui->label_0x0F,m_ui->m_7D_0F,m_ui->r_7D_0F,29030,m.idleBase,steps(m.idleBase));
   rememberNaLabel(m_ui->m_7D_15);
@@ -2716,7 +2723,7 @@ void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na)
   QLabel *hiRaw[]={m_ui->m_7D_17,m_ui->m_7D_19,m_ui->m_7D_1B,m_ui->m_7D_1D};
   QLabel *loRaw[]={m_ui->m_7D_18,m_ui->m_7D_1A,m_ui->m_7D_1C,m_ui->m_7D_1E};
   QString refHelp=I18n::text(29041);
-  if(p->repeatedThrottleReference)refHelp+=QStringLiteral("\n")+I18n::text(29042);
+  if(p&&p->repeatedThrottleReference)refHelp+=QStringLiteral("\n")+I18n::text(29042);
   for(int i=0;i<4;++i) {
     const Value &v=m.throttleReference[i];
     const QString hi=v.availability==Availability::Missing?QStringLiteral("--"):QString::number(v.raw>>8);
@@ -2724,6 +2731,7 @@ void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na)
     cell(names[i],hiRaw[i],extra(hiRaw[i],m_ui->HF_table),I18n::text(29032).arg(i+1),hi,numeric(v,2,QStringLiteral(" TPS")),refHelp);
     rememberNaLabel(loNames[i]);
     loNames[i]->setText(I18n::text(29032).arg(i+1)+QStringLiteral(" (LSB)"));
+    loNames[i]->setToolTip(documentation(refHelp));
     loRaw[i]->setText(lo);
   }
   row(m_ui->label_0x1F,m_ui->m_7D_1F,extra(m_ui->m_7D_1F,m_ui->HF_table),29033,m.learnCount,numeric(m.learnCount,0));
@@ -2738,7 +2746,30 @@ void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na)
     {m_ui->label_0x10,m_ui->m_7D_10,m_ui->r_7D_10,Group::Indirect7D10}};
   for(const auto &r:groups) {
     const auto d=na.dtc(r.group);
-    cell(r.name,r.raw,r.result,QString(),rawDtc(d),dtcText(p,r.group,d),dtcHelp(p,r.group));
+    cell(r.name,r.raw,r.result,QString(),rawDtc(d),dtcText(p,r.group,d),
+         documentationOnly?dtcDocumentation(r.group):dtcHelp(p,r.group));
+  }
+  const struct {QLabel *name;int key;} retained[]={
+    {m_ui->label_80x19,29076},{m_ui->label_80x1A,29077},
+    {m_ui->label_0x03,29078},{m_ui->label_0x07,29078},{m_ui->label_0x08,29078}};
+  for(const auto &r:retained) {
+    rememberNaLabel(r.name);
+    r.name->setToolTip(documentation(I18n::text(r.key)));
+  }
+  m_ui->label_80x1A->setText(I18n::text(29079));
+  m_ui->label_0x03->setText(I18n::text(29080));
+  m_ui->label_0x10->setText(I18n::text(29081));
+  if(documentationOnly) {
+    for(QGridLayout *grid:{m_ui->HF_table,m_ui->HF_table_2}) {
+      for(int i=0;i<grid->count();++i) {
+        int row=0,col=0,rs=0,cs=0;
+        grid->getItemPosition(i,&row,&col,&rs,&cs);
+        if(row==0||col<2)continue;
+        if(QLabel *label=qobject_cast<QLabel*>(grid->itemAt(i)->widget()))
+          label->setText(QStringLiteral("--"));
+      }
+    }
+    return; // no diagnosis or change of settings while disconnected
   }
   // The existing Errors page has one label/LED per bit. Keep its geometry
   // but replace the legacy meanings only for the confirmed NA profile.

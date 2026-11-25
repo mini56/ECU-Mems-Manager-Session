@@ -196,7 +196,7 @@ private:
     bool m_naIdentityTipActive = false;
     QString m_naIdentityTipOriginal;
     void clearNaIdentityStatus();
-    void showNaPages(const Mems16Na::SessionEvidence &na);
+    void showNaPages(const Mems16Na::SessionEvidence &na,bool documentationOnly=false);
     void restoreNaPages();
     void rememberNaLabel(QLabel *label);
 
