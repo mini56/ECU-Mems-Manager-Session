@@ -53,7 +53,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-4">4. Scheda Impostazioni</h2>
-<p>Comprende le regolazioni di servizio legate a minimo, carburante e accensione, secondo la ECU. Consultare gli avvisi prima di modificare i valori. La correzione del minimo a caldo per 7D14-15 segue l'impostazione reale della ECU.</p>
+<p>Comprende le regolazioni di servizio legate a minimo, carburante e accensione, secondo la ECU. Consultare gli avvisi prima di modificare i valori. Gli altri profili mantengono l’interpretazione storica di 7D14-15. Per MEMS 1.6 aspirato identificato, lo scostamento del regime minimo è la parola grezza meno 32768, senza correzione della posizione a caldo.</p>
 
 
 <p>Il quadrante centrale indica il regime motore; sotto compaiono le regolazioni supportate per minimo, carburante e accensione. Controllare i valori prima di intervenire.</p><p><b>Regolazioni ECU</b></p>
@@ -61,6 +61,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-5">5. Scheda Errori</h2>
+<p><a href="#chapter-mems16na">Consultare il capitolo MEMS 1.6 aspirato per unità, maschere DTC e registri specifici del firmware.</a></p>
 <p>Visualizza guasti ECU, anomalie registrate e stati. Leggere e comprendere i guasti prima di cancellarli. Alcuni contatori richiedono un riavvio completo della ECU.</p>
 
 
@@ -77,6 +78,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-7">7. Tutte le misure</h2>
+<p><a href="#chapter-mems16na">Consultare il capitolo MEMS 1.6 aspirato per unità, maschere DTC e registri specifici del firmware.</a></p>
 <p>Mostra parametri dettagliati, descrizioni, valori ECU grezzi e valori interpretati quando la decodifica è documentata. Per esempio, 138 può significare 13,8 V per una lettura batteria specifica. Nessuna conversione viene inventata per campi sconosciuti.</p>
 
 
@@ -91,6 +93,43 @@ small{color:#aebcc5}
 <p>Le due tabelle mostrano posizioni e dati grezzi dei frame 7D e 80, con la relativa interpretazione documentata. Sono utili per controllare la decodifica.</p><p><b>Dati grezzi e calcolati</b></p>
 <p><img src=":/help/images/Capture d’écran (900).png" width="550"></p>
 
+
+<h2 id="chapter-mems16na">MEMS 1.6 aspirato — misure e guasti secondo il firmware</h2>
+<p>Queste regole si applicano solo al MEMS 1.6 aspirato identificato dal nome completo del firmware e dall’identificativo ECU concordanti (123 profili documentati). Si usa l’identificazione D1 esistente quando disponibile; l’identificativo numerico da solo non basta. Altrimenti resta la decodifica storica. Nessuna scelta del profilo o nuovo comando ECU è imposta.</p>
+<h3>Misure: posizioni, unità e disponibilità</h3>
+<table>
+<tr><th>Posizione</th><th>Misura / interpretazione</th></tr>
+<tr><td>80/04</td><td>Temperatura ambiente: FF non disponibile.</td></tr>
+<tr><td>80/06</td><td>Temperatura carburante: FF se non utilizzata; conversione storica se supportata.</td></tr>
+<tr><td>80/0B</td><td>Contatto P/N cambio automatico: AANMP002 0 = P/N, 32 = fuori P/N; altre polarità non confermate.</td></tr>
+<tr><td>80/0C</td><td>Richiesta climatizzazione: AANMP002 0 = presente, 1 = assente.</td></tr>
+<tr><td>80/09 — r × 5 / 255</td><td>Tensione potenziometro farfalla (V).</td></tr>
+<tr><td>80/0F — r × 6,25</td><td>Ampiezza correzione regime minimo (RPM); segno da 7D/13 solo se i due valori concordano.</td></tr>
+<tr><td>80/10</td><td>Posizione a caldo motorino passo-passo (passi).</td></tr>
+<tr><td>80/11 — r × 0,1</td><td>Tensione massima apprendimento minimo (V).</td></tr>
+<tr><td>80/1B</td><td>Accensione disinserita: AANMP002 1 = sì, 0 = no.</td></tr>
+<tr><td>7D/02 — r × 0,5</td><td>Angolo farfalla (°).</td></tr>
+<tr><td>7D/0B — (r − 128) × 8</td><td>Correzione tempo iniezione (µs).</td></tr>
+<tr><td>7D/0F</td><td>Posizione base motorino passo-passo (passi).</td></tr>
+<tr><td>7D/13 — (r − 128) × 25</td><td>Correzione con segno (RPM); il segno combinato richiede coerenza.</td></tr>
+<tr><td>7D/14–15 — W − 32768</td><td>Scostamento regime minimo (RPM), senza correzione posizione a caldo.</td></tr>
+<tr><td>7D/17–1E — W / 256</td><td>Quattro riferimenti farfalla (TPS): parole di due byte, prima il byte più significativo; tutti gli otto byte restano visibili. Alcuni firmware ripetono quattro volte lo stesso riferimento.</td></tr>
+<tr><td>7D/1F</td><td>Numero di apprendimenti farfalla.</td></tr>
+</table>
+<p>Un valore mancante, non utilizzato (FF secondo il profilo) o non verificato non è una misura zero. Tensione lambda in mV (×5) e conversione attuale anticipo accensione restano invariate. Nessuna nuova soglia di guasto.</p>
+<h3>Guasti e aiuto permanente</h3>
+<p>Ogni gruppo DTC ha un aiuto permanente con i circuiti sorvegliati anche in assenza di guasti. Ricevuto mantiene il valore grezzo; Calcolato / Interpretato dettaglia tutti i guasti e stati. Un guasto elettrico memorizzato riguarda un circuito, non necessariamente un componente guasto o un guasto attuale. Gli indicatori non identificati non sono guasti noti.</p>
+<table>
+<tr><th>Posizione</th><th>Misura / interpretazione</th></tr>
+<tr><td>DTC 0 — 80/0D</td><td>01 sensore temperatura refrigerante; 02 sensore aria aspirazione; 20 sensore carburante solo se supportato.</td></tr>
+<tr><td>DTC 1 — 80/0E</td><td>02 pompa carburante; 10 canister; 20 MAP; 80 potenziometro farfalla. 04/08: varianti sotto.</td></tr>
+<tr><td>DTC 2 — 7D/05</td><td>04 riscaldatore lambda confermato per AANMP002 (altrimenti circuito non identificato); 10 sincronizzazione motore; 40 verifica contatto farfalla (due stati rilevati, informazione, non guasto).</td></tr>
+<tr><td>DTC 3, 4, 5 — 7D/0E, 11, 16 ; 7D/10</td><td>FF = non utilizzato dal firmware; né otto guasti né prova di assenza guasti.</td></tr>
+</table>
+<p>DTC 1: 04/08 indicano riscaldatore aspirazione/climatizzazione per 51 profili, climatizzazione/riscaldatore per EKDMF002, ventole/climatizzazione per 13, uscita comando PTC/climatizzazione per 56 e climatizzazione/uscita comando PTC per EKDMF000 ed EKDMF003. Il dispositivo fisico delle 58 uscite PTC non è confermato.</p>
+<p>Esempi AANMP002: DTC 0 = 0 → nessun guasto; DTC 1 = 160 → MAP e potenziometro farfalla; DTC 2 = 64 → nessun guasto, verifica contatto farfalla. La diagnostica automatica usa le stesse maschere senza criteri storici incompatibili. Nessuna cancellazione automatica.</p>
+<h3>Registri e Analisi</h3>
+<p>TXT/CSV V2 marcato MEMS16NA_SCHEMA=2 conserva identità ECU, firmware, data e ora, entrambe le trame grezze, valori calcolati e disponibilità. I file storici restano leggibili senza riconvertire valori già calcolati. Le curve omettono misure mancanti; Colonne mostra valori grezzi, stati e guasti. Quattro riferimenti TPS distinti. I registri comunicazione ECU restano separati e la cartella abituale è mantenuta. Le immagini della guida mostrano versioni precedenti dell’interfaccia.</p>
 
 <h2 id="chapter-9">9. ECU / ROSCO</h2>
 <p><b>Libreria di comunicazione del progetto:</b> ECU MEMS Manager SESSION utilizza la nostra DLL nativa Windows a 64 bit, <code>mems_manager_x64.dll</code>, sviluppata per il progetto. Gestisce la comunicazione seriale con le centraline MEMS (connessione, inizializzazione, lettura dei dati e comandi diagnostici supportati), conservando la compatibilità con le funzioni storiche ROSCO. I calcoli specializzati della scheda <b>Iniezione</b> e alcune letture RAM in modalità 4 sono implementati in SESSION, non direttamente nella DLL.</p>
@@ -113,6 +152,7 @@ small{color:#aebcc5}
 <p><b>Verifica:</b> SESSION 184 include test automatici di trame e decoder, ma collegamento e cancellazione su centraline MEMS 2J e MEMS 3 reali richiedono ancora prove. La centralina airbag RC5 non fa parte del riconoscimento motore.</p>
 
 <h2 id="chapter-10">10. Diagnostica automatica</h2>
+<p><a href="#chapter-mems16na">Consultare il capitolo MEMS 1.6 aspirato per unità, maschere DTC e registri specifici del firmware.</a></p>
 <p>Esamina i valori ECU correnti distinguendo stato normale, avviso e anomalia. Può registrare un riferimento ed esportare un rapporto. Controlla anche il tempo di carica della bobina.</p>
 
 
@@ -121,6 +161,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-11">11. Analisi dei registri</h2>
+<p><a href="#chapter-mems16na">Consultare il capitolo MEMS 1.6 aspirato per unità, maschere DTC e registri specifici del firmware.</a></p>
 <p>Importa registri CSV/TXT compatibili, visualizza i canali selezionati e sovrappone le curve per confrontare l'andamento nel tempo.</p>
 
 

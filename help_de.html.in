@@ -51,7 +51,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-4">4. Einstellungen</h2>
-<p>Enthält je nach ECU Serviceeinstellungen für Leerlauf, Kraftstoff und Zündung. Lesen Sie Hinweise und Risiken, bevor Sie Werte ändern. Die Warmleerlaufkorrektur für 7D14-15 nutzt die tatsächliche ECU-Einstellung.</p>
+<p>Enthält je nach ECU Serviceeinstellungen für Leerlauf, Kraftstoff und Zündung. Lesen Sie Hinweise und Risiken, bevor Sie Werte ändern. Für andere Profile bleibt die bisherige Interpretation von 7D14-15 erhalten. Beim identifizierten MEMS 1.6 Saugmotor ist die Leerlaufdrehzahlabweichung das Rohwort minus 32768, ohne Korrektur der Warmleerlaufposition.</p>
 
 
 <p>Die große Anzeige zeigt die Motordrehzahl. Darunter befinden sich die vom Steuergerät unterstützten Leerlauf-, Kraftstoff- und Zündzeitpunkt-Einstellungen. Prüfen Sie die angezeigten Werte vor einer Änderung.</p><p><b>ECU-Einstellungen</b></p>
@@ -59,6 +59,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-5">5. Fehler</h2>
+<p><a href="#chapter-mems16na">Firmwareabhängige Einheiten, DTC-Masken und Aufzeichnungen siehe Kapitel MEMS 1.6 Saugmotor.</a></p>
 <p>Zeigt ECU-Fehler, gespeicherte Auffälligkeiten und Statusinformationen. Fehler erst lesen und verstehen, dann löschen. Einige Zähler benötigen einen vollständigen ECU-Neustart.</p>
 
 
@@ -75,6 +76,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-7">7. Alle Messwerte</h2>
+<p><a href="#chapter-mems16na">Firmwareabhängige Einheiten, DTC-Masken und Aufzeichnungen siehe Kapitel MEMS 1.6 Saugmotor.</a></p>
 <p>Zeigt Parameter mit Hilfetext, empfangenem Rohwert und interpretiertem Wert, soweit die Umrechnung dokumentiert ist. Beispielsweise können 138 bei einer dokumentierten Batteriespannung 13,8 V bedeuten. Unbekannte Felder werden nicht erfunden.</p>
 
 
@@ -89,6 +91,43 @@ small{color:#aebcc5}
 <p>Beide Tabellen zeigen Positionen und Rohwerte der Diagnoseframes 7D und 80 sowie dokumentierte Umrechnungen. Dies hilft bei der Kontrolle der Decodierung.</p><p><b>Rohdaten und Umrechnung</b></p>
 <p><img src=":/help/images/Capture d’écran (900).png" width="550"></p>
 
+
+<h2 id="chapter-mems16na">MEMS 1.6 Saugmotor — firmwareabhängige Messwerte und Fehler</h2>
+<p>Diese Regeln gelten nur für MEMS 1.6 Saugmotor mit übereinstimmendem vollständigem Firmwarenamen und ECU-Kennung (123 dokumentierte Profile). Die vorhandene D1-Identifikation wird verwendet, sofern verfügbar; die numerische Kennung allein reicht nicht aus. Sonst bleibt die bisherige Decodierung erhalten. Keine Profilauswahl und kein neuer ECU-Befehl erforderlich.</p>
+<h3>Messwerte: Positionen, Einheiten und Verfügbarkeit</h3>
+<table>
+<tr><th>Position</th><th>Messwert / Interpretation</th></tr>
+<tr><td>80/04</td><td>Umgebungstemperatur: FF nicht verfügbar.</td></tr>
+<tr><td>80/06</td><td>Kraftstofftemperatur: FF bei Nichtverwendung; bei Unterstützung bisherige Umrechnung.</td></tr>
+<tr><td>80/0B</td><td>Automatik-P/N-Kontakt: AANMP002 0 = P/N, 32 = außerhalb P/N; andere Polaritäten unbestätigt.</td></tr>
+<tr><td>80/0C</td><td>Klimaanforderung: AANMP002 0 = vorhanden, 1 = nicht vorhanden.</td></tr>
+<tr><td>80/09 — r × 5 / 255</td><td>Spannung Drosselklappenpotentiometer (V).</td></tr>
+<tr><td>80/0F — r × 6,25</td><td>Betrag der Leerlaufdrehzahlkorrektur (RPM); Vorzeichen aus 7D/13 nur bei Übereinstimmung.</td></tr>
+<tr><td>80/10</td><td>Warmleerlauf-Schrittmotorposition (Schritte).</td></tr>
+<tr><td>80/11 — r × 0,1</td><td>Maximale Leerlauf-Lernspannung (V).</td></tr>
+<tr><td>80/1B</td><td>Zündung aus: AANMP002 1 = ja, 0 = nein.</td></tr>
+<tr><td>7D/02 — r × 0,5</td><td>Drosselklappenwinkel (°).</td></tr>
+<tr><td>7D/0B — (r − 128) × 8</td><td>Einspritzzeitkorrektur (µs).</td></tr>
+<tr><td>7D/0F</td><td>Grundposition des Schrittmotors (Schritte).</td></tr>
+<tr><td>7D/13 — (r − 128) × 25</td><td>Vorzeichenbehaftete Korrektur (RPM); gemeinsames Vorzeichen nur bei Übereinstimmung.</td></tr>
+<tr><td>7D/14–15 — W − 32768</td><td>Leerlaufdrehzahlabweichung (RPM), ohne Warmleerlaufpositionskorrektur.</td></tr>
+<tr><td>7D/17–1E — W / 256</td><td>Vier Drosselklappenreferenzen (TPS): Zwei-Byte-Wörter, höchstwertiges Byte zuerst; alle acht Bytes bleiben sichtbar. Einige Firmwarevarianten wiederholen dieselbe Referenz viermal.</td></tr>
+<tr><td>7D/1F</td><td>Anzahl der Drosselklappen-Lernvorgänge.</td></tr>
+</table>
+<p>Fehlende, nicht verwendete (FF je nach Profil) oder ungeprüfte Werte sind keine Nullmessungen. Lambdaspannung bleibt in mV (×5), die bisherige Zündwinkelumrechnung bleibt erhalten. Keine neuen Fehlergrenzwerte.</p>
+<h3>Fehler und dauerhafte Kontexthilfe</h3>
+<p>Jede DTC-Gruppe hat eine dauerhafte Kontexthilfe mit den überwachten Stromkreisen, auch ohne Fehler. Der Empfangswert bleibt roh; die Interpretation zeigt alle Fehler und Zustände. Ein gespeicherter elektrischer Fehler bezeichnet den Stromkreis, nicht zwingend ein defektes Bauteil oder eine aktuelle Störung. Unbekannte Indikatoren sind keine bekannten Fehler.</p>
+<table>
+<tr><th>Position</th><th>Messwert / Interpretation</th></tr>
+<tr><td>DTC 0 — 80/0D</td><td>01 Kühlmitteltemperatursensor; 02 Ansaugluftsensor; 20 Kraftstofftemperatursensor nur bei Unterstützung.</td></tr>
+<tr><td>DTC 1 — 80/0E</td><td>02 Kraftstoffpumpe; 10 Aktivkohlebehälter; 20 MAP; 80 Drosselklappenpotentiometer. 04/08: Varianten unten.</td></tr>
+<tr><td>DTC 2 — 7D/05</td><td>04 Lambdaheizung bei AANMP002 bestätigt (sonst unbekannter Stromkreis); 10 Motorsynchronisation; 40 Drosselklappenkontaktprüfung (beide Zustände erkannt, Information, kein Fehler).</td></tr>
+<tr><td>DTC 3, 4, 5 — 7D/0E, 11, 16 ; 7D/10</td><td>FF = von dieser Firmware nicht verwendet; weder acht Fehler noch Nachweis der Fehlerfreiheit.</td></tr>
+</table>
+<p>DTC 1: 04/08 stehen bei 51 Profilen für Ansaugheizung/Klimaanlage, bei EKDMF002 für Klimaanlage/Heizung, bei 13 für Kühlgebläse/Klimaanlage, bei 56 für PTC-Steuerausgang/Klimaanlage und bei EKDMF000 sowie EKDMF003 für Klimaanlage/PTC-Steuerausgang. Die tatsächliche Ausstattung der 58 PTC-Steuerausgänge ist nicht bestätigt.</p>
+<p>Beispiele AANMP002: DTC 0 = 0 → kein Fehler; DTC 1 = 160 → MAP und Drosselklappenpotentiometer; DTC 2 = 64 → kein Fehler, Drosselklappenkontaktprüfung. Die automatische Diagnose nutzt dieselben Masken ohne unvereinbare alte Heuristiken. Kein automatisches Löschen.</p>
+<h3>Aufzeichnung und Analyse</h3>
+<p>TXT/CSV V2 mit MEMS16NA_SCHEMA=2 speichert ECU-Kennung, Firmware, Datum und Uhrzeit, beide Rohframes, berechnete Werte und Verfügbarkeit. Alte Dateien bleiben ohne erneute Umrechnung bereits berechneter Werte lesbar. Kurven lassen fehlende Messwerte aus; Spalten zeigen Rohwerte, Zustände und Fehler. Vier getrennte TPS-Referenzen. ECU-Kommunikationsprotokolle bleiben getrennt, das übliche Verzeichnis bleibt erhalten. Die Abbildungen zeigen frühere Oberflächenversionen.</p>
 
 <h2 id="chapter-9">9. ECU / ROSCO</h2>
 <p><b>Kommunikationsbibliothek des Projekts:</b> ECU MEMS Manager SESSION verwendet unsere eigene native Windows-64-Bit-DLL <code>mems_manager_x64.dll</code>, die für dieses Projekt entwickelt wurde. Sie übernimmt die serielle Kommunikation mit MEMS-Steuergeräten (Verbindung, Initialisierung, Datenabfrage und unterstützte Diagnosebefehle) und bleibt mit den historischen ROSCO-Funktionen kompatibel. Spezielle Berechnungen im Bereich <b>Einspritzung</b> und einige RAM-Abfragen im Modus 4 erfolgen im SESSION-Programm selbst, nicht direkt in der DLL.</p>
@@ -111,6 +150,7 @@ small{color:#aebcc5}
 <p><b>Prüfstatus:</b> SESSION 184 enthält automatische Prüfungen der Telegramme und Decoder. Verbindungs- und Löschtests an echten MEMS-2J- und MEMS-3-Steuergeräten stehen noch aus. Das RC5-Airbagsteuergerät gehört nicht zur Motorsteuergerät-Erkennung.</p>
 
 <h2 id="chapter-10">10. Automatische Diagnose</h2>
+<p><a href="#chapter-mems16na">Firmwareabhängige Einheiten, DTC-Masken und Aufzeichnungen siehe Kapitel MEMS 1.6 Saugmotor.</a></p>
 <p>Bewertet aktuelle ECU-Messwerte und unterscheidet Normalzustände, Warnungen und Abweichungen. Referenzaufnahmen und Berichtexporte sind möglich. Auch die Spulenladezeit wird geprüft.</p>
 
 
@@ -119,6 +159,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-11">11. Protokollanalyse</h2>
+<p><a href="#chapter-mems16na">Firmwareabhängige Einheiten, DTC-Masken und Aufzeichnungen siehe Kapitel MEMS 1.6 Saugmotor.</a></p>
 <p>Öffnet unterstützte CSV/TXT-Messprotokolle, zeigt gewählte Kanäle und überlagert Kurven zum zeitlichen Vergleich.</p>
 
 

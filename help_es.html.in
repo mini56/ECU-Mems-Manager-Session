@@ -56,7 +56,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-4">4. Pestaña Ajustes</h2>
-<p>Permite los ajustes de servicio relacionados con ralentí, combustible y encendido según la ECU. Consulte las ayudas y los riesgos antes de modificar valores. La corrección del ralentí caliente para 7D14-15 usa el ajuste real de la ECU y no una constante inventada.</p>
+<p>Permite los ajustes de servicio relacionados con ralentí, combustible y encendido según la ECU. Consulte las ayudas y los riesgos antes de modificar valores. Los demás perfiles conservan la interpretación histórica de 7D14-15. Para el MEMS 1.6 atmosférico identificado, la desviación de régimen de ralentí es la palabra bruta menos 32768, sin corrección por la posición de ralentí caliente.</p>
 
 
 <p>El indicador central presenta las revoluciones del motor; abajo aparecen los ajustes de ralentí, combustible y encendido admitidos por la ECU. Compruebe los valores antes de modificarlos.</p><p><b>Ajustes de la ECU</b></p>
@@ -64,6 +64,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-5">5. Pestaña Errores</h2>
+<p><a href="#chapter-mems16na">Consulte el capítulo MEMS 1.6 atmosférico para las unidades, máscaras DTC y registros específicos del firmware.</a></p>
 <p>Muestra averías ECU, anomalías memorizadas e indicadores de estado. Lea y comprenda los errores antes de borrarlos. Algunos contadores necesitan un reinicio completo de la ECU para volver al estado inicial.</p>
 
 
@@ -80,6 +81,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-7">7. Todas las mediciones</h2>
+<p><a href="#chapter-mems16na">Consulte el capítulo MEMS 1.6 atmosférico para las unidades, máscaras DTC y registros específicos del firmware.</a></p>
 <p>Presenta los parámetros detallados, la ayuda, el valor bruto recibido y la interpretación cuando se conoce. Por ejemplo, 138 puede corresponder a 13,8 V para una medición de batería documentada. No se inventan conversiones para campos desconocidos.</p>
 
 
@@ -94,6 +96,43 @@ small{color:#aebcc5}
 <p>Las tablas de datos muestran las posiciones y valores brutos de las tramas 7D y 80, junto a su interpretación documentada. Resultan útiles para comprobar la decodificación.</p><p><b>Datos brutos e interpretados</b></p>
 <p><img src=":/help/images/Capture d’écran (900).png" width="550"></p>
 
+
+<h2 id="chapter-mems16na">MEMS 1.6 atmosférico — mediciones y fallos según firmware</h2>
+<p>Estas reglas se aplican solo al MEMS 1.6 atmosférico identificado por el nombre completo del firmware y el identificador ECU coincidentes (123 perfiles documentados). Se utiliza la identificación D1 existente cuando está disponible; el identificador numérico no basta. En caso contrario se conserva la decodificación histórica. No se impone seleccionar un perfil ni enviar un nuevo comando ECU.</p>
+<h3>Mediciones: posiciones, unidades y disponibilidad</h3>
+<table>
+<tr><th>Posición</th><th>Medición / interpretación</th></tr>
+<tr><td>80/04</td><td>Temperatura ambiente: FF no disponible.</td></tr>
+<tr><td>80/06</td><td>Temperatura del combustible: FF si no se utiliza; conversión histórica si se admite.</td></tr>
+<tr><td>80/0B</td><td>Contacto P/N de cambio automático: AANMP002 0 = P/N, 32 = fuera de P/N; otras polaridades sin confirmar.</td></tr>
+<tr><td>80/0C</td><td>Solicitud de climatización: AANMP002 0 = presente, 1 = ausente.</td></tr>
+<tr><td>80/09 — r × 5 / 255</td><td>Tensión del potenciómetro de mariposa (V).</td></tr>
+<tr><td>80/0F — r × 6,25</td><td>Amplitud de corrección del régimen de ralentí (RPM); signo de 7D/13 solo si coinciden los valores.</td></tr>
+<tr><td>80/10</td><td>Posición en caliente del motor paso a paso (pasos).</td></tr>
+<tr><td>80/11 — r × 0,1</td><td>Tensión máxima de aprendizaje del ralentí (V).</td></tr>
+<tr><td>80/1B</td><td>Contacto quitado: AANMP002 1 = sí, 0 = no.</td></tr>
+<tr><td>7D/02 — r × 0,5</td><td>Ángulo de mariposa (°).</td></tr>
+<tr><td>7D/0B — (r − 128) × 8</td><td>Corrección del tiempo de inyección (µs).</td></tr>
+<tr><td>7D/0F</td><td>Posición base del motor paso a paso (pasos).</td></tr>
+<tr><td>7D/13 — (r − 128) × 25</td><td>Corrección con signo (RPM); el signo combinado requiere coherencia.</td></tr>
+<tr><td>7D/14–15 — W − 32768</td><td>Desviación del régimen de ralentí (RPM), sin corrección de posición en caliente.</td></tr>
+<tr><td>7D/17–1E — W / 256</td><td>Cuatro referencias de mariposa (TPS): palabras de dos bytes, primero el byte más significativo; se conservan los ocho bytes visibles. Algunos firmwares repiten la misma referencia cuatro veces.</td></tr>
+<tr><td>7D/1F</td><td>Número de aprendizajes de mariposa.</td></tr>
+</table>
+<p>Un valor ausente, no utilizado (FF según perfil) o no verificado no es una medición cero. La tensión lambda sigue en mV (×5) y se conserva la conversión actual del avance de encendido. No se deducen nuevos umbrales de avería.</p>
+<h3>Fallos y ayuda permanente</h3>
+<p>Cada grupo DTC tiene una ayuda permanente con los circuitos vigilados incluso sin fallo. Recibido conserva el valor bruto; Calculado / Interpretado detalla todos los fallos y estados. Un fallo eléctrico memorizado señala un circuito, no necesariamente un componente averiado o un fallo actual. Los indicadores no identificados no son fallos conocidos.</p>
+<table>
+<tr><th>Posición</th><th>Medición / interpretación</th></tr>
+<tr><td>DTC 0 — 80/0D</td><td>01 sensor de refrigerante; 02 sensor de aire de admisión; 20 sensor de combustible solo si se admite.</td></tr>
+<tr><td>DTC 1 — 80/0E</td><td>02 bomba de combustible; 10 cánister; 20 MAP; 80 potenciómetro de mariposa. 04/08: variantes abajo.</td></tr>
+<tr><td>DTC 2 — 7D/05</td><td>04 calefacción lambda confirmada en AANMP002 (si no, circuito no identificado); 10 sincronización motor; 40 comprobación contacto mariposa (dos estados detectados, información, no fallo).</td></tr>
+<tr><td>DTC 3, 4, 5 — 7D/0E, 11, 16 ; 7D/10</td><td>FF = no utilizado por este firmware; ni ocho fallos ni prueba de ausencia de avería.</td></tr>
+</table>
+<p>DTC 1: 04/08 corresponden a calefactor de admisión/climatización en 51 perfiles, climatización/calefactor en EKDMF002, ventiladores/climatización en 13, salida de mando PTC/climatización en 56 y climatización/salida de mando PTC en EKDMF000 y EKDMF003. El equipamiento físico de las 58 salidas PTC no está confirmado.</p>
+<p>Ejemplos AANMP002: DTC 0 = 0 → ningún fallo; DTC 1 = 160 → MAP y potenciómetro de mariposa; DTC 2 = 64 → ningún fallo, comprobación contacto mariposa. El diagnóstico automático usa las mismas máscaras sin aplicar criterios históricos incompatibles. Sin borrado automático.</p>
+<h3>Registros y Análisis</h3>
+<p>TXT/CSV V2 marcado MEMS16NA_SCHEMA=2 conserva identidad ECU, firmware, fecha y hora, ambas tramas brutas, valores calculados y disponibilidad. Los archivos anteriores se leen sin reconvertir valores ya calculados. Las curvas omiten mediciones ausentes; Columnas detalla valores brutos, estados y fallos. Las cuatro referencias TPS son distintas. Los registros de comunicación ECU permanecen separados y se conserva la carpeta habitual. Las capturas del manual muestran versiones anteriores de la interfaz.</p>
 
 <h2 id="chapter-9">9. ECU / ROSCO</h2>
 <p><b>Biblioteca de comunicación del proyecto:</b> ECU MEMS Manager SESSION utiliza nuestra propia DLL nativa de Windows de 64 bits, <code>mems_manager_x64.dll</code>, creada para el proyecto. Gestiona la comunicación serie con las ECU MEMS (conexión, inicialización, lectura de datos y comandos de diagnóstico compatibles), manteniendo la compatibilidad con las funciones históricas ROSCO. Los cálculos especializados de <b>Inyección</b> y algunas lecturas de RAM en modo 4 se realizan en el propio SESSION, no directamente en la DLL.</p>
@@ -116,6 +155,7 @@ small{color:#aebcc5}
 <p><b>Validación:</b> SESSION 184 incluye pruebas automáticas de tramas y descodificación; todavía deben verificarse las conexiones y los borrados en ECU MEMS 2J y MEMS 3 reales. El módulo de airbag RC5 no forma parte de la detección de la ECU del motor.</p>
 
 <h2 id="chapter-10">10. Diagnóstico automático</h2>
+<p><a href="#chapter-mems16na">Consulte el capítulo MEMS 1.6 atmosférico para las unidades, máscaras DTC y registros específicos del firmware.</a></p>
 <p>Evalúa las mediciones ECU actuales y diferencia estados normales, avisos y anomalías. Permite guardar una referencia y exportar un informe. También comprueba el tiempo de carga de la bobina.</p>
 
 
@@ -124,6 +164,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-11">11. Análisis de registros</h2>
+<p><a href="#chapter-mems16na">Consulte el capítulo MEMS 1.6 atmosférico para las unidades, máscaras DTC y registros específicos del firmware.</a></p>
 <p>Abre registros CSV/TXT compatibles, muestra canales seleccionados y superpone curvas para comparar su evolución temporal.</p>
 
 

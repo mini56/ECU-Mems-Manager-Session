@@ -1,0 +1,7 @@
+# Suivi V0.52 — Lot 2E : Aide hors ligne
+Base 74b58f333625943063bb1f8e7c0d2847bcd38542, run 45563391687 vert. Rapport V0.43 ch. 47–49, 61, 63, 65–66.
+- Les six guides HTML sources FR/EN/DE/ES/IT/PT sont actualisés dans leur langue, avec un chapitre spécifique MEMS 1.6 atmosphérique, accessible dans la navigation existante (h2 id=chapter-mems16na) et quatre liens depuis les chapitres Erreurs, Toutes les mesures, Diagnostic et Analyse.
+- Les 16 lignes de mesures documentent les conversions, unités, états et limites par firmware ; DTC0–5 et 7D/10, matrice 04/08 et exemples AANMP002, distinction défaut mémorisé/état, V2, ancien format et Communications ECU. L'ancienne explication de 7D14-15 est explicitement limitée au décodage historique dans Réglages ; aucune nouvelle conversion de l'allumage ni seuil lambda.
+- Toutes les captures existantes sont conservées à l'identique (contrôle de leurs balises à l'édition). Elles illustrent des versions antérieures : pas de nouvelle capture d'écran réelle disponible. Les modèles .html.in sont les sources compilées par CMake ; aucun changement du lecteur HelpViewer ni des ressources d'images.
+- Test de structure et de contenu des six guides ajouté à la CI privée ; contrôle de compilation encore à effectuer. Aucun changement des commandes ECU, des autres familles, de la DLL ou de publication. Ne pas annoncer de validation réelle sans essai véhicule.
+- Après CI verte : audit final des 23 choix et des non-régressions, contrôle visuel et préparation du test utilisateur sans publier.

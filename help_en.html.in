@@ -72,7 +72,7 @@ small{color:#aebcc5}
 
 <h2 id="chapter-4">4. Settings tab</h2>
 <p>The Settings tab contains service adjustments such as idle, fuel and ignition-related corrections. Tooltips explain the purpose and risks of each adjustment.</p>
-<p>The hot-idle correction used for decoding field 7D14-15 follows the value actually present in the ECU adjustment; it is not replaced by an arbitrary constant.</p>
+<p>Other profiles retain historical 7D14-15 interpretation. For identified naturally aspirated MEMS 1.6, idle speed error is the raw word minus 32768, without a correction based on the hot-idle position setting.</p>
 
 
 <p>The large central dial shows engine speed. The lower controls adjust ECU-supported values, while the <b>idle contact</b> and <b>closed-loop</b> indications provide context. Review the displayed adjustment values before changing them.</p>
@@ -81,6 +81,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-5">5. Errors tab</h2>
+<p><a href="#chapter-mems16na">See the naturally aspirated MEMS 1.6 chapter for firmware-specific units, DTC masks and recordings.</a></p>
 <p>This tab displays ECU fault information, recorded anomalies and status checks. Faults should be read and understood before they are cleared. Some counters or status fields may require a complete ECU reset before they return to their default state.</p>
 
 
@@ -99,6 +100,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-7">7. All measurements</h2>
+<p><a href="#chapter-mems16na">See the naturally aspirated MEMS 1.6 chapter for firmware-specific units, DTC masks and recordings.</a></p>
 <p>The <b>All measurements</b> tab shows detailed parameters and their help text, together with the raw ECU value and the interpreted value when decoding is known.</p>
 <table>
 <tr><th>Parameter</th><th>ECU received</th><th>Interpreted</th></tr>
@@ -120,6 +122,43 @@ small{color:#aebcc5}
 <p><b>Screenshot — All data: offset, description, received and calculated.</b></p>
 <p><img src=":/help/images/Capture d’écran (900).png" width="550"></p>
 
+
+<h2 id="chapter-mems16na">Naturally aspirated MEMS 1.6 — firmware-specific readings and faults</h2>
+<p>These rules apply only to naturally aspirated MEMS 1.6 firmware identified by a matching full name and ECU identifier (123 documented profiles). Existing D1 identification is used when available; the numerical ID alone is insufficient. Otherwise Manager retains historical decoding. No profile selection or new ECU command is imposed.</p>
+<h3>Measurements: positions, units and availability</h3>
+<table>
+<tr><th>Position</th><th>Measurement / interpretation</th></tr>
+<tr><td>80/04</td><td>Ambient temperature: FF unavailable.</td></tr>
+<tr><td>80/06</td><td>Fuel temperature: FF unavailable when unused; historical conversion retained when supported.</td></tr>
+<tr><td>80/0B</td><td>Automatic transmission P/N switch: AANMP002 0 = P/N, 32 = outside P/N; other polarities unconfirmed.</td></tr>
+<tr><td>80/0C</td><td>Air conditioning request: AANMP002 0 = present, 1 = absent.</td></tr>
+<tr><td>80/09 — r × 5 / 255</td><td>Throttle potentiometer voltage (V).</td></tr>
+<tr><td>80/0F — r × 6.25</td><td>Idle speed correction magnitude (RPM); sign from 7D/13 only when both values agree.</td></tr>
+<tr><td>80/10</td><td>Hot-idle stepper position (steps).</td></tr>
+<tr><td>80/11 — r × 0.1</td><td>Maximum idle learning voltage (V).</td></tr>
+<tr><td>80/1B</td><td>Ignition off: AANMP002 1 = yes, 0 = no.</td></tr>
+<tr><td>7D/02 — r × 0.5</td><td>Throttle angle (°).</td></tr>
+<tr><td>7D/0B — (r − 128) × 8</td><td>Injection time correction (µs).</td></tr>
+<tr><td>7D/0F</td><td>Base stepper position (steps).</td></tr>
+<tr><td>7D/13 — (r − 128) × 25</td><td>Signed correction (RPM); combined sign requires consistency.</td></tr>
+<tr><td>7D/14–15 — W − 32768</td><td>Idle speed error (RPM), without hot-idle position correction.</td></tr>
+<tr><td>7D/17–1E — W / 256</td><td>Four throttle references (TPS): two-byte words, most significant byte first; all eight bytes remain visible. Some firmware repeats the same reference four times.</td></tr>
+<tr><td>7D/1F</td><td>Throttle learning count.</td></tr>
+</table>
+<p>Missing, unused (FF according to profile) and unverified values are not zero measurements. Lambda voltage remains in mV (×5); the current ignition advance conversion is retained. No new fault threshold is inferred from these conversions.</p>
+<h3>Faults and permanent tooltips</h3>
+<p>Each DTC group has a permanent tooltip listing monitored circuits even when no fault is present. Received retains the raw value; Calculated / Interpreted details every fault and state. Stored electrical faults identify a circuit, not necessarily a failed component or a current malfunction. Unidentified indicators are not treated as known faults.</p>
+<table>
+<tr><th>Position</th><th>Measurement / interpretation</th></tr>
+<tr><td>DTC 0 — 80/0D</td><td>01 coolant temperature sensor; 02 intake air sensor; 20 fuel temperature sensor only when supported.</td></tr>
+<tr><td>DTC 1 — 80/0E</td><td>02 fuel pump; 10 canister; 20 MAP; 80 throttle potentiometer. 04/08: see variants below.</td></tr>
+<tr><td>DTC 2 — 7D/05</td><td>04 lambda heater confirmed for AANMP002 (otherwise unidentified circuit); 10 engine synchronization; 40 throttle-switch check (both states detected, information, not a fault).</td></tr>
+<tr><td>DTC 3, 4, 5 — 7D/0E, 11, 16 ; 7D/10</td><td>FF = unused by this firmware; neither eight faults nor evidence of no malfunction.</td></tr>
+</table>
+<p>DTC 1: 04/08 designate intake heater/air conditioning for 51 profiles, air conditioning/heater for EKDMF002, cooling fans/air conditioning for 13 profiles, PTC control output/air conditioning for 56 profiles, and air conditioning/PTC control output for EKDMF000 and EKDMF003. Physical equipment is unconfirmed for the 58 PTC control outputs.</p>
+<p>AANMP002 examples: DTC 0 = 0 → no fault; DTC 1 = 160 → MAP and throttle potentiometer; DTC 2 = 64 → no fault, throttle-switch check. Automatic diagnostics uses the same masks and does not evaluate incompatible historical heuristics. No automatic clearing.</p>
+<h3>Recording and Analysis</h3>
+<p>TXT/CSV V2, marked MEMS16NA_SCHEMA=2, retains ECU identity, firmware, date and time, both raw frames, calculated values and availability. Historical files remain readable without reconverting already calculated values. Analysis curves omit missing measurements; Columns details raw values, states and faults. The four TPS references are separate. ECU communication logs remain separate. The usual log directory is retained. Guide screenshots illustrate earlier interface versions.</p>
 
 <h2 id="chapter-9">9. ECU / ROSCO</h2>
 <p><b>Project communication library:</b> ECU MEMS Manager SESSION uses our own native Windows 64-bit DLL, <code>mems_manager_x64.dll</code>, developed for this project. It handles serial communication with MEMS ECUs (connection, initialisation, data reading and supported diagnostic commands) while retaining compatibility with historical ROSCO functions. Specialised calculations in the <b>Injection</b> tab and some Mode 4 RAM reads are implemented in SESSION itself, not directly in the DLL.</p>
@@ -144,6 +183,7 @@ small{color:#aebcc5}
 <p><b>Hardware validation:</b> SESSION 184 includes automatic frame and decoder tests, but real-ECU connection and fault-clearing tests are still required for MEMS 2J and MEMS 3. The RC5 airbag controller is not part of engine ECU detection.</p>
 
 <h2 id="chapter-10">10. Automatic diagnostics</h2>
+<p><a href="#chapter-mems16na">See the naturally aspirated MEMS 1.6 chapter for firmware-specific units, DTC masks and recordings.</a></p>
 <p>The automatic diagnostic panel evaluates current ECU values and reports normal values, warnings and anomalies. It can capture a reference and export a report. Coil charge time is checked against the expected range used by this application.</p>
 
 
@@ -153,6 +193,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-11">11. Log analysis</h2>
+<p><a href="#chapter-mems16na">See the naturally aspirated MEMS 1.6 chapter for firmware-specific units, DTC masks and recordings.</a></p>
 <p>The Analysis tab can read supported CSV/TXT diagnostic logs, display selected channels and overlay curves. Use the channel list to choose which measurements are displayed and compare their evolution over time.</p>
 
 
