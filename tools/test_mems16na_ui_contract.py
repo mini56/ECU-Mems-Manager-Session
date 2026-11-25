@@ -32,3 +32,17 @@ assert 'showNaDocumentation();\n  applyVisualTheme' in summary
 assert 'dtcDocumentation(groups[i])' in summary
 assert 'dtcDocumentation(r.group)' in source
 print('MEMS16NA_OFFLINE_SOURCE_CONTRACT_OK')
+
+# SESSION 209: shared qualified diagnostic and help styles.
+service=Path('expert/IaMemsService.cpp').read_text(encoding='utf-8')
+route=Path('expert/IaMemsLibraryIntegration.cpp').read_text(encoding='utf-8')
+assert 'setNaDiagnostic(naEvidence,*data,m_diagnosticPanel->naDiagnosticReport())' in source
+assert 'IaMemsNa::observation(na,data' in service and 'm_naReport+' in service
+assert 'naAnswer(trimmed)' in route
+assert 'documentedUnusedDtc(r.group)' in source and 'documentedUnusedDtc(groups[i])' in summary
+styles=Path('styles.h').read_text(encoding='utf-8')
+for index,background,foreground in [(1,'#ffffff','#000000'),(2,'#000000','#ffffff')]:
+    part=styles.split('QToolTip {')[index].split('}')[0]
+    assert 'background-color: '+background+';' in part and 'color: '+foreground+';' in part
+    assert 'border: 1px solid #ff8a22;' in part and 'border-radius: 8px;' in part
+print('SESSION_209_SHARED_DIAGNOSTIC_AND_HELP_CONTRACT_OK')

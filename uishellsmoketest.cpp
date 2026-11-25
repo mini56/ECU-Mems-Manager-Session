@@ -9,6 +9,11 @@
 #include "summarytab.h"
 #include "analysistab.h"
 #include "tooltipbubblemanager.h"
+#include "expert/IaMemsService.h"
+#include "diagnosticpanel.h"
+#include <QHelpEvent>
+#include <QToolTip>
+#include <QVBoxLayout>
 #include "i18n.h"
 #include "database/DatabaseManager.h"
 #include "database/MemsReferenceDatabase.h"
@@ -730,6 +735,48 @@ bool verifyUi(MainWindow &window)
              qApp->styleSheet().contains(QStringLiteral("QToolTip")),
              "Tooltips must have legible contrasting colors in both themes") && ok;
 
+    // Actual hover presentation: two adjacent targets, both themes,
+    // no duplicate line and the correct tooltip text.
+    {
+        QWidget probe(&window,Qt::Tool);
+        auto *layout=new QVBoxLayout(&probe);
+        auto *first=new QLabel(QStringLiteral("DTC 0"),&probe);
+        auto *second=new QLabel(QStringLiteral("DTC 1"),&probe);
+        first->setToolTip(QStringLiteral("DTC zero unique"));
+        second->setToolTip(QStringLiteral("DTC one unique\nDTC one unique"));
+        for(auto *label:{first,second}){
+            label->setProperty("helpBubbleLeft",true);
+            layout->addWidget(label);
+        }
+        const bool previousDark=qApp->property("ecuDarkTheme").toBool();
+        const QString previousStyle=qApp->styleSheet();
+        probe.resize(500,100);
+        TooltipBubbleManager::install(&probe);
+        probe.show();QCoreApplication::processEvents();
+        for(bool dark:{false,true}){
+            qApp->setProperty("ecuDarkTheme",dark);
+            qApp->setStyleSheet(dark?STYLE_DARK:STYLE_LIGHT);
+            QCoreApplication::processEvents();
+            for(auto *label:{first,second}){
+                auto *icon=label->findChild<QLabel*>(QStringLiteral("_ecuHelpBubble"),Qt::FindDirectChildrenOnly);
+                ok=check(icon&&!icon->isHidden(),"Help icon exists")&&ok;
+                if(!icon)continue;
+                ok=check(qAbs(icon->geometry().center().y()-label->rect().center().y())<=1,"Help icon vertical alignment")&&ok;
+                const QPoint point=icon->geometry().center();
+                QHelpEvent event(QEvent::ToolTip,point,label->mapToGlobal(point));
+                QApplication::sendEvent(label,&event);
+                const QString text=QToolTip::text();
+                const QString expected=label==first?QStringLiteral("DTC zero unique"):QStringLiteral("DTC one unique");
+                const QString other=label==first?QStringLiteral("DTC one unique"):QStringLiteral("DTC zero unique");
+                ok=check(text.contains(label->text())&&text.count(expected)==1&&!text.contains(other)
+                    &&text.contains(QStringLiteral("<table width=")),"Correct row help, wrapped and deduplicated")&&ok;
+            }
+        }
+        QToolTip::hideText();probe.hide();
+        qApp->setProperty("ecuDarkTheme",previousDark);
+        qApp->setStyleSheet(previousStyle);
+        QCoreApplication::processEvents();
+    }
     OptionsDialog *options=window.findChild<OptionsDialog*>();
     QCheckBox *autoHide=options?options->findChild<QCheckBox*>(
         QStringLiteral("taskbarAutoHideCheckbox")):nullptr;
@@ -1505,6 +1552,50 @@ int runUiShellSmokeTest(QApplication &app)
         return 2;
     }
     I18n::install(&app);
+    // Exercise the actual service and library routing, using the same
+    // validated snapshot as Diagnostic. No ECU or model activation.
+    {
+        using namespace Mems16Na;
+        SessionEvidence na;
+        auto tx=[&](std::uint8_t command,const std::vector<std::uint8_t> &response){
+            na.tx({command});na.rx(response);na.finish();
+        };
+        tx(0xd0,{0xd0,0x98,0,2,2});
+        tx(0xd1,{0xd1,'A','A','N','M','P','0','0','2',0x98,0,2,2});
+        std::vector<std::uint8_t> a(29,0),b(33,0);
+        a[0]=0x80;a[1]=28;a[5]=255;a[7]=255;a[16]=8;a[17]=32;
+        b[0]=0x7d;b[1]=32;b[6]=0x40;b[10]=1;b[12]=129;
+        b[15]=255;b[17]=255;b[18]=255;b[20]=126;b[21]=0x7f;b[22]=0xff;b[23]=255;
+        tx(0x80,a);tx(0x7d,b);
+        if(!na.ready()){logSmoke(QStringLiteral("FAIL IA NA test identity"));return 8;}
+        mems_data d{};d.engine_rpm=900;d.battery_voltage=138;d.coolant_temp=100;d.map_kpa=40;d.coil_time=1250;
+        DiagnosticPanel panel;panel.updateData(&d,&na);
+        auto *service=IaMemsService::instance();
+        QString answer;
+        const auto connection=QObject::connect(service,&IaMemsService::responseReady,&app,[&](const QString &value){answer=value;});
+        auto ask=[&](const QString &question){
+            answer.clear();service->askWithLibrary(question);return answer;
+        };
+        service->setNaDiagnostic(na,d,panel.naDiagnosticReport());
+        const QString diagnostic=ask(QStringLiteral("diagnostic moteur"));
+        bool passed=diagnostic.contains(panel.naDiagnosticReport().section(QLatin1Char('\n'),0,0))
+            &&diagnostic.contains(I18n::text(29019))&&diagnostic.contains(QStringLiteral("8 µs"))
+            &&diagnostic.contains(QStringLiteral("-1 RPM"));
+        passed=ask(QStringLiteral("DTC 4")).contains(I18n::text(29001))&&passed;
+        passed=ask(QStringLiteral("DTC 2")).contains(I18n::text(29019))&&passed;
+        passed=ask(QStringLiteral("correction temps injection")).contains(QStringLiteral("8 µs"))&&passed;
+        passed=ask(QStringLiteral("historique")).contains(I18n::text(29083).arg(1))&&passed;
+        na.discardPair();panel.updateData(&d,&na);
+        service->setNaDiagnostic(na,d,panel.naDiagnosticReport());
+        passed=ask(QStringLiteral("diagnostic moteur")).contains(I18n::text(29048))&&passed;
+        service->setConnected(false);service->clearNaDiagnostic();
+        passed=ask(QStringLiteral("AANMP002 DTC 4")).contains(I18n::text(29001))&&passed;
+        QObject::disconnect(connection);
+        service->clearConversation();
+        service->setProperty("iaMemsActiveDocumentaryComponent",QVariant());
+        if(!passed){logSmoke(QStringLiteral("FAIL IA NA service routing"));return 8;}
+        logSmoke(QStringLiteral("SESSION_209_IA_NA_SERVICE_PASS"));
+    }
     // The real application prepares the reference cache, user database and
     // index before it creates MainWindow. Reproduce that lifecycle rather than
     // forcing the page constructor to rebuild the first-run index on the UI thread.
