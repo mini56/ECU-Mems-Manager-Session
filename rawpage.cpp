@@ -86,8 +86,12 @@ void fitRawDataPage(QWidget *page)
 
         for(QLabel *label:block->findChildren<QLabel*>()) {
             const QString name=label->objectName();
-            // Help targets are overlays, not grid rows. Preserve their fixed size.
-            if(name==QStringLiteral("_ecuHelpBubble"))continue;
+            // Help overlays share the raw page's typography but must not
+            // inherit the data row's expanding size policy or minimum height.
+            if(name==QStringLiteral("_ecuHelpBubble")){
+                label->setFont(DataPageTypography::body(label->font()));
+                continue;
+            }
             const bool header=name.startsWith(QStringLiteral("header_")) ||
                               name.startsWith(QStringLiteral("Aheader_"));
             label->setFont(header

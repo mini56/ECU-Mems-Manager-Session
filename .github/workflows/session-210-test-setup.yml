@@ -439,7 +439,7 @@ jobs:
           $finished=$process.WaitForExit(300000)
           foreach($file in @($log,$stderr,$stdout)){
             Write-Host "UI_SMOKE_DIAGNOSTIC=$file"
-            if(Test-Path $file){Get-Content $file | Select-Object -Last 120}
+            if(Test-Path $file){Get-Content $file}
             else{Write-Host 'FILE_NOT_CREATED'}
           }
           if(-not $finished){
