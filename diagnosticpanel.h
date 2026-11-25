@@ -23,6 +23,8 @@ public:
     void update2JData(const QVariantMap &values, const QStringList &faults,
                       const QString &family = QStringLiteral("MEMS 2J"));
     void setEcuId(const QByteArray &id);
+    // The IA consumes the same report, not a competing set of diagnostic rules.
+    QString naDiagnosticReport() const { return m_naEvidence.identifiedProfile()?buildNaReport():QString(); }
 
 private slots:
     void captureReference();

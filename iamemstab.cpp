@@ -785,8 +785,11 @@ void IaMemsTab::captureEcuSample()
     if (!m_mems || !m_service)
         return;
 
-    mems_data *data = m_mems->getData();
-    if (!data)
+    Mems16Na::SessionEvidence na;
+    mems_data *data = m_mems->getData(&na);
+    // The MainWindow publishes the exact Diagnostic snapshot for NA.
+    // Never add a second legacy interpretation of a confirmed NA sample.
+    if (!data || na.identifiedProfile())
         return;
 
     ExpertObservation observation;

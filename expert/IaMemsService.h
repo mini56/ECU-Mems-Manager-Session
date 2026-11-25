@@ -8,6 +8,8 @@
 #include "ExpertEngine.h"
 #include "ExpertKnowledgeReader.h"
 #include "ExpertTypes.h"
+#include "../mems16na_session_evidence.h"
+#include "../rosco.h"
 
 class LocalAiClient;
 
@@ -22,6 +24,8 @@ public:
     void setConnected(bool connected);
     void setContext(const ExpertContext &context);
     void addObservation(const ExpertObservation &observation);
+    void setNaDiagnostic(const Mems16Na::SessionEvidence &na,const mems_data &data,const QString &report);
+    void clearNaDiagnostic();
     void ask(const QString &question);
     void askWithLibrary(const QString &question);
     void clearConversation();
@@ -42,6 +46,7 @@ private:
     void openPackagedKnowledge();
     void updateContextFromQuestion(const QString &question);
     QString groundingFor(const QString &question);
+    QString naAnswer(const QString &question) const;
     QString softwareAnswer(const QString &question) const;
     QString currentValuesAnswer() const;
     QString historyAnswer() const;
@@ -57,6 +62,9 @@ private:
     ExpertContext m_context;
     QList<ExpertObservation> m_history;
     ExpertAnalysisResult m_lastAnalysis;
+    Mems16Na::SessionEvidence m_naEvidence;
+    QString m_naReport;
+    QList<ExpertObservation> m_naHistory;
 
     QString m_databasePath;
     QString m_knowledgeError;

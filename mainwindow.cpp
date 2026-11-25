@@ -18,6 +18,7 @@
 #include <QGraphicsOpacityEffect>
 #include "mainwindow.h"
 #include "mems16na_presentation.h"
+#include "expert/IaMemsService.h"
 #include <QSizePolicy>
 #include "overviewramlive.h"
 #include "injectionramtestui.h"
@@ -1108,6 +1109,7 @@ void MainWindow::onDataReady()
     clearNaIdentityStatus();
     m_summaryTab->update2JData(values,family);
     if (m_diagnosticPanel) m_diagnosticPanel->update2JData(values,faults,family);
+    IaMemsService::instance()->clearNaDiagnostic();
     if (values.contains(QStringLiteral("rpm")))
     {
       m_ui->m_revCounter->setValue(values.value(QStringLiteral("rpm")).toDouble());
@@ -1160,6 +1162,9 @@ void MainWindow::onDataReady()
   const quint8 fault2=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc2).faultBits:data->dtc2;
   m_summaryTab->updateData(data,&naEvidence);
   if (m_diagnosticPanel) m_diagnosticPanel->updateData(data,&naEvidence);
+  if(naIdentified && m_diagnosticPanel)
+    IaMemsService::instance()->setNaDiagnostic(naEvidence,*data,m_diagnosticPanel->naDiagnosticReport());
+  else IaMemsService::instance()->clearNaDiagnostic();
   int corrected_iac = (data->iac_position > IAC_MAXIMUM) ? IAC_MAXIMUM : data->iac_position;
   const double ignitionAdvanceDeg = static_cast<double>(data->ignition_advance) * 0.5 - 24.0;
   const double ignitionAdjustmentDeg = (static_cast<int>(data->ignition_advance2) - 48) * 0.5;
@@ -1791,6 +1796,7 @@ void MainWindow::onDisconnect()
   if(m_summaryTab)m_summaryTab->showNaDocumentation();
   showNaPages(Mems16Na::SessionEvidence(),true);
   if(m_diagnosticPanel)m_diagnosticPanel->endNaSession();
+  IaMemsService::instance()->clearNaDiagnostic();
   EcuCommunicationLog::finish();
   m_ui->m_saveAdjustmentsButton->setEnabled(false);
   setProperty("ecuConnectInProgress", false);

@@ -2,6 +2,7 @@
 #include "../i18n.h"
 
 #include "IaResponseLogic.h"
+#include "IaMemsNaContext.h"
 #include "IaMemsConversationRouting.h"
 #include "LocalAiClient.h"
 
@@ -463,6 +464,7 @@ void IaMemsService::setConnected(bool connected)
     if (m_connected == connected)
         return;
     m_connected = connected;
+    if(!connected)clearNaDiagnostic();
     emit statusChanged();
 }
 
@@ -473,8 +475,93 @@ void IaMemsService::setContext(const ExpertContext &context)
     emit statusChanged();
 }
 
+void IaMemsService::clearNaDiagnostic()
+{
+    if(!m_naEvidence.identifiedProfile())return;
+    m_naEvidence.reset();
+    m_naReport.clear();
+    m_naHistory.clear();
+    m_history.clear();
+    m_engine.clearSamples();
+    m_lastAnalysis=ExpertAnalysisResult();
+    m_context=ExpertContext();
+    m_engine.setContext(m_context);
+    emit statusChanged();
+}
+
+void IaMemsService::setNaDiagnostic(const Mems16Na::SessionEvidence &na,const mems_data &data,const QString &report)
+{
+    const auto *profile=na.identifiedProfile();
+    if(!profile){clearNaDiagnostic();return;}
+    const bool changed=m_naEvidence.identifiedProfile()!=profile || m_naEvidence.identity()!=na.identity();
+    if(changed){
+        m_naHistory.clear();
+        m_history.clear();
+        m_engine.clearSamples();
+        m_lastAnalysis=ExpertAnalysisResult();
+    }
+    m_naEvidence=na;
+    m_naReport=report;
+    m_connected=true;
+    if(changed){
+        ExpertContext context;
+        context.family=QStringLiteral("1.6");
+        context.firmware=QString::fromLatin1(profile->firmware);
+        setContext(context);
+    }
+    if(!na.ready())return;
+    const auto sample=IaMemsNa::observation(na,data,QDateTime::currentMSecsSinceEpoch());
+    m_naHistory.append(sample);
+    if(m_naHistory.size()>kMaximumSamples)m_naHistory.removeFirst();
+    IaResponseLogic::noteMeasurementTimestamp(sample.timestampMs);
+}
+
+QString IaMemsService::naAnswer(const QString &question) const
+{
+    using namespace Mems16Na;
+    const int dtc=IaMemsNa::requestedDtc(question);
+    const bool live=m_connected && m_naEvidence.identifiedProfile();
+    if(!live){
+        if(dtc>=0 && IaMemsNa::explicitReference(question))
+            return IaMemsNa::dtcAnswer(dtc,m_naEvidence,true);
+        return QString();
+    }
+    if(!IaMemsNa::relevant(question))return QString();
+    if(dtc>=0)return IaMemsNa::dtcAnswer(dtc,m_naEvidence,false);
+    if(!m_naEvidence.ready())return I18n::text(29052)+QStringLiteral("\n")+I18n::text(29048);
+    const QString t=IaResponseLogic::normalize(question);
+    if(IaResponseLogic::hasAny(t,{"historique","history","historico","verlauf","evolution","tendance","trend"})){
+        QStringList lines;
+        lines<<I18n::text(29049)+QStringLiteral(" : ")+QString::fromLatin1(m_naEvidence.identifiedProfile()->firmware);
+        lines<<I18n::text(29083).arg(m_naHistory.size());
+        // Never run old thresholds or inject zero for an unavailable measurement.
+        const struct Metric { const char *key;int label;const char *unit; } metrics[]={
+            {"injection_time_us",29029," µs"},{"idle_error_rpm",29031," RPM"},
+            {"idle_signed_rpm",29024," RPM"},{"throttle_voltage_v",29027," V"},
+            {"lambda_mv",29057," mV"},{"learn_count",29033,""},
+            {"idle_hot_steps",29025,""},{"idle_base_steps",29030,""}};
+        for(const auto &metric:metrics){
+            const QString key=QString::fromLatin1(metric.key);
+            double lo=0,hi=0,last=0;int count=0;
+            for(const auto &sample:m_naHistory){
+                if(!sample.values.contains(key))continue;
+                const double value=sample.values.value(key);
+                if(!count)lo=hi=value;else {lo=qMin(lo,value);hi=qMax(hi,value);}
+                last=value;++count;
+            }
+            if(count)lines<<I18n::text(metric.label)+QStringLiteral(" : min %1 / max %2 / %3 %4")
+                .arg(lo,0,'f',2).arg(hi,0,'f',2).arg(last,0,'f',2).arg(QString::fromUtf8(metric.unit));
+        }
+        return lines.join(QLatin1Char('\n'));
+    }
+    // Use exactly the same table and thresholds as the Diagnostic page.
+    // Append the remaining qualified values and their documented meanings.
+    return m_naReport+QStringLiteral("\n\n")+IaMemsNa::measurementDetails(m_naEvidence);
+}
+
 void IaMemsService::addObservation(const ExpertObservation &observation)
 {
+    if(m_naEvidence.identifiedProfile())return;
     if (observation.timestampMs > 0)
         IaResponseLogic::noteMeasurementTimestamp(observation.timestampMs);
 
@@ -497,6 +584,11 @@ void IaMemsService::ask(const QString &question)
     if (trimmed.isEmpty())
         return;
 
+    const QString na=IaMemsConversationRouting::isDocumentationQuestion(trimmed)?QString():naAnswer(trimmed);
+    if(!na.isEmpty()){
+        m_pendingGrounding.clear();
+        emit responseReady(na);emit statusChanged();return;
+    }
     updateContextFromQuestion(trimmed);
     m_pendingGrounding = groundingFor(trimmed);
 
@@ -602,6 +694,10 @@ QString IaMemsService::groundingFor(const QString &question)
     const QString software = softwareAnswer(question);
     if (!software.isEmpty())
         return software;
+    if(!IaMemsConversationRouting::isDocumentationQuestion(question)){
+        const QString na=naAnswer(question);
+        if(!na.isEmpty())return na;
+    }
 
     if (containsAny(text, {QStringLiteral("aide"), QStringLiteral("que peux tu"),
                            QStringLiteral("que peux-tu"), QStringLiteral("comment te parler")}))

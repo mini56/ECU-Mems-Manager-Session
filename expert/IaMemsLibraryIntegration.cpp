@@ -832,6 +832,17 @@ void IaMemsService::askWithLibrary(const QString &question)
         return;
     }
 
+    // A qualified NA diagnosis must bypass obsolete rules and model-generated
+    // conversions. Explicit workshop documentation keeps its original route.
+    const QString na=(!resolvedDocumentary &&
+        !IaMemsConversationRouting::isDocumentationQuestion(trimmed))?naAnswer(trimmed):QString();
+    if(!na.isEmpty()){
+        clearStructuredMenuState(this);
+        m_pendingGrounding.clear();
+        emit responseReady(na);
+        emit statusChanged();
+        return;
+    }
     updateContextFromQuestion(trimmed);
 
     // Live ECU diagnosis remains on the measurement/expert route unless
