@@ -61,14 +61,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-3">3. Injection tab</h2>
-<p>The Injection tab groups the injection values acquired through the dedicated reading mode: <b>final injection time</b>, <b>base injection time</b>, <b>transient correction</b> and <b>transient state</b>.</p>
-<p>These values share the same dedicated acquisition path to avoid unnecessary ECU reading-mode changes. IA MEMS observes them when they are already available; it does not start an additional ECU polling loop on its own.</p>
-
-
-<p>The lower chart tracks final injection time. The right-hand panel shows firmware information, raw RAM values and the active reading mode. The RAM mapping is available as <b>read-only</b> data when supported by the ECU and protocol.</p>
-<p><b>Screenshot — Injection: four gauges, time plot and RAM data.</b></p>
-<p><img src=":/help/images/Capture d’écran (910).png" width="550"></p>
-
+<p>The Injection tab displays final injection time, base injection time, transient correction and transient state. The chart shows final injection over time. The side panel displays firmware, raw values and reading status. These readings are read-only when available.</p>
 
 <h2 id="chapter-4">4. Settings tab</h2>
 <p>The Settings tab contains service adjustments such as idle, fuel and ignition-related corrections. Tooltips explain the purpose and risks of each adjustment.</p>
@@ -111,14 +104,9 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-8">8. All data</h2>
-<p>This detailed view exposes raw and decoded MEMS fields. It is useful when comparing protocol bytes with interpreted measurements.</p>
-
-
-<p>Two tables show, among other items, the field offsets for diagnostic frames <b>7D and 80</b>. The Received column shows raw data; Calculated shows a documented interpretation, where available. This view is particularly useful for checking low-level decoding.</p>
+<p>The tables display received values and their interpretation when available. A raw value must not be confused with a physical measurement.</p>
 <p><b>Screenshot — All data: offset, description, received and calculated.</b></p>
 <p><img src=":/help/images/Capture d’écran (900).png" width="550"></p>
-
-
 <h2 id="chapter-mems16na">Naturally aspirated MEMS 1.6 — firmware-specific readings and faults</h2>
 <p>Manager adapts measurements and faults to the identified ECU. No manual profile selection is required. Unavailable or unconfirmed information is indicated.</p>
 <h3>Measurements: units and availability</h3>
@@ -156,26 +144,21 @@ small{color:#aebcc5}
 <p>TXT/CSV recordings retain ECU identity, readings and availability. Historical files remain readable. Analysis curves omit missing readings; Columns displays readings and faults. ECU communication logs remain separate.</p>
 
 <h2 id="chapter-9">9. ECU / ROSCO</h2>
-<p><b>Project communication library:</b> Manager uses its own Windows 64-bit communication library <code>mems_manager_x64.dll</code>, compatible with historical ROSCO functions.</p>
-<p>The ECU / ROSCO tab displays supported reading and session functions. TX/RX exchanges are displayed in hexadecimal. ECU recoding remains disabled.</p>
-
+<p>This page provides the available advanced diagnostic functions for experienced users. ECU recoding remains disabled.</p>
 
 <h2 id="chapter-interactive">Interactive mode — advanced commands</h2>
-<p>This page provides the existing ROSCO interactive-command instructions. It is intended for technical use: know the selected serial interface and the meaning of a command before sending it to the ECU. For regular live measurements, use <b>Connect</b> and the diagnostic pages instead.</p>
+<p>This page is intended for experienced users. Do not send commands unless you understand their effects. For routine diagnostics, use <b>Connect</b> and the measurement pages.</p>
+
 <h2 id="chapter-ecu19">ECU 1.9 test — communication checks</h2>
-<p>The <b>ECU 1.9 test</b> page offers a guided session covering connection, identification and ECU data reading. It reports connection status, command responses, injection-reading steps, restoration of diagnostic mode and reconnection separately. A log records the events; controls are available to start, stop and open the results folder. This is different from USB cable recognition.</p>
+<p>The ECU 1.9 test checks connection and readings. Use the start and stop controls, then open the results folder to view the log. This test is separate from the USB cable test.</p>
 
 <h2 id="chapter-mems2j">MEMS 2J — automatic connection and diagnostics</h2>
-<p>Connect a compatible diagnostic cable to the ECU, switch on the ignition and click <b>CONNECT</b>. SESSION tries the available serial interfaces and identifies the ECU family from an actual response; no manual adapter-brand or protocol selection is needed.</p>
-<p>Once <b>MEMS 2J</b> is identified, available readings appear on the usual <b>Overview</b> and <b>All measurements</b> pages. Faults read from the ECU appear under <b>Automatic diagnostics</b>. Undocumented measurements remain raw. Some fault codes apply specifically to the Mini MPi and must not be assumed to apply to other variants.</p>
-<p><b>Validation:</b> the reader and automated tests were added in SESSION 178; a real MEMS 2J ECU connection and measurements still need to be tested. Since SESSION 184, users can explicitly request fault-code clearing; ECU programming, calibration and immobiliser functions are not added.</p>
-
-<p><b>Clearing MEMS 2J faults:</b> after a confirmed connection, use the existing clear-fault control. This operation modifies stored fault information and never runs automatically. Legacy ROSCO adjustment and actuator commands do not apply to MEMS 2J.</p>
+<p>Connect a compatible diagnostic cable, switch on the ignition and press <b>Connect</b>. Manager automatically identifies the ECU. Use <b>Overview</b>, <b>All measurements</b> and <b>Automatic diagnostics</b> for the available functions.</p>
+<p>Fault clearing takes place only at your request. It changes stored fault information: review faults before clearing them. Adjustments and actuator tests are available only for compatible ECUs. Some faults are specific to the Mini MPi.</p>
 <h3>MEMS 3 — automatic connection, live data and fault codes</h3>
-<p>Connect a compatible diagnostic cable, switch on the ignition and press <b>CONNECT</b>. Manager identifies MEMS 3 from the ECU response without manual protocol selection.</p>
-<p>Once a MEMS 3 ECU responds, SESSION displays the available decoded engine speed, coolant/oil/intake temperatures, MAP, throttle, lambda and coil times. Measurements without established units remain raw. The diagnostics page shows <b>16-bit engine fault codes</b>, their known status and the underlying hexadecimal data.</p>
-<p><b>Clearing MEMS 3 faults:</b> use the existing clear-fault control after connecting. Clearing is user-requested only, never during automatic detection or polling. Experimental immobiliser and calibration commands are not enabled.</p>
-<p><b>Hardware validation:</b> SESSION 184 includes automatic frame and decoder tests, but real-ECU connection and fault-clearing tests are still required for MEMS 2J and MEMS 3. The RC5 airbag controller is not part of engine ECU detection.</p>
+<p>Connect a compatible diagnostic cable, switch on the ignition and press <b>Connect</b>. Manager automatically identifies the ECU. Use <b>Overview</b>, <b>All measurements</b> and <b>Automatic diagnostics</b> for the available functions.</p>
+<p>Fault clearing takes place only at your request. It changes stored fault information: review faults before clearing them. Adjustments and actuator tests are available only for compatible ECUs. Some faults are specific to the Mini MPi.</p>
+<p>MEMS 2J and MEMS 3 connections and fault clearing still require validation on real ECUs. RC5 airbag diagnostics are separate from engine diagnostics.</p>
 
 <h2 id="chapter-10">10. Automatic diagnostics</h2>
 <p><a href="#chapter-mems16na">See the naturally aspirated MEMS 1.6 chapter for readings, faults and recordings.</a></p>
@@ -199,18 +182,14 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-12">12. IA MEMS</h2>
-<p>The <b>IA MEMS</b> tab combines natural-language dialogue, ECU measurements already acquired by the application, their history, the expert engine and the MEMS knowledge database.</p>
-<p>The expert engine distinguishes observations, hypotheses, external information and confidence/provenance levels. A component must not be condemned from a single reading. When information is insufficient or contradictory, IA MEMS must say so instead of inventing a conclusion.</p>
-<p>The conversational model runs locally from the files supplied with the package. It starts only when the IA MEMS tab is actually opened, avoiding unnecessary memory and CPU use during normal operation. It sends no extra ECU command: it only observes data already acquired by MEMS Manager.</p>
-
-
+<p>IA MEMS helps interpret measurements and consult available documentation offline. A single reading does not prove that a component is faulty. Check the sources, vehicle and missing information. IA MEMS sends no additional ECU commands.</p>
 <p>Ask a specific question or search for an operation (such as alternator removal). If the installed documentation contains the procedure, IA MEMS can display numbered steps, document references and associated manufacturer pages. Open source pages at full size to check diagrams. The results depend on the installed sources and applicable vehicle.</p>
 <p><b>Screenshot — IA MEMS: procedure steps and manufacturer page.</b></p>
 <p><img src=":/help/images/Capture d’écran (914).png" width="550"></p>
 
-
 <h2 id="chapter-13">13. Snapshots</h2>
-<p>In the <b>Tools</b> panel, <b>Record</b> starts diagnostic logging and <b>Stop</b> ends it. <b>Snapshot</b> captures an image of the window; <b>View captures</b> opens the viewer to inspect, enlarge or delete images. Deletion requires confirmation. The log file name appears in the Tools panel and lower status strip.</p>
+<p>In the <b>Tools</b> panel, <b>Record</b> starts diagnostic logging and <b>Stop</b> ends it. <b>Snapshot</b> captures an image of the window; <b>View captures</b> opens the viewer to inspect, enlarge or delete images. Deletion requires confirmation.</p>
+<p>The recording file name can be edited in the lower status bar.</p>
 
 <h2 id="chapter-14">14. Tooltips and help bubble</h2>
 <p><img src=":/icons/helpbubble.png" width="14" height="14"> A small orange circled question mark indicates contextual help. Hover over it to read the help for the corresponding parameter. The symbol is identical in light and dark themes, with no coloured background. Illustrative screenshots may show the previous symbol.</p>
@@ -221,15 +200,14 @@ small{color:#aebcc5}
 <h2 id="chapter-16">16. Themes</h2>
 <p><b>Light:</b> light interface and gauge faces.</p>
 <p><b>Dark:</b> dark interface and gauge faces with high-contrast text, graduations and needles. Tables are also adapted for readability.</p>
+<p>Confirm a theme or language change in Options: Manager restarts automatically. Confirmation is required if an ECU is connected or recording is active.</p>
 
 <h2 id="chapter-17">17. Language</h2>
 <p>The interface supports French, English, Spanish, Italian, Portuguese and German. The selected language is stored in the application settings.</p>
 
 <h2 id="chapter-18">18. Supported ECU families</h2>
-<p>SESSION supports Rover MEMS <b>1.2, 1.3 and 1.6</b> through ROSCO, <b>MEMS 1.9</b> through K-Line wake-up, and <b>MEMS 2J and MEMS 3</b> through their own K-Line protocols. The ECU family is determined from a successful response after pressing <b>Connect</b>. Available readings and commands depend on the actual ECU session; MEMS 2J/3 do not use legacy ROSCO adjustment commands. Physical ECU testing remains outstanding for the newer readers.</p>
-
+<p>Manager supports Rover MEMS <b>1.2, 1.3, 1.6, 1.9, 2J and 3</b>. Press <b>Connect</b>; available functions depend on the connected ECU. Hardware validation of the newer families remains outstanding.</p>
 <div class="tip"><b>Lucas 5AS immobiliser:</b> open <b>Other control units</b>, choose <b>Connect</b>, then <b>Read status</b> or <b>Live monitoring</b>. Horn, LED and hazard-light tests require confirmation explaining their effect. <b>Save diagnostic log</b> records the exchange. Physical testing is pending; remote pairing is not yet available.</div>
-
 <h2 id="chapter-19">19. Basic diagnostic guidance</h2>
 <table>
 <tr><th>Symptom</th><th>Checks</th></tr>

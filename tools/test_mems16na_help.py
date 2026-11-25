@@ -22,8 +22,11 @@ for lang in ('fr','en','de','es','it','pt'):
     assert guide.ids.count('chapter-mems16na')==1,lang
     assert guide.links.count('chapter-mems16na')==4,lang
     assert guide.images.count(':/icons/helpbubble.png')==1,lang
-    assert len([x for x in guide.images if x.startswith(':/help/images/')])==13,lang
+    assert len([x for x in guide.images if x.startswith(':/help/images/')])==12,lang
     assert all(x.startswith(':/help/images/') or x==':/icons/helpbubble.png' for x in guide.images),lang
+    assert not any('(910).png' in x for x in guide.images),lang
+    assert not re.search(r'(?i)mems_manager_x64\.dll|\bK-Line\b|SESSION 18[478]|7D\s+(?:et|and|und|y|e)\s+80',html),lang
+    assert all(x in guide.ids for x in ('chapter-3','chapter-9','chapter-ecu19','chapter-mems2j','chapter-12','chapter-18')),lang
     section=html.split('<h2 id="chapter-mems16na">',1)[1].split('<h2 id="chapter-9">',1)[0]
     for token in ('µs','TPS','DTC 0','DTC 1','DTC 2','DTC 3, 4, 5','RPM'):
         assert token in section,(lang,token)

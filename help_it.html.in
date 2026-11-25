@@ -45,12 +45,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-3">3. Scheda Iniezione</h2>
-<p>Raccoglie il tempo di iniezione finale, il tempo base, la correzione transitoria e il relativo stato mediante la lettura dedicata. IA MEMS osserva i dati già disponibili e non avvia un ulteriore ciclo di interrogazione ECU.</p>
-
-
-<p>Il grafico inferiore mostra l'andamento del tempo d'iniezione finale. A destra si trovano firmware, valori RAM grezzi e modalità di lettura. La mappa RAM è in sola lettura dove supportata.</p><p><b>Iniezione e grafico</b></p>
-<p><img src=":/help/images/Capture d’écran (910).png" width="550"></p>
-
+<p>La scheda Iniezione mostra il tempo di iniezione finale, il tempo base, la correzione transitoria e il relativo stato. Il grafico mostra l’andamento dell’iniezione finale. Il pannello laterale presenta firmware, valori grezzi e stato di lettura. Le misure disponibili sono in sola lettura.</p>
 
 <h2 id="chapter-4">4. Scheda Impostazioni</h2>
 <p>Lo scostamento del regime minimo è visualizzato in RPM; l’interpretazione dipende dalla centralina identificata.</p>
@@ -87,13 +82,9 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-8">8. Tutti i dati</h2>
-<p>Visualizza i campi MEMS grezzi e decodificati per confrontare byte di protocollo e misurazioni interpretate.</p>
-
-
-<p>Le due tabelle mostrano posizioni e dati grezzi dei frame 7D e 80, con la relativa interpretazione documentata. Sono utili per controllare la decodifica.</p><p><b>Dati grezzi e calcolati</b></p>
+<p>Le tabelle mostrano i valori ricevuti e la relativa interpretazione quando disponibile. Un valore grezzo non equivale a una misura fisica.</p>
+<p><b>Dati grezzi e calcolati</b></p>
 <p><img src=":/help/images/Capture d’écran (900).png" width="550"></p>
-
-
 <h2 id="chapter-mems16na">MEMS 1.6 aspirato — misure e guasti secondo il firmware</h2>
 <p>Manager adatta le misure e i guasti alla centralina identificata. Non occorre selezionare manualmente un profilo. Le informazioni non disponibili o non confermate sono segnalate.</p>
 <h3>Misure: unità e disponibilità</h3>
@@ -131,24 +122,21 @@ small{color:#aebcc5}
 <p>I registri TXT/CSV conservano identità ECU, misure e disponibilità. I file storici restano leggibili. Le curve omettono le misure mancanti; Colonne mostra misure e guasti. I registri comunicazione ECU rimangono separati.</p>
 
 <h2 id="chapter-9">9. ECU / ROSCO</h2>
-<p><b>Libreria di comunicazione del progetto:</b> Manager utilizza la propria libreria Windows a 64 bit <code>mems_manager_x64.dll</code>, compatibile con le funzioni storiche ROSCO.</p>
-<p>La scheda ECU / ROSCO presenta le funzioni di lettura e sessione supportate. Gli scambi TX/RX sono visualizzati in esadecimale. La ricodifica ECU rimane disattivata.</p>
+<p>Questa pagina offre le funzioni diagnostiche avanzate disponibili agli utenti esperti. La ricodifica ECU rimane disattivata.</p>
 
+<h2 id="chapter-interactive">Modalità interattiva — comandi avanzati</h2>
+<p>Questa pagina è destinata agli utenti esperti. Non inviare comandi di cui non si conoscono gli effetti. Per la diagnosi normale usare <b>Connetti</b> e le pagine delle misure.</p>
 
-<h2 id="chapter-interactive">Modalità interattiva — comandi avanzati</h2><p>La pagina presenta le istruzioni per i comandi interattivi ROSCO. È destinata a chi conosce il protocollo e la porta selezionata. Per le letture correnti utilizzare <b>Connetti</b> e le normali pagine diagnostiche.</p>
-<h2 id="chapter-ecu19">Test ECU 1.9 — controlli di comunicazione</h2><p>Il test ECU 1.9 esegue una sequenza guidata di connessione, identificazione e letture. Mostra separatamente risposte del protocollo, acquisizione iniezione, ripristino della modalità diagnostica e riconnessione. Consente di avviare, interrompere e aprire la cartella dei registri. Non è il test del cavo USB.</p>
+<h2 id="chapter-ecu19">Test ECU 1.9 — controlli di comunicazione</h2>
+<p>Il test ECU 1.9 verifica la connessione e le letture. Usare i comandi di avvio e arresto, quindi aprire la cartella dei risultati per consultare il registro. È distinto dal test del cavo USB.</p>
 
 <h2 id="chapter-mems2j">MEMS 2J — connessione e diagnosi automatiche</h2>
-<p>Collegare un cavo diagnostico compatibile alla centralina, inserire l'accensione e premere <b>Connetti</b>. SESSION verifica le interfacce seriali disponibili e riconosce la famiglia dalle risposte effettive della centralina, senza selezione manuale di cavo o protocollo.</p>
-<p>Quando viene identificata la famiglia <b>MEMS 2J</b>, i valori disponibili appaiono in <b>Panoramica</b> e <b>Tutte le misure</b>; i guasti letti compaiono in <b>Diagnostica automatica</b>. I valori non documentati rimangono grezzi. Alcuni codici sono specifici della Mini MPi.</p>
-<p><b>Verifica:</b> il lettore e i test automatici sono stati integrati in SESSION 178; occorre ancora provarli su una centralina MEMS 2J reale. Da SESSION 184 è disponibile la cancellazione dei guasti su richiesta esplicita dell'utente; non sono state aggiunte funzioni di programmazione, calibrazione o immobilizzatore.</p>
-
-<p><b>Cancellazione guasti MEMS 2J:</b> dopo il collegamento confermato, utilizzare il comando esistente di cancellazione. L’operazione modifica la memoria guasti e non viene mai avviata automaticamente. I comandi ROSCO di regolazione e degli attuatori non si applicano a MEMS 2J.</p>
+<p>Collegare il cavo diagnostico compatibile, accendere il quadro e premere <b>Connetti</b>. Manager riconosce automaticamente la centralina. Consultare <b>Panoramica</b>, <b>Tutte le misure</b> e <b>Diagnostica automatica</b>.</p>
+<p>La cancellazione dei guasti avviene solo su richiesta. Modifica i guasti memorizzati: consultarli prima di cancellarli. Regolazioni e prove attuatori sono disponibili solo per centraline compatibili. Alcuni guasti sono specifici della Mini MPi.</p>
 <h3>MEMS 3 — collegamento automatico, misure e guasti</h3>
-<p>Collegare il cavo diagnostico compatibile, inserire l’accensione e premere <b>Connetti</b>. Manager riconosce MEMS 3 dalla risposta della centralina senza selezione manuale del protocollo.</p>
-<p>Con MEMS 3 collegato, il programma mostra i valori disponibili di regime, temperatura liquido, olio e aria, MAP, farfalla, lambda e tempi delle bobine. Le misure prive di unità confermata restano grezze. La diagnostica presenta i <b>codici guasto motore a 16 bit</b>, lo stato noto e i dati esadecimali ricevuti.</p>
-<p><b>Cancellazione guasti MEMS 3:</b> utilizzare il comando esistente dopo il collegamento. Solo su richiesta dell’utente, mai durante il riconoscimento o l’acquisizione automatica. I comandi sperimentali di immobilizzatore o calibrazione non sono attivati.</p>
-<p><b>Verifica:</b> SESSION 184 include test automatici di trame e decoder, ma collegamento e cancellazione su centraline MEMS 2J e MEMS 3 reali richiedono ancora prove. La centralina airbag RC5 non fa parte del riconoscimento motore.</p>
+<p>Collegare il cavo diagnostico compatibile, accendere il quadro e premere <b>Connetti</b>. Manager riconosce automaticamente la centralina. Consultare <b>Panoramica</b>, <b>Tutte le misure</b> e <b>Diagnostica automatica</b>.</p>
+<p>La cancellazione dei guasti avviene solo su richiesta. Modifica i guasti memorizzati: consultarli prima di cancellarli. Regolazioni e prove attuatori sono disponibili solo per centraline compatibili. Alcuni guasti sono specifici della Mini MPi.</p>
+<p>Connessione e cancellazione dei guasti di MEMS 2J e MEMS 3 devono ancora essere verificate su centraline reali. La diagnosi airbag RC5 è separata da quella del motore.</p>
 
 <h2 id="chapter-10">10. Diagnostica automatica</h2>
 <p><a href="#chapter-mems16na">Consultare il capitolo MEMS 1.6 aspirato per misure, guasti e registri.</a></p>
@@ -170,18 +158,17 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-12">12. IA MEMS</h2>
-<p>L'assistente combina domande in linguaggio naturale, misure ECU già acquisite, motore esperto e database MEMS. Distingue osservazioni, ipotesi, fonti e grado di affidabilità. Un solo valore non basta per condannare un componente. Il modello funziona localmente, si attiva aprendo la scheda e non invia comandi ECU aggiuntivi.</p>
-
-
-<p>Inserire una domanda o il nome di un'operazione. Se la documentazione è installata, IA MEMS può mostrare passaggi numerati, riferimenti e pagine del costruttore. Aprire le pagine ingrandite per verificarne i dettagli.</p><p><b>IA MEMS e procedura</b></p>
+<p>IA MEMS aiuta a interpretare le misure e consultare la documentazione disponibile offline. Una singola misura non dimostra che un componente sia guasto. Verificare fonti, veicolo e informazioni mancanti. IA MEMS non invia comandi aggiuntivi alla centralina.</p>
+<p>Inserire una domanda o il nome di un'operazione. Se la documentazione è installata, IA MEMS può mostrare passaggi numerati, riferimenti e pagine del costruttore. Aprire le pagine ingrandite per verificarne i dettagli.</p>
+<p><b>IA MEMS e procedura</b></p>
 <p><img src=":/help/images/Capture d’écran (914).png" width="550"></p>
-
 
 <h2 id="chapter-13">13. Catture schermo</h2>
 <p>Cattura salva un'immagine della finestra nella cartella captures. Visualizza catture permette di vedere, ingrandire o eliminare un'immagine previa conferma.</p>
 
 
 <p>Nel pannello Strumenti, <b>Registrazione</b> avvia il log diagnostico e <b>Interrompi</b> lo conclude. <b>Istantanea</b> salva un'immagine della finestra; <b>Visualizza catture</b> apre il visualizzatore.</p>
+<p>Il nome del file di registrazione è modificabile nella barra inferiore.</p>
 
 <h2 id="chapter-14">14. Aiuto contestuale</h2>
 <p><img src=":/icons/helpbubble.png" width="14" height="14"> Un piccolo punto interrogativo arancione in un cerchio indica la guida contestuale. Passare il puntatore sul simbolo per leggere la guida del parametro corrispondente. Il simbolo è identico nei temi chiaro e scuro, senza sfondo colorato. Le immagini illustrative possono mostrare il simbolo precedente.</p>
@@ -191,15 +178,14 @@ small{color:#aebcc5}
 
 <h2 id="chapter-16">16. Temi</h2>
 <p>Chiaro usa sfondi e strumenti chiari. Scuro usa sfondi scuri e scritte, lancette e tabelle ad alto contrasto, mantenendo leggibili gli avvisi.</p>
+<p>Confermare il cambio di tema o lingua nelle Opzioni: Manager si riavvia automaticamente. È richiesta conferma se una centralina è collegata o la registrazione è attiva.</p>
 
 <h2 id="chapter-17">17. Lingua</h2>
 <p>L'interfaccia supporta francese, inglese, spagnolo, italiano, portoghese e tedesco. La scelta viene salvata nelle impostazioni SESSION.</p>
 
 <h2 id="chapter-18">18. Famiglie ECU supportate</h2>
-<p>SESSION supporta Rover MEMS <b>1.2, 1.3 e 1.6</b> tramite ROSCO, <b>MEMS 1.9</b> tramite inizializzazione K-Line e <b>MEMS 2J e MEMS 3</b> con protocolli K-Line distinti. Il riconoscimento dipende dalle risposte reali della centralina dopo <b>Connetti</b>. Le letture e i comandi disponibili dipendono dalla sessione stabilita; i comandi ROSCO di regolazione non si applicano a MEMS 2J/3. Restano da eseguire prove su centraline reali.</p>
-
+<p>Manager supporta Rover MEMS <b>1.2, 1.3, 1.6, 1.9, 2J e 3</b>. Premere <b>Connetti</b>; le funzioni dipendono dalla centralina collegata. La verifica hardware delle famiglie più recenti resta da completare.</p>
 <div class="tip"><b>Immobilizer Lucas 5AS:</b> in <b>Altre centraline</b> premere <b>Connetti</b>, poi <b>Leggi stati</b> o <b>Monitoraggio in tempo reale</b>. I test di clacson, LED e luci di emergenza richiedono una conferma che ne spiega l'effetto. È possibile salvare il registro. I test reali sono da confermare; l'abbinamento telecomandi non è disponibile.</div>
-
 <h2 id="chapter-19">19. Guida diagnostica di base</h2>
 <p>Nessuna comunicazione: controllare quadro, porta, cavo, alimentazione e masse ECU. MAP anomalo: verificare tubo depressione, collettore e sensore. Minimo instabile: verificare interruttore, IAC, perdite d'aria, temperatura e correzioni carburante. Guasto lambda: controllare riscaldamento, cablaggio, tensione e ciclo chiuso. Bobina: controllare batteria, circuito primario e cablaggio.</p>
 
@@ -226,7 +212,7 @@ small{color:#aebcc5}
 <p>L'opzione Nascondi automaticamente la barra delle applicazioni di Windows è disattivata per impostazione predefinita. Se attivata, modifica il desktop mentre SESSION è aperto. Il programma ripristina l'impostazione alla chiusura e dispone di controlli di recupero dopo un arresto inatteso. Le politiche Windows possono impedirlo.</p>
 
 <h2 id="chapter-24">24. Illustrazioni del costruttore</h2>
-<p>Le 13 schermate sono già integrate nel pacchetto di installazione di SESSION e sono disponibili senza Internet. Le immagini mostrano l'interfaccia francese, mentre questo testo è in italiano. I disegni tecnici del costruttore provengono invece dai pacchetti documentali installati.</p>
+<p>Le 12 schermate sono già integrate nel pacchetto di installazione di SESSION e sono disponibili senza Internet. Le immagini mostrano l'interfaccia francese, mentre questo testo è in italiano. I disegni tecnici del costruttore provengono invece dai pacchetti documentali installati.</p>
 <p><b>Schermata iniziale</b></p>
 <p><img src=":/help/images/Capture d’écran (915).png" width="550"></p>
 

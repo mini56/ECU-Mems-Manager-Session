@@ -131,6 +131,10 @@ if(HELP_SCREENSHOTS)
     file(WRITE "${HELP_SCREENSHOTS_QRC}" "<RCC>\n<qresource prefix=\"/help/images\">\n")
     foreach(SCREENSHOT IN LISTS HELP_SCREENSHOTS)
         get_filename_component(SCREENSHOT_NAME "${SCREENSHOT}" NAME)
+        # Exclude the outdated Injection illustration until a corrected capture is supplied.
+        if(SCREENSHOT_NAME STREQUAL "Capture d’écran (910).png")
+            continue()
+        endif()
         file(APPEND "${HELP_SCREENSHOTS_QRC}"
             "<file alias=\"${SCREENSHOT_NAME}\">${SCREENSHOT}</file>\n")
     endforeach()

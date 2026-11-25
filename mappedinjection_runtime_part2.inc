@@ -8,15 +8,13 @@
     {
         m_firmwareId=firmware;m_baseAddr=baseAddr;m_transientAddr=transientAddr;m_counterAddr=counterAddr;
         m_firmware->setText(I18n::text(7916).arg(firmware.isEmpty()?QStringLiteral("--"):firmware));
+        // Titles describe the measurements, not the internal addressing.
+        m_base->setTitle(I18n::text(7902));
+        m_transient->setTitle(I18n::text(7903));
+        m_counter->setTitle(I18n::text(7904));
         if(mappingKnown){
-            m_base->setTitle(I18n::text(7923).arg(hexAddress(baseAddr)));
-            m_transient->setTitle(I18n::text(7924).arg(hexAddress(transientAddr)));
-            m_counter->setTitle(I18n::text(7925).arg(hexAddress(counterAddr)));
             m_status->setText(I18n::text(7917));m_status->setStyleSheet(QStringLiteral("color:#65db79;"));
         } else {
-            m_base->setTitle(I18n::text(7902));
-            m_transient->setTitle(I18n::text(7903));
-            m_counter->setTitle(I18n::text(7904));
             m_status->setText(I18n::text(7922));m_status->setStyleSheet(QStringLiteral("color:#ff9828;"));
         }
         synchronizeGaugeTitles();
@@ -63,9 +61,9 @@ private:
     {
         if(!m_firmware)return;
         m_firmware->setText(I18n::text(7916).arg(m_firmwareId.isEmpty()?QStringLiteral("--"):m_firmwareId));
-        m_baseRaw->setText(I18n::text(7913).arg(m_baseAddr?hexAddress(m_baseAddr):QStringLiteral("----")).arg(m_baseRawValue));
-        m_transientRaw->setText(I18n::text(7914).arg(m_transientAddr?hexAddress(m_transientAddr):QStringLiteral("----")).arg(m_transientRawValue));
-        m_counterRaw->setText(I18n::text(7915).arg(m_counterAddr?hexAddress(m_counterAddr):QStringLiteral("----")).arg(m_counterValue));
+        m_baseRaw->setText(I18n::text(7913).arg(m_baseRawValue));
+        m_transientRaw->setText(I18n::text(7914).arg(m_transientRawValue));
+        m_counterRaw->setText(I18n::text(7915).arg(m_counterValue));
         m_mode->setText(I18n::text(7909).arg(m_modeText.isEmpty()?I18n::text(7912):m_modeText));
     }
     QLabel *m_status=nullptr,*m_firmware=nullptr,*m_baseRaw=nullptr,*m_transientRaw=nullptr,*m_counterRaw=nullptr,*m_mode=nullptr;

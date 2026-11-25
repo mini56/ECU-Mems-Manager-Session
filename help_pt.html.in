@@ -43,12 +43,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-3">3. Separador Injeção</h2>
-<p>Agrupa o tempo de injeção final, tempo base, correção transitória e estado transitório obtidos no modo de leitura dedicado. A IA MEMS observa as medições existentes sem iniciar outra consulta ECU.</p>
-
-
-<p>O gráfico inferior acompanha o tempo de injeção final. O painel lateral apresenta firmware, valores RAM brutos e modo de leitura. A cartografia RAM é apenas de leitura quando suportada.</p><p><b>Injeção e gráfico</b></p>
-<p><img src=":/help/images/Capture d’écran (910).png" width="550"></p>
-
+<p>O separador Injeção apresenta o tempo de injeção final, o tempo base, a correção transitória e o respetivo estado. O gráfico mostra a evolução da injeção final. O painel lateral apresenta firmware, valores brutos e estado da leitura. As medições disponíveis são apenas de leitura.</p>
 
 <h2 id="chapter-4">4. Separador Definições</h2>
 <p>O desvio do regime de ralenti é apresentado em RPM; a interpretação depende da ECU identificada.</p>
@@ -85,13 +80,9 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-8">8. Todos os dados</h2>
-<p>Mostra campos MEMS brutos e descodificados para comparar os dados do protocolo com as medições interpretadas.</p>
-
-
-<p>As tabelas mostram posições e valores brutos das tramas 7D e 80, bem como interpretações documentadas. São úteis para verificar a descodificação.</p><p><b>Dados brutos e calculados</b></p>
+<p>As tabelas mostram os valores recebidos e a sua interpretação quando disponível. Um valor bruto não equivale a uma medição física.</p>
+<p><b>Dados brutos e calculados</b></p>
 <p><img src=":/help/images/Capture d’écran (900).png" width="550"></p>
-
-
 <h2 id="chapter-mems16na">MEMS 1.6 atmosférico — medições e avarias por firmware</h2>
 <p>Manager adapta as medições e avarias à ECU identificada. Não é necessário selecionar manualmente um perfil. A informação indisponível ou não confirmada é assinalada.</p>
 <h3>Medições: unidades e disponibilidade</h3>
@@ -129,24 +120,21 @@ small{color:#aebcc5}
 <p>Os registos TXT/CSV conservam a identidade ECU, as medições e a disponibilidade. Os ficheiros antigos continuam legíveis. As curvas omitem medições ausentes; Colunas mostra medições e avarias. Os registos de comunicação ECU permanecem separados.</p>
 
 <h2 id="chapter-9">9. ECU / ROSCO</h2>
-<p><b>Biblioteca de comunicação do projeto:</b> Manager utiliza a sua própria biblioteca Windows de 64 bits <code>mems_manager_x64.dll</code>, compatível com as funções históricas ROSCO.</p>
-<p>O separador ECU / ROSCO apresenta as funções de leitura e sessão suportadas. As trocas TX/RX são apresentadas em hexadecimal. A recodificação ECU permanece desativada.</p>
+<p>Esta página apresenta as funções de diagnóstico avançadas disponíveis para utilizadores experientes. A recodificação ECU permanece desativada.</p>
 
+<h2 id="chapter-interactive">Modo interativo — comandos avançados</h2>
+<p>Esta página destina-se a utilizadores experientes. Não envie comandos cujos efeitos desconhece. Para o diagnóstico habitual, utilize <b>Ligar</b> e as páginas de medições.</p>
 
-<h2 id="chapter-interactive">Modo interativo — comandos avançados</h2><p>Esta página apresenta instruções para comandos interativos ROSCO. Destina-se a utilizadores que conhecem o protocolo e a porta série escolhida. Para medições normais, utilize <b>Ligar</b> e as páginas de diagnóstico.</p>
-<h2 id="chapter-ecu19">Teste ECU 1.9 — verificação de comunicação</h2><p>O teste ECU 1.9 executa uma sequência orientada de ligação, identificação e leitura. Apresenta respostas do protocolo, leitura da injeção, reposição do modo de diagnóstico e nova ligação. É possível iniciar, parar e abrir a pasta dos registos. Não substitui o teste do cabo USB.</p>
+<h2 id="chapter-ecu19">Teste ECU 1.9 — verificação de comunicação</h2>
+<p>O teste ECU 1.9 verifica a ligação e as leituras. Utilize os comandos de início e paragem e abra a pasta de resultados para consultar o registo. É distinto do teste do cabo USB.</p>
 
 <h2 id="chapter-mems2j">MEMS 2J — ligação e diagnóstico automáticos</h2>
-<p>Ligue um cabo de diagnóstico compatível à ECU, ative a ignição e clique em <b>Ligar</b>. SESSION verifica as interfaces série disponíveis e identifica a família pelas respostas reais da ECU, sem escolha manual da marca do cabo ou do protocolo.</p>
-<p>Depois de identificar o <b>MEMS 2J</b>, as medições disponíveis aparecem em <b>Visão geral</b> e <b>Todas as medições</b>; as avarias lidas surgem em <b>Diagnóstico automático</b>. Os valores não documentados mantêm-se em bruto. Alguns códigos são específicos do Mini MPi.</p>
-<p><b>Validação:</b> leitor e testes automáticos integrados desde SESSION 178; ainda é necessário testar com uma ECU MEMS 2J real. Desde SESSION 184, o utilizador pode pedir expressamente o apagamento de avarias; não foram acrescentadas funções de programação, calibração ou imobilizador.</p>
-
-<p><b>Apagamento de avarias MEMS 2J:</b> após confirmar a ligação, utilizar o botão existente para apagar avarias. A operação altera a memória de avarias e nunca é executada automaticamente. As regulações e atuadores ROSCO não se aplicam a MEMS 2J.</p>
+<p>Ligue o cabo de diagnóstico compatível, ligue a ignição e prima <b>Ligar</b>. Manager identifica automaticamente a ECU. Consulte <b>Visão geral</b>, <b>Todas as medições</b> e <b>Diagnóstico automático</b>.</p>
+<p>A eliminação de avarias só é efetuada a pedido do utilizador. Altera as avarias memorizadas: consulte-as antes de as apagar. Ajustes e testes de atuadores só estão disponíveis para ECU compatíveis. Algumas avarias são específicas do Mini MPi.</p>
 <h3>MEMS 3 — ligação automática, medições e avarias</h3>
-<p>Ligar o cabo de diagnóstico compatível, ligar a ignição e premir <b>Ligar</b>. Manager identifica MEMS 3 pela resposta da ECU sem seleção manual do protocolo.</p>
-<p>Com o MEMS 3 ligado, são apresentados os valores disponíveis de rotação, temperaturas do líquido, óleo e ar, MAP, borboleta, lambda e tempos das bobinas. Dados de unidade não confirmada permanecem brutos. A página de diagnóstico mostra <b>códigos de avaria do motor de 16 bits</b>, o respetivo estado conhecido e os dados hexadecimais recebidos.</p>
-<p><b>Apagamento de avarias MEMS 3:</b> utilizar o comando existente após a ligação. Só a pedido do utilizador, nunca durante o reconhecimento ou a leitura automática. Os comandos experimentais de imobilizador e calibração não estão ativados.</p>
-<p><b>Validação:</b> SESSION 184 inclui testes automáticos das tramas e descodificação; faltam ainda testes de ligação e apagamento em ECU MEMS 2J e MEMS 3 reais. O airbag RC5 não faz parte da deteção da ECU do motor.</p>
+<p>Ligue o cabo de diagnóstico compatível, ligue a ignição e prima <b>Ligar</b>. Manager identifica automaticamente a ECU. Consulte <b>Visão geral</b>, <b>Todas as medições</b> e <b>Diagnóstico automático</b>.</p>
+<p>A eliminação de avarias só é efetuada a pedido do utilizador. Altera as avarias memorizadas: consulte-as antes de as apagar. Ajustes e testes de atuadores só estão disponíveis para ECU compatíveis. Algumas avarias são específicas do Mini MPi.</p>
+<p>A ligação e a eliminação de avarias MEMS 2J e MEMS 3 ainda devem ser validadas em ECU reais. O diagnóstico do airbag RC5 é separado do diagnóstico do motor.</p>
 
 <h2 id="chapter-10">10. Diagnóstico automático</h2>
 <p><a href="#chapter-mems16na">Consultar o capítulo MEMS 1.6 atmosférico para medições, avarias e registos.</a></p>
@@ -168,18 +156,17 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-12">12. IA MEMS</h2>
-<p>A IA MEMS combina perguntas em linguagem natural, medições ECU já recolhidas, motor especializado e base MEMS. Distingue observações, hipóteses, fontes e níveis de confiança. Uma leitura isolada não basta para condenar um componente. O modelo funciona localmente, é ativado ao abrir o separador e não envia comandos ECU adicionais.</p>
-
-
-<p>Pesquise um componente ou uma operação. Quando existe documentação instalada, IA MEMS pode apresentar passos numerados, referências e páginas do fabricante. Abra a página ampliada para verificar diagramas.</p><p><b>IA MEMS e procedimento</b></p>
+<p>IA MEMS ajuda a interpretar as medições e a consultar a documentação disponível sem Internet. Uma medição isolada não prova que um componente esteja avariado. Verifique fontes, veículo e informações em falta. IA MEMS não envia comandos adicionais à ECU.</p>
+<p>Pesquise um componente ou uma operação. Quando existe documentação instalada, IA MEMS pode apresentar passos numerados, referências e páginas do fabricante. Abra a página ampliada para verificar diagramas.</p>
+<p><b>IA MEMS e procedimento</b></p>
 <p><img src=":/help/images/Capture d’écran (914).png" width="550"></p>
-
 
 <h2 id="chapter-13">13. Capturas de ecrã</h2>
 <p>Captura guarda uma imagem da janela na pasta captures. Ver capturas permite pré-visualizar, ampliar ou apagar imagens após confirmação.</p>
 
 
 <p>Na secção Ferramentas, <b>Gravação</b> inicia o registo de diagnóstico e <b>Parar</b> termina-o. <b>Captura instantânea</b> guarda uma imagem; <b>Ver capturas</b> permite consultar as imagens.</p>
+<p>O nome do ficheiro de gravação pode ser editado na barra inferior.</p>
 
 <h2 id="chapter-14">14. Ajuda contextual</h2>
 <p><img src=":/icons/helpbubble.png" width="14" height="14"> Um pequeno ponto de interrogação laranja dentro de um círculo indica ajuda contextual. Passe o ponteiro sobre o símbolo para ler a ajuda do parâmetro correspondente. O símbolo é idêntico nos temas claro e escuro, sem fundo colorido. As capturas ilustrativas podem mostrar o símbolo anterior.</p>
@@ -189,15 +176,14 @@ small{color:#aebcc5}
 
 <h2 id="chapter-16">16. Temas</h2>
 <p>Claro utiliza fundo e mostradores claros. Escuro utiliza fundo escuro com texto, agulhas e tabelas de alto contraste, mantendo os avisos legíveis.</p>
+<p>Confirme a alteração de tema ou idioma nas Opções: Manager reinicia automaticamente. É solicitada confirmação se uma ECU estiver ligada ou uma gravação estiver ativa.</p>
 
 <h2 id="chapter-17">17. Idioma</h2>
 <p>A interface suporta francês, inglês, espanhol, italiano, português e alemão. O idioma selecionado fica guardado nas definições de SESSION.</p>
 
 <h2 id="chapter-18">18. Famílias ECU suportadas</h2>
-<p>SESSION suporta Rover MEMS <b>1.2, 1.3 e 1.6</b> via ROSCO, <b>MEMS 1.9</b> via inicialização K-Line e <b>MEMS 2J e MEMS 3</b> através de protocolos K-Line distintos. A família é identificada pelas respostas reais da ECU após premir <b>Ligar</b>. Medições e comandos dependem da sessão estabelecida; os ajustes ROSCO não são enviados ao MEMS 2J/3. Falta validar os novos leitores em ECU reais.</p>
-
+<p>Manager suporta Rover MEMS <b>1.2, 1.3, 1.6, 1.9, 2J e 3</b>. Prima <b>Ligar</b>; as funções disponíveis dependem da ECU ligada. A validação em hardware das famílias mais recentes continua pendente.</p>
 <div class="tip"><b>Imobilizador Lucas 5AS:</b> em <b>Outras unidades</b>, selecione <b>Ligar</b>, depois <b>Ler estados</b> ou <b>Monitorização em direto</b>. Os testes da buzina, LED e luzes de emergência pedem confirmação e explicam o efeito. Pode guardar o registo. Falta validação num módulo real; a programação de telecomandos ainda não está disponível.</div>
-
 <h2 id="chapter-19">19. Orientações de diagnóstico</h2>
 <p>Sem comunicação: verificar ignição, porta, cabo, alimentação e massas ECU. MAP anormal: verificar tubo de vácuo, coletor e sensor. Ralenti instável: verificar interruptor, IAC, fugas, temperatura e correções de combustível. Avaria lambda: verificar aquecimento, fios, tensão e circuito fechado. Bobina: verificar bateria, circuito primário e fios.</p>
 
@@ -224,7 +210,7 @@ small{color:#aebcc5}
 <p>A opção Ocultar automaticamente a barra de tarefas do Windows vem desativada. Se for ativada, altera o comportamento do ambiente de trabalho enquanto SESSION está aberto. O programa repõe a definição ao sair e tem verificações de recuperação após um fecho inesperado. As políticas do Windows podem impedir a alteração.</p>
 
 <h2 id="chapter-24">24. Ilustrações do fabricante</h2>
-<p>As 13 capturas deste guia estão integradas no instalador SESSION e são consultadas sem Internet. As imagens mostram a interface em francês; as instruções estão em português. Os desenhos do fabricante provêm dos pacotes documentais instalados.</p>
+<p>As 12 capturas deste guia estão integradas no instalador SESSION e são consultadas sem Internet. As imagens mostram a interface em francês; as instruções estão em português. Os desenhos do fabricante provêm dos pacotes documentais instalados.</p>
 <p><b>Arranque</b></p>
 <p><img src=":/help/images/Capture d’écran (915).png" width="550"></p>
 

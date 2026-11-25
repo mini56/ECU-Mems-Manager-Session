@@ -16,13 +16,13 @@
     {
         if(m_statusBound)return true;
         QFrame *bar=m_window->findChild<QFrame*>(QStringLiteral("uiRebuildStatus"));if(!bar)return false;
-        if(!bar->findChild<QLabel*>(QStringLiteral("statusFile"))||
+        if(!bar->findChild<QLineEdit*>(QStringLiteral("m_logFileNameBox"))||
            !bar->findChild<QLabel*>(QStringLiteral("statusReadMode"))||
            !bar->findChild<QLabel*>(QStringLiteral("statusPort"))||
            !bar->findChild<QLabel*>(QStringLiteral("statusFirmware")))return false;
 
         m_statusBound=true;
-        QTimer *timer=new QTimer(this);timer->setInterval(500);
+        QTimer *timer=new QTimer(this);timer->setObjectName(QStringLiteral("statusRefreshTimer"));timer->setInterval(500);
         QObject::connect(timer,&QTimer::timeout,this,[this](){refreshStatusBar();});
         timer->start();
         refreshStatusBar();
@@ -33,18 +33,14 @@
 
     void refreshStatusBar()
     {
-        QLabel *file=m_window->findChild<QLabel*>(QStringLiteral("statusFile"));
         QLabel *mode=m_window->findChild<QLabel*>(QStringLiteral("statusReadMode"));
         QLabel *port=m_window->findChild<QLabel*>(QStringLiteral("statusPort"));
         QLabel *firmware=m_window->findChild<QLabel*>(QStringLiteral("statusFirmware"));
-        if(!file||!mode||!port||!firmware)return;
+        if(!mode||!port||!firmware)return;
 
-        QString fileName;
+        // Never overwrite the user's editable recording name. Analysis
+        // already displays the selected source file on its own page.
         const bool analysisFile=(m_tabs->currentWidget()==m_analysis)&&m_analysis->fileSourceSelected();
-        if(analysisFile)fileName=m_analysis->property("analysisSourceFile").toString().trimmed();
-        if(fileName.isEmpty())if(QLineEdit *f=m_window->findChild<QLineEdit*>(QStringLiteral("m_logFileNameBox")))fileName=f->text().trimmed();
-        if(fileName.isEmpty())fileName=QStringLiteral("--");
-        file->setText(I18n::text(7115).arg(fileName));
 
         QString portName;
         if(m_mems&&m_mems->isConnected()){

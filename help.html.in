@@ -61,14 +61,7 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-3">3. Onglet Injection</h2>
-<p>L’onglet Injection regroupe les mesures d’injection acquises par le mode de lecture prévu pour ces données : <b>temps d’injection final</b>, <b>temps d’injection de base</b>, <b>correction transitoire</b> et <b>état transitoire</b>.</p>
-<p>Ces valeurs utilisent la même acquisition dédiée afin d’éviter de multiplier inutilement les modes de lecture ECU. IA MEMS observe ces données lorsqu’elles sont déjà disponibles ; elle ne déclenche pas un polling supplémentaire de sa propre initiative.</p>
-
-
-<p>Le graphique inférieur suit l'injection finale dans le temps. Le panneau de droite montre le firmware, les valeurs RAM brutes et le mode de lecture en cours. La cartographie RAM est consultée en <b>lecture seule</b> lorsque l'ECU et le protocole le permettent.</p>
-<p><b>Capture — Injection : quatre cadrans, courbe et données RAM.</b></p>
-<p><img src=":/help/images/Capture d’écran (910).png" width="550"></p>
-
+<p>L’onglet Injection présente le temps d’injection final, le temps de base, la correction transitoire et l’état transitoire. Le graphique montre l’évolution de l’injection finale. Le panneau latéral présente le firmware, les valeurs brutes et l’état de la lecture. Ces mesures sont consultables en lecture seule lorsqu’elles sont disponibles.</p>
 
 <h2 id="chapter-4">4. Onglet Réglage</h2>
 <p>L’onglet Réglage contient les ajustements de service disponibles, notamment les corrections liées au ralenti, au carburant ou à l’allumage selon l’ECU. Les bulles d’aide expliquent le rôle et les risques des réglages.</p>
@@ -111,14 +104,9 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-8">8. Toutes les données</h2>
-<p>Cette vue détaillée expose les champs MEMS bruts et décodés. Elle est utile pour comparer les octets du protocole avec les mesures interprétées.</p>
-
-
-<p>Les deux tableaux montrent notamment les positions des trames de diagnostic <b>7D et 80</b>. La colonne Reçu contient les octets ou valeurs brutes ; Calculé présente leur interprétation lorsqu'elle est documentée. Cette page s'adresse surtout à la vérification technique du décodage.</p>
+<p>Les tableaux présentent les valeurs reçues et leur interprétation lorsqu’elle est disponible. Une valeur brute ne doit pas être confondue avec une mesure physique.</p>
 <p><b>Capture — Toutes les données : position, description, reçu et calculé.</b></p>
 <p><img src=":/help/images/Capture d’écran (900).png" width="550"></p>
-
-
 <h2 id="chapter-mems16na">MEMS 1.6 atmosphérique — mesures et défauts par firmware</h2>
 <p>Manager adapte les mesures et les défauts au calculateur identifié. Aucun choix manuel de profil n’est nécessaire. Les informations indisponibles ou non confirmées sont signalées.</p>
 <h3>Mesures : unités et disponibilités</h3>
@@ -156,26 +144,21 @@ small{color:#aebcc5}
 <p>Les journaux TXT/CSV conservent l’identité du calculateur, les mesures et leur disponibilité. Les anciens fichiers restent lisibles. Les courbes omettent les mesures absentes ; les colonnes présentent les valeurs et les défauts. Les journaux Communications ECU restent séparés.</p>
 
 <h2 id="chapter-9">9. ECU / ROSCO</h2>
-<p><b>Bibliothèque de communication du projet :</b> Manager utilise sa propre bibliothèque de communication Windows 64 bits <code>mems_manager_x64.dll</code>, compatible avec les fonctions historiques ROSCO.</p>
-<p>L’onglet ECU / ROSCO présente les fonctions de lecture et de session prises en charge. Les échanges TX/RX sont affichés en hexadécimal. La recodification ECU reste désactivée.</p>
-
+<p>Cette page présente les fonctions de diagnostic avancées disponibles. Elle est destinée aux utilisateurs expérimentés. La recodification du calculateur reste désactivée.</p>
 
 <h2 id="chapter-interactive">Mode interactif — commandes avancées</h2>
-<p>Cette page présente les indications de l'interface ROSCO et les commandes interactives disponibles. Elle est destinée à un usage technique : le choix du port série et la compréhension des commandes sont nécessaires avant d'envoyer quoi que ce soit à l'ECU. Pour lire les mesures usuelles, utilisez plutôt <b>Connecter</b> et les pages de diagnostic.</p>
+<p>Cette page est destinée aux utilisateurs expérimentés. N’envoyez aucune commande dont vous ne connaissez pas les effets. Pour le diagnostic courant, utilisez <b>Connecter</b> et les pages de mesures.</p>
+
 <h2 id="chapter-ecu19">Test ECU 1.9 — essais de communication</h2>
-<p>La page <b>Test ECU 1.9</b> propose un essai guidé de connexion, d'identification et de lecture. Elle affiche séparément l'état de la connexion, les réponses des commandes et des mesures, les étapes de lecture d'injection, la restauration du mode diagnostic et la reconnexion. Les événements sont consignés dans un journal ; les boutons permettent de démarrer, arrêter et ouvrir le dossier de résultats. Ce test est distinct de la simple reconnaissance du câble USB.</p>
+<p>Le test ECU 1.9 permet de vérifier la connexion et la lecture des mesures. Utilisez les boutons de démarrage et d’arrêt, puis ouvrez le dossier des résultats pour consulter le journal. Ce test est distinct du test câble USB.</p>
 
 <h2 id="chapter-mems2j">MEMS 2J — connexion automatique et diagnostic</h2>
-<p>Branchez un câble de diagnostic compatible à l'ECU, mettez le contact et cliquez sur <b>CONNECTER</b>. SESSION essaie les interfaces série et reconnaît la famille du calculateur à partir de sa réponse, sans choix manuel de marque de câble ni de protocole.</p>
-<p>Une fois le <b>MEMS 2J</b> identifié, les mesures disponibles apparaissent dans les pages habituelles <b>Aperçu</b> et <b>Toutes les mesures</b>. Les défauts lus figurent dans <b>Diagnostic automatique</b>. Les valeurs non documentées restent brutes. Certains codes de défaut concernent spécifiquement la Mini MPi et ne doivent pas être appliqués sans vérification aux autres variantes.</p>
-<p><b>Validation :</b> la lecture et les tests automatiques ont été intégrés à SESSION 178 ; un essai sur un véritable calculateur MEMS 2J reste nécessaire. Depuis SESSION 184, l'effacement des défauts peut être demandé par l'utilisateur ; aucune fonction de programmation, de calibration ou d'antidémarrage n'est ajoutée.</p>
-
-<p><b>Effacer les défauts sur MEMS 2J :</b> après une connexion confirmée, utilisez la commande d’effacement existante. Cette opération modifie la mémoire des défauts et ne se lance jamais automatiquement. Les réglages et tests d’actionneurs ROSCO ne sont pas des commandes MEMS 2J.</p>
+<p>Branchez le câble de diagnostic compatible, mettez le contact et cliquez sur <b>Connecter</b>. Manager reconnaît automatiquement le calculateur. Consultez <b>Aperçu</b>, <b>Toutes les mesures</b> et <b>Diagnostic automatique</b> pour les fonctions disponibles.</p>
+<p>L’effacement des défauts est effectué uniquement à votre demande. Il modifie les défauts mémorisés : consultez-les avant de les effacer. Les réglages et tests d’actionneurs ne sont disponibles que pour les calculateurs compatibles. Certains défauts sont spécifiques à la Mini MPi.</p>
 <h3>MEMS 3 — connexion automatique, mesures et défauts</h3>
-<p>Branchez le câble de diagnostic compatible, mettez le contact et cliquez sur <b>CONNECTER</b>. Manager reconnaît le MEMS 3 à partir de la réponse du calculateur, sans choix manuel du protocole.</p>
-<p>Lorsque le MEMS 3 répond, le programme affiche les mesures décodées disponibles : régime, températures liquide, huile et admission, pression MAP, papillon, lambda et temps de bobines. Les valeurs de signification incertaine restent indiquées comme brutes. Le panneau de diagnostic présente les défauts moteur <b>sur 16 bits</b> avec leur état lorsqu'il est connu, ainsi que les données hexadécimales reçues.</p>
-<p><b>Effacer les défauts sur MEMS 3 :</b> utilisez le bouton d’effacement après connexion. L’opération n’est effectuée que sur demande ; jamais lors de la reconnaissance ou de l’acquisition automatique. Les commandes expérimentales d’antidémarrage et de calibration ne sont pas activées.</p>
-<p><b>Validation matérielle :</b> SESSION 184 comporte des tests automatiques de trames et de décodage, mais les connexions et les commandes d'effacement MEMS 2J et MEMS 3 restent à vérifier sur des calculateurs réels. Le diagnostic airbag RC5 ne fait pas partie de la connexion moteur.</p>
+<p>Branchez le câble de diagnostic compatible, mettez le contact et cliquez sur <b>Connecter</b>. Manager reconnaît automatiquement le calculateur. Consultez <b>Aperçu</b>, <b>Toutes les mesures</b> et <b>Diagnostic automatique</b> pour les fonctions disponibles.</p>
+<p>L’effacement des défauts est effectué uniquement à votre demande. Il modifie les défauts mémorisés : consultez-les avant de les effacer. Les réglages et tests d’actionneurs ne sont disponibles que pour les calculateurs compatibles. Certains défauts sont spécifiques à la Mini MPi.</p>
+<p>Les connexions et l’effacement des défauts MEMS 2J et MEMS 3 restent à valider sur des calculateurs réels. Le diagnostic airbag RC5 est distinct du diagnostic moteur.</p>
 
 <h2 id="chapter-10">10. Diagnostic automatique</h2>
 <p><a href="#chapter-mems16na">Voir le chapitre MEMS 1.6 atmosphérique pour les mesures, défauts et enregistrements.</a></p>
@@ -199,18 +182,14 @@ small{color:#aebcc5}
 
 
 <h2 id="chapter-12">12. IA MEMS</h2>
-<p>L’onglet <b>IA MEMS</b> réunit le dialogue en langage naturel, les mesures ECU déjà acquises, leur historique, le moteur expert et la base de connaissances MEMS.</p>
-<p>Le moteur expert distingue les observations, les hypothèses, les informations externes et leur niveau de preuve. Une pièce ne doit pas être condamnée sur une seule mesure. Lorsque les données sont insuffisantes ou contradictoires, IA MEMS doit l’indiquer au lieu d’inventer une conclusion.</p>
-<p>Le modèle conversationnel fonctionne localement avec les fichiers fournis dans le package. Il ne démarre que lorsque l’onglet IA MEMS est réellement ouvert, afin de ne pas consommer inutilement mémoire et processeur pendant l’utilisation normale du logiciel. Il n’envoie aucune commande ECU supplémentaire : il observe les données déjà acquises par MEMS Manager.</p>
-
-
+<p>IA MEMS aide à interpréter les mesures et à consulter la documentation disponible, hors ligne. Une mesure isolée ne suffit pas à identifier une pièce défectueuse. Vérifiez les sources et tenez compte du véhicule et des informations manquantes. IA MEMS n’envoie pas de commande supplémentaire au calculateur.</p>
 <p>Posez une question précise ou recherchez une opération (par exemple la dépose d'un alternateur). Lorsqu'une procédure est présente dans la base installée, l'IA peut afficher des étapes numérotées, des références de document et les pages constructeur associées. Utilisez le lien de grand format sur ces pages pour vérifier le détail des schémas. La réponse dépend des sources réellement installées et du véhicule concerné.</p>
 <p><b>Capture — IA MEMS : étapes de procédure et page constructeur associée.</b></p>
 <p><img src=":/help/images/Capture d’écran (914).png" width="550"></p>
 
-
 <h2 id="chapter-13">13. Captures</h2>
-<p>Dans la zone <b>Outils</b>, <b>Enregistrement</b> démarre l'enregistrement du diagnostic et <b>Arrêter</b> le termine. <b>Vue instantanée</b> crée une capture d'écran ; <b>Voir les captures</b> ouvre le visualiseur permettant de consulter, agrandir ou supprimer une image. La suppression demande confirmation. Le nom du journal apparaît dans la zone Outils et dans le bandeau inférieur.</p>
+<p>Dans la zone <b>Outils</b>, <b>Enregistrement</b> démarre l'enregistrement du diagnostic et <b>Arrêter</b> le termine. <b>Vue instantanée</b> crée une capture d'écran ; <b>Voir les captures</b> ouvre le visualiseur permettant de consulter, agrandir ou supprimer une image. La suppression demande confirmation.</p>
+<p>Le nom du fichier d’enregistrement est modifiable dans la barre inférieure.</p>
 
 <h2 id="chapter-14">14. Bulles d’aide</h2>
 <p><img src=":/icons/helpbubble.png" width="14" height="14"> Le petit point d’interrogation orange entouré d’un cercle indique une aide contextuelle. Survolez-le avec la souris pour lire l’aide du paramètre concerné. Le symbole est identique dans les thèmes clair et sombre, sans fond coloré. Les captures illustratives peuvent montrer l’ancien symbole.</p>
@@ -221,15 +200,14 @@ small{color:#aebcc5}
 <h2 id="chapter-16">16. Thèmes</h2>
 <p><b>Clair :</b> interface et cadrans clairs.</p>
 <p><b>Sombre :</b> interface sombre et cadrans sombres avec textes, graduations et aiguilles contrastés. Les tableaux sont adaptés afin de conserver une bonne lisibilité.</p>
+<p>Validez le changement de thème ou de langue dans Options : Manager redémarre automatiquement. Une confirmation est demandée si un calculateur est connecté ou si un enregistrement est actif.</p>
 
 <h2 id="chapter-17">17. Langues</h2>
 <p>L’interface prend en charge le français, l’anglais, l’espagnol, l’italien, le portugais et l’allemand. La langue choisie est enregistrée dans les réglages de l’application.</p>
 
 <h2 id="chapter-18">18. Familles ECU prises en charge</h2>
-<p>SESSION prend en charge les dialogues des Rover MEMS <b>1.2, 1.3 et 1.6</b> (ROSCO), du <b>MEMS 1.9</b> (réveil K-Line), ainsi que des <b>MEMS 2J et MEMS 3</b> (protocoles K-Line distincts). Le choix se fait à partir d'une réponse du calculateur après <b>Connecter</b>. Les lectures et les commandes proposées dépendent de la famille et de la session réellement établies ; les protocoles 2J et 3 ne réutilisent pas les commandes de réglage ROSCO. Les essais matériels des nouveaux protocoles restent nécessaires.</p>
-
+<p>Manager prend en charge les familles Rover MEMS <b>1.2, 1.3, 1.6, 1.9, 2J et 3</b>. Cliquez sur <b>Connecter</b> ; les fonctions proposées dépendent du calculateur connecté. La validation matérielle des familles les plus récentes reste à compléter.</p>
 <div class="tip"><b>Lucas 5AS — antidémarrage :</b> dans <b>Autres calculateurs</b>, utilisez <b>Connecter</b>, puis <b>Lire les états</b> ou <b>Suivi en direct</b>. Le klaxon, le voyant et les feux de détresse peuvent être testés après une confirmation expliquant leur activation. <b>Enregistrer le journal</b> conserve les échanges. Ces tests restent à vérifier sur un boîtier réel ; la programmation des télécommandes n'est pas encore disponible.</div>
-
 <h2 id="chapter-19">19. Conseils de diagnostic de base</h2>
 <table>
 <tr><th>Symptôme</th><th>Contrôles</th></tr>

@@ -786,6 +786,8 @@ bool verifyUi(MainWindow &window)
              window.findChildren<QLineEdit*>(QStringLiteral("m_logFileNameBox")).size()==1&&
              !window.findChild<QLabel*>(QStringLiteral("statusFile")),
              "Single editable recording filename is in the bottom status")&&ok;
+    ok=check(window.findChild<QTimer*>(QStringLiteral("statusRefreshTimer"))!=nullptr,
+             "Status refresh remains connected after moving the recording editor")&&ok;
     OptionsDialog *options=window.findChild<OptionsDialog*>();
     QCheckBox *autoHide=options?options->findChild<QCheckBox*>(
         QStringLiteral("taskbarAutoHideCheckbox")):nullptr;
