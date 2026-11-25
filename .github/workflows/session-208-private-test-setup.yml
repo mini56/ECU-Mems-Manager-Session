@@ -1,5 +1,5 @@
 name: SESSION 208 - Setup prive de test
-run-name: SESSION 208 - Setup de test prive - ${{ github.sha }}
+run-name: SESSION 208 - Setup prive - controle A propos corrige - ${{ github.sha }}
 on:
   workflow_dispatch:
   push:
