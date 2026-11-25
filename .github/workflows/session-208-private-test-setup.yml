@@ -368,8 +368,11 @@ jobs:
               throw "ABOUT_208_INSTALLED_TRANSLATION_SHA_MISMATCH_$lang"
             }
             $translated=Get-Content $to -Raw -Encoding utf8 | ConvertFrom-Json
-            if(-not $translated.'6208' -or $translated.'6208' -notmatch 'MEMS 3'){
-              throw "ABOUT_208_NEW_KEY_NOT_INSTALLED_$lang"
+            if(-not $translated.'6207' -or $translated.'6207' -notmatch 'MEMS 3'){
+              throw "ABOUT_208_MEMS3_KEY_NOT_INSTALLED_$lang"
+            }
+            if(-not $translated.'6208' -or $translated.'6208' -notmatch 'Lucas 5AS'){
+              throw "ABOUT_208_LUCAS5AS_KEY_NOT_INSTALLED_$lang"
             }
           }
           Write-Host 'SESSION_208_SIX_ABOUT_TRANSLATIONS_INSTALLED_AND_SHA_VERIFIED'
