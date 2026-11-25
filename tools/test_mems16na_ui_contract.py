@@ -46,3 +46,23 @@ for index,background,foreground in [(1,'#ffffff','#000000'),(2,'#000000','#fffff
     assert 'background-color: '+background+';' in part and 'color: '+foreground+';' in part
     assert 'border: 1px solid #ff8a22;' in part and 'border-radius: 8px;' in part
 print('SESSION_209_SHARED_DIAGNOSTIC_AND_HELP_CONTRACT_OK')
+
+# SESSION 210: one source of the small orange help pictogram.
+from struct import unpack
+icon_header=Path('helpbubble.png').read_bytes()[:29]
+assert icon_header[:8]==b'\x89PNG\r\n\x1a\n' and icon_header[12:16]==b'IHDR'
+assert unpack('>II',icon_header[16:24])==(42,42)
+assert icon_header[25]==6, 'RGBA with transparent background required'
+manager=Path('tooltipbubblemanager.cpp').read_text(encoding='utf-8')
+header=Path('tooltipbubblemanager.h').read_text(encoding='utf-8')
+assert 'helpIconSize() { return 14; }' in header
+assert 'helpHitSize() { return 18; }' in header
+assert 'QPixmap pixmap(QStringLiteral(":/icons/helpbubble.png"))' in manager
+assert 'pixmap.setDevicePixelRatio(qreal(pixmap.width())/helpIconSize())' in manager
+assert 'bubble->setScaledContents(false)' in manager
+assert 'TooltipBubbleManager::install(dialog)' in manager
+assert 'TooltipBubbleManager::helpIconSize()' in summary
+assert 'HELP' not in Path('helpbubble.svg').read_text(encoding='utf-8')
+assert '<file>helpbubble.png</file>' in Path('resources.qrc').read_text(encoding='utf-8')
+assert 'QToolTip{background-color:#000000;color:#ffffff;' in Path('uishell.cpp').read_text(encoding='utf-8')
+print('SESSION_210_SHARED_SMALL_HELP_ICON_SOURCE_CONTRACT_OK')
