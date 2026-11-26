@@ -1,0 +1,17 @@
+{
+  "report": [
+    {
+      "firmware": "AANMP002",
+      "initial": 50,
+      "resolved": 28,
+      "remaining": 22
+    },
+    {
+      "firmware": "KBHBG009",
+      "initial": 114,
+      "resolved": 28,
+      "remaining": 86
+    }
+  ],
+  "limits": "Ce lot relie les entrées au code et aux tables; il ne démontre pas une nouvelle commande ECU ni une nouvelle mesure disponible. Aucune activation ECU."
+}
