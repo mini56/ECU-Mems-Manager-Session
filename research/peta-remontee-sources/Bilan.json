@@ -1,0 +1,245 @@
+{
+  "method": "PETA originaux complets, index ASM direct/alias, pointeurs calibration, carte index immediat candidat, trames binaires. Pas de preuve exhaustive de flot, ni accessibilite autre mode, ni nouveaute Manager. Roles lecture/ecriture syntaxiques. Pas de modification du programme.",
+  "summary": [
+    {
+      "firmware": "AANMP002",
+      "xf_sha": "9a7e4fa85f3e6bbd30efe37ecb6256010aaeea70",
+      "asm_sha": "6f37e665e3fe3fae5c2dbbfa274fbbf884318e2b",
+      "bin_sha": "623fdda0dd5e1ebe943c7c162d7d7e292cd99496",
+      "asm_lines": 11311,
+      "parsed_instructions": 5350,
+      "xf_lines": 882,
+      "tune_base": "8600",
+      "map_routine": "32D7",
+      "diagnostic_lengths": [
+        [
+          "80",
+          28
+        ],
+        [
+          "7D",
+          32
+        ]
+      ],
+      "counts": {
+        "calibration": {
+          "total": 266,
+          "withRefs": 248,
+          "diag": 0
+        },
+        "map": {
+          "total": 55,
+          "withRefs": 50,
+          "diag": 0
+        },
+        "ram": {
+          "total": 358,
+          "withRefs": 336,
+          "diag": 31
+        },
+        "flag": {
+          "total": 160,
+          "withRefs": 155,
+          "diag": 13
+        }
+      }
+    },
+    {
+      "firmware": "KBHBG009",
+      "xf_sha": "018f487f102e4031b5914a3ec515d4c556a018e4",
+      "asm_sha": "fb54ca321b3c19b064f677fdc579b93e2906639f",
+      "bin_sha": "a59cb2a38f763d4434fa12a4a414001f2ef5afd1",
+      "asm_lines": 21723,
+      "parsed_instructions": 6898,
+      "xf_lines": 1226,
+      "tune_base": "9400",
+      "map_routine": "3879",
+      "diagnostic_lengths": [
+        [
+          "80",
+          28
+        ],
+        [
+          "7D",
+          33
+        ]
+      ],
+      "counts": {
+        "calibration": {
+          "total": 326,
+          "withRefs": 299,
+          "diag": 0
+        },
+        "map": {
+          "total": 61,
+          "withRefs": 54,
+          "diag": 0
+        },
+        "ram": {
+          "total": 441,
+          "withRefs": 413,
+          "diag": 30
+        },
+        "flag": {
+          "total": 258,
+          "withRefs": 206,
+          "diag": 20
+        }
+      }
+    }
+  ],
+  "examples": [
+    {
+      "firmware": "AANMP002",
+      "name": "ign_crkg_adv",
+      "cat": "calibration",
+      "addr": "8690",
+      "refs": 1,
+      "first": [
+        "ROM:696E                 ld      INTMEM_32, 90h[INTMEM_56]"
+      ],
+      "diag": ""
+    },
+    {
+      "firmware": "AANMP002",
+      "name": "m_tmp_gauge_dr",
+      "cat": "map",
+      "addr": "8778",
+      "refs": 1,
+      "first": [
+        "ROM:4F9C                 ld      INTMEM_1C, #3 | ROM:4FA0                 lcall   ROM_32D7"
+      ],
+      "diag": ""
+    },
+    {
+      "firmware": "AANMP002",
+      "name": "i_dbpos_max_bv",
+      "cat": "ram",
+      "addr": "0047",
+      "refs": 5,
+      "first": [
+        "ROM:4890                 ldb     INTMEM_47, 139h[INTMEM_56]",
+        "ROM:4E17                 ldb     INTMEM_1C+1, INTMEM_47"
+      ],
+      "diag": "80/11@360C (opérande numérique à vérifier)"
+    },
+    {
+      "firmware": "AANMP002",
+      "name": "inj_pulsewidth",
+      "cat": "ram",
+      "addr": "0066",
+      "refs": 6,
+      "first": [
+        "ROM:241E                 add     INTMEM_78, INTMEM_66",
+        "ROM:3280                 st      INTMEM_1C+2, INTMEM_66"
+      ],
+      "diag": ""
+    },
+    {
+      "firmware": "AANMP002",
+      "name": "s_afr_final",
+      "cat": "ram",
+      "addr": "00D3",
+      "refs": 9,
+      "first": [
+        "ROM:5632                 stb     INTMEM_1A, INTMEM_D3",
+        "ROM:564B                 stb     INTMEM_1C, INTMEM_D3"
+      ],
+      "diag": "7D/04@366A (opérande numérique à vérifier)"
+    },
+    {
+      "firmware": "AANMP002",
+      "name": "f_o2s_fault_log",
+      "cat": "flag",
+      "addr": "0052",
+      "refs": 2,
+      "first": [
+        "ROM:5E16                 orb     INTMEM_52, #-80h",
+        "ROM:5E92                 orb     INTMEM_52, #-80h"
+      ],
+      "diag": ""
+    },
+    {
+      "firmware": "AANMP002",
+      "name": "m_ptc_htr_req",
+      "cat": "flag",
+      "addr": "00F7",
+      "refs": 2,
+      "first": [
+        "ROM:4F6A                 orb     INTMEM_F7, #10h",
+        "ROM:4F72                 andb    INTMEM_F7, #-11h"
+      ],
+      "diag": ""
+    },
+    {
+      "firmware": "KBHBG009",
+      "name": "ign_crkg_adv",
+      "cat": "calibration",
+      "addr": "94B2",
+      "refs": 1,
+      "first": [
+        "ROM:7B13                 ld      INTMEM_EE, 0B2h[INTMEM_40]"
+      ],
+      "diag": ""
+    },
+    {
+      "firmware": "KBHBG009",
+      "name": "i_dbpos_max_bv",
+      "cat": "ram",
+      "addr": "0031",
+      "refs": 9,
+      "first": [
+        "ROM:4F53                 ldb     INTMEM_30+1, #4",
+        "ROM:4F58                 clrb    INTMEM_30+1"
+      ],
+      "diag": "80/11@3C58 (opérande numérique à vérifier)"
+    },
+    {
+      "firmware": "KBHBG009",
+      "name": "m_thr_shut_bits",
+      "cat": "ram",
+      "addr": "002A",
+      "refs": 20,
+      "first": [
+        "ROM:4F9A                 ld      INTMEM_2A, [INTMEM_26]",
+        "ROM:4F9D                 ldb     INTMEM_2E, INTMEM_2A"
+      ],
+      "diag": "7D/17-18@3D0A (opérande numérique à vérifier) | 7D/19-1A@3D0E (opérande numérique à vérifier) | 7D/1B-1C@3D12 (opérande numérique à vérifier) | 7D/1D-1E@3D16 (opérande numérique à vérifier)"
+    },
+    {
+      "firmware": "KBHBG009",
+      "name": "s_afr_final",
+      "cat": "ram",
+      "addr": "00C4",
+      "refs": 7,
+      "first": [
+        "ROM:6842                 ldb     INTMEM_C4, INTMEM_291[]",
+        "ROM:684E                 ldb     INTMEM_C4, INTMEM_292[]"
+      ],
+      "diag": "7D/04@3CC2 (opérande numérique à vérifier)"
+    },
+    {
+      "firmware": "KBHBG009",
+      "name": "m_pbu_fault_log",
+      "cat": "flag",
+      "addr": "003C",
+      "refs": 1,
+      "first": [
+        "ROM:65EC                 orb     INTMEM_3C, #20h ; ' '"
+      ],
+      "diag": "80/0D@3C48/3C86:mask=20 (masque)"
+    },
+    {
+      "firmware": "KBHBG009",
+      "name": "f_o2s_fault_log",
+      "cat": "flag",
+      "addr": "003D",
+      "refs": 2,
+      "first": [
+        "ROM:6DC4                 orb     INTMEM_3D, #1",
+        "ROM:6E5E                 orb     INTMEM_3D, #1"
+      ],
+      "diag": ""
+    }
+  ]
+}
