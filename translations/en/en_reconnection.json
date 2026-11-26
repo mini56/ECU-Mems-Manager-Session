@@ -1,0 +1,4 @@
+{
+  "29160": "ECU connection lost",
+  "29161": "Automatic reconnection failed after %1 attempts. Check the ignition, cable and ECU power supply, then click Connect."
+}

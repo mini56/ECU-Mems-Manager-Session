@@ -10,6 +10,7 @@
 #endif
 namespace {
 QString activePath,startStamp,familyName,ecuIdentifier;
+bool sessionConfirmed=false;
 QString safe(QString s){
     s=s.trimmed();
     for(QChar &c:s)if(!c.isLetterOrNumber()&&c!=QLatin1Char('-')&&c!=QLatin1Char('_')&&c!=QLatin1Char('.'))
@@ -25,10 +26,10 @@ void setTrace(const QString &path){
     else qputenv("ECU_MEMS_COMM_TRACE_FILE",QFile::encodeName(path));
 #endif
 }
-QString unique(const QDir &d,const QString &base){
-    QString p=d.filePath(base+QStringLiteral(".txt"));
+QString unique(const QDir &d,const QString &base,const QString &extension=QStringLiteral(".txt")){
+    QString p=d.filePath(base+extension);
     for(int i=1;QFileInfo::exists(p);++i)
-        p=d.filePath(base+QStringLiteral("_")+QString::number(i)+QStringLiteral(".txt"));
+        p=d.filePath(base+QStringLiteral("_")+QString::number(i)+extension);
     return p;
 }
 }
@@ -40,7 +41,11 @@ bool EcuCommunicationLog::beginAttempt(){
     if(!dir.exists()&&!dir.mkpath(QStringLiteral(".")))return false;
     startStamp=QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd_HH-mm-ss-zzz"));
     familyName=QStringLiteral("ECU-Non-Identifie");ecuIdentifier.clear();
-    activePath=unique(dir,startStamp+QStringLiteral("_ECU-Non-Identifie_Communications_ECU"));
+    sessionConfirmed=false;
+    // The DLL needs a real trace file before the handshake (including NA
+    // frame validation). A provisional name keeps failed attempts out of
+    // the user's saved TXT recordings.
+    activePath=unique(dir,startStamp+QStringLiteral("_ECU-Non-Identifie_Communications_ECU"),QStringLiteral(".txt.part"));
     QFile f(activePath);
     if(!f.open(QIODevice::WriteOnly|QIODevice::NewOnly|QIODevice::Text)){
         activePath.clear();return false;
@@ -51,6 +56,9 @@ bool EcuCommunicationLog::beginAttempt(){
     setTrace(activePath);
     note(QStringLiteral("CONNEXION_DEMANDEE"));
     return true;
+}
+void EcuCommunicationLog::confirmSession(){
+    if(!activePath.isEmpty()){sessionConfirmed=true;note(QStringLiteral("CONNEXION_ETABLIE"));}
 }
 void EcuCommunicationLog::identify(const QString &family,const QString &id){
     if(activePath.isEmpty())return;
@@ -72,15 +80,19 @@ void EcuCommunicationLog::finish(){
     if(activePath.isEmpty()){setTrace(QString());return;}
     note(QStringLiteral("SESSION_TERMINEE"));
     setTrace(QString());
+    if(!sessionConfirmed){
+        QFile::remove(activePath);
+        activePath.clear();familyName.clear();ecuIdentifier.clear();
+        return;
+    }
     const QDir dir=QFileInfo(activePath).absoluteDir();
     const QString base=startStamp+QLatin1Char('_')+safe(familyName)
         +(ecuIdentifier.isEmpty()?QString():QStringLiteral("_")+safe(ecuIdentifier))
         +QStringLiteral("_Communications_ECU");
-    // A failed/unidentified attempt already has its final name: never
-    // rename it to a suffixed duplicate merely because it exists.
+    // Promote the completed confirmed trace without overwriting older recordings.
     const QString natural=dir.filePath(base+QStringLiteral(".txt"));
     const QString target=natural==activePath?activePath:unique(dir,base);
     if(activePath!=target)QFile::rename(activePath,target);
-    activePath.clear();familyName.clear();ecuIdentifier.clear();
+    activePath.clear();familyName.clear();ecuIdentifier.clear();sessionConfirmed=false;
 }
 QString EcuCommunicationLog::currentPath(){return activePath;}

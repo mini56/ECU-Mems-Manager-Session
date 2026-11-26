@@ -441,7 +441,8 @@ void MEMSInterface::runServiceLoop()
     }
     else
     {
-      emit readError();
+      if(m_disconnectRequested.loadAcquire()==0 && m_shutdownRequested.loadAcquire()==0)
+        emit readError();
       // Une coupure du contact ou une perte série ne doit pas laisser
       // la boucle tourner indéfiniment. La déconnexion ci-dessous
       // libère proprement la session ; l'UI pourra retenter sans alerte.

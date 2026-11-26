@@ -28,6 +28,8 @@ public:
     QString getSerialDevice() { return m_deviceName; }
     int getIntervalMsecs();
     bool isConnected();
+    // GUI owner calls this only before an accepted new connection request.
+    void prepareConnectionRequest() { m_disconnectRequested.storeRelease(0); }
     void disconnectFromECU();
     void requestShutdown();
     mems_data* getData();

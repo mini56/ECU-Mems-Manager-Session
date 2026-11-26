@@ -730,8 +730,14 @@ void MEMSInterface::onStartPollingRequest()
     if (m_connectionAttemptActive || m_serviceLoopRunning)
         return;
 
+    // Cancellation can arrive before the queued request reaches this thread.
+    // Only the GUI's accepted new request may clear that cancellation flag.
+    if(m_disconnectRequested.loadAcquire()!=0) {
+        m_disconnectRequested.storeRelease(0);
+        emit disconnected();
+        return;
+    }
     m_connectionAttemptActive = true;
-    m_disconnectRequested.storeRelease(0);
     m_stopPolling = false;
     m_shutdownThread = false;
     resetProtocolContext();

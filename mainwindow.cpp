@@ -280,7 +280,7 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
 
   m_reconnectTimer = new QTimer(this);
   m_reconnectTimer->setInterval(3000);
-  m_autoReconnectEnabled = false;
+  m_reconnectTimer->setSingleShot(true);
   connect(m_reconnectTimer, SIGNAL(timeout()), this, SLOT(onReconnectAttempt()));
 
   m_prevFaultMask = 0;
@@ -910,13 +910,18 @@ void MainWindow::setupWidgets()
  */
 void MainWindow::onConnectClicked()
 {
-  if (m_closing || property("ecuConnectInProgress").toBool())
+  if (m_closing || !m_reconnectPolicy.startManual())
     return;
+  startConnectionAttempt();
+}
 
-  EcuCommunicationLog::beginAttempt(); // Before any serial handshake.
+void MainWindow::startConnectionAttempt()
+{
+  EcuCommunicationLog::beginAttempt(); // Provisional trace before the handshake.
+  m_mems->prepareConnectionRequest();
   setProperty("ecuConnectInProgress", true);
   m_ui->m_connectButton->setEnabled(false);
-  m_autoReconnectEnabled = true;
+  m_ui->m_disconnectButton->setEnabled(true);
   refreshConnectionHeader();
 
   // If the worker thread hasn't been created yet, do that now.
@@ -942,7 +947,7 @@ void MainWindow::onConnectClicked()
 
 void MainWindow::onInterfaceThreadReady()
 {
-  if (!m_closing)
+  if (!m_closing && (m_reconnectPolicy.starting() || m_reconnectPolicy.cancelling()))
     emit requestToStartPolling();
 }
 
@@ -970,11 +975,21 @@ void MainWindow::onEcuIdReceived(uint8_t* id)
  */
 void MainWindow::onDisconnectClicked()
 {
-  m_autoReconnectEnabled = false;
-  setProperty("ecuConnectInProgress", false);
   m_reconnectTimer->stop();
+  const bool awaitWorker=m_reconnectPolicy.cancel();
   m_ui->m_disconnectButton->setEnabled(false);
-  m_mems->disconnectFromECU();
+  m_ui->m_commsGoodLed->setChecked(false);
+  m_ui->m_commsBadLed->setChecked(true);
+  m_ui->m_connectButton->setEnabled(!awaitWorker);
+  setProperty("ecuConnectInProgress", awaitWorker);
+  if(awaitWorker)m_mems->disconnectFromECU();
+  setActuatorTestsEnabled(false);
+  setAdjustmentsEnabled(false);
+  setActuatorsOffEnabled(false);
+  m_ui->m_clearFaultsButton->setEnabled(false);
+  m_ui->m_saveAdjustmentsButton->setEnabled(false);
+  m_ui->m_resetAdjustmentsButton->setEnabled(false);
+  m_ui->m_resetECUButton->setEnabled(false);
   refreshConnectionHeader();
 }
 
@@ -1096,6 +1111,7 @@ void MainWindow::setAdjustmentsEnabled(bool enabled)
  */
 void MainWindow::onDataReady()
 {
+  if(m_closing || !m_reconnectPolicy.connected())return;
   if (m_mems->ecuFamily()==MemsEcuFamily::Mems2J ||
       m_mems->ecuFamily()==MemsEcuFamily::Mems3)
   {
@@ -1613,9 +1629,9 @@ void MainWindow::onEditOptionsClicked()
     // and restart the timer
     if (m_options->getSerialDeviceChanged())
     {
-      if (m_mems->isConnected())
+      if (!m_reconnectPolicy.idle())
       {
-        m_mems->disconnectFromECU();
+        onDisconnectClicked();
       }
       m_mems->setSerialDevice(m_options->getSerialDeviceName());
     }
@@ -1667,8 +1683,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
     return;
   }
   m_closing = true;
-  m_autoReconnectEnabled = false;
-  m_silentReconnect = false;
+  m_reconnectPolicy.cancel();
   setProperty("ecuConnectInProgress", false);
   if (m_reconnectTimer)
     m_reconnectTimer->stop();
@@ -1749,6 +1764,8 @@ void MainWindow::refreshConnectionHeader()
 
 void MainWindow::onConnect()
 {
+  if(m_closing || !m_reconnectPolicy.established())return;
+  EcuCommunicationLog::confirmSession();
   setProperty("ecuConnectInProgress", false);
   m_reconnectTimer->stop();
   m_ui->m_connectButton->setEnabled(false);
@@ -1789,13 +1806,14 @@ void MainWindow::onDisconnect()
   if(m_diagnosticPanel)m_diagnosticPanel->endNaSession();
   IaMemsService::instance()->clearNaDiagnostic();
   EcuCommunicationLog::finish();
+  const auto outcome=m_reconnectPolicy.closed();
   m_ui->m_saveAdjustmentsButton->setEnabled(false);
   setProperty("ecuConnectInProgress", false);
-  m_ui->m_connectButton->setEnabled(true);
-  m_ui->m_disconnectButton->setEnabled(false);
+  m_ui->m_connectButton->setEnabled(!m_closing && m_reconnectPolicy.idle());
+  m_ui->m_disconnectButton->setEnabled(!m_closing && m_reconnectPolicy.waiting());
   m_ui->m_engine_error->setChecked(false);
   m_ui->m_commsGoodLed->setChecked(false);
-  m_ui->m_commsBadLed->setChecked(false);
+  m_ui->m_commsBadLed->setChecked(true);
   m_ui->m_ecuIdLabel->setText(I18n::text(7050) /* EN: ECU ID: */);
   m_ui->m_mapGauge->setValue(0.0);
   m_ui->m_revCounter->setValue(0.0);
@@ -1850,6 +1868,7 @@ void MainWindow::onDisconnect()
   setActuatorsOffEnabled(false);
   m_prevFaultMaskValid = false;
   refreshConnectionHeader();
+  handleConnectionOutcome(outcome);
 }
 
 /**
@@ -1858,46 +1877,47 @@ void MainWindow::onDisconnect()
  */
 void MainWindow::onReadError()
 {
+  if(m_closing || !m_reconnectPolicy.lost())return;
   EcuCommunicationLog::note(QStringLiteral("ERREUR_LECTURE"));
-  setProperty("ecuConnectInProgress", false);
+  // Do not arm the timer until disconnected() acknowledges worker closure.
+  setProperty("ecuConnectInProgress", true);
   m_ui->m_commsGoodLed->setChecked(false);
   m_ui->m_commsBadLed->setChecked(true);
   setActuatorTestsEnabled(false);
   setAdjustmentsEnabled(false);
   setActuatorsOffEnabled(false);
-  m_ui->m_connectButton->setEnabled(true);
+  m_ui->m_clearFaultsButton->setEnabled(false);
+  m_ui->m_saveAdjustmentsButton->setEnabled(false);
+  m_ui->m_resetAdjustmentsButton->setEnabled(false);
+  m_ui->m_resetECUButton->setEnabled(false);
+  m_ui->m_connectButton->setEnabled(false);
   m_ui->m_disconnectButton->setEnabled(true);
   m_ui->m_engine_error->setChecked(false);
   refreshConnectionHeader();
-
-  // Tentative de reconnexion automatique (câble débranché puis rebranché),
-  // seulement si la déconnexion n'est pas volontaire
-  if (m_autoReconnectEnabled && !m_reconnectTimer->isActive())
-  {
-    m_reconnectTimer->start();
-  }
 }
 
-/**
- * Tente une reconnexion automatique après une perte de communication
- * (câble débranché). N'a d'effet que si la reconnexion automatique est
- * toujours souhaitée (l'utilisateur n'a pas cliqué sur "Déconnecter").
- */
 void MainWindow::onReconnectAttempt()
 {
-  if (m_autoReconnectEnabled && !m_closing)
-  {
-    if (property("ecuConnectInProgress").toBool())
-      return;
+  if(m_closing || !m_reconnectPolicy.startRetry())return;
+  startConnectionAttempt();
+}
 
-    // Les échecs de reconnexion automatiques ne doivent pas ouvrir
-    // une boîte de dialogue en boucle lorsque le contact est coupé.
-    m_silentReconnect = true;
-    onConnectClicked();
+void MainWindow::handleConnectionOutcome(EcuReconnectPolicy::Outcome outcome,const QString &device)
+{
+  if(m_closing)return;
+  using Outcome=EcuReconnectPolicy::Outcome;
+  if(outcome==Outcome::Retry) {
+    m_reconnectTimer->start();
+    return;
   }
-  else
-  {
-    m_reconnectTimer->stop();
+  m_reconnectTimer->stop();
+  if(outcome==Outcome::Alert) {
+    showConnectionError(this,I18n::text(29160),I18n::text(29161).arg(EcuReconnectPolicy::maxRetries));
+  } else if(outcome==Outcome::ManualFailure) {
+    if(device.isEmpty())
+      showConnectionError(this,I18n::text(7056),I18n::text(7057)+I18n::text(7058));
+    else
+      showConnectionError(this,I18n::text(7059),I18n::text(7060).arg(device));
   }
 }
 
@@ -1961,8 +1981,9 @@ void MainWindow::onViewCapturesClicked()
  */
 void MainWindow::onReadSuccess()
 {
+  if(m_closing || !m_reconnectPolicy.connected())return;
+  m_reconnectPolicy.receivedData();
   setProperty("ecuConnectInProgress", false);
-  m_silentReconnect = false;
   m_ui->m_commsGoodLed->setChecked(true);
   m_ui->m_commsBadLed->setChecked(false);
   m_ui->m_connectButton->setEnabled(false);
@@ -2028,31 +2049,12 @@ void MainWindow::onFailedToConnect(QString dev)
 {
   EcuCommunicationLog::note(QStringLiteral("ECHEC_CONNEXION %1").arg(dev));
   EcuCommunicationLog::finish();
+  const auto outcome=m_reconnectPolicy.failed();
   setProperty("ecuConnectInProgress", false);
-  if (!m_closing)
-    m_ui->m_connectButton->setEnabled(true);
+  m_ui->m_connectButton->setEnabled(!m_closing && m_reconnectPolicy.idle());
+  m_ui->m_disconnectButton->setEnabled(!m_closing && m_reconnectPolicy.waiting());
   refreshConnectionHeader();
-
-  if (m_closing)
-    return;
-
-  if (m_silentReconnect)
-  {
-    m_silentReconnect = false;
-    return;
-  }
-
-  if (dev.isEmpty() || dev.isNull())
-  {
-    showConnectionError(this, I18n::text(7056) /* EN: Error */,
-                         I18n::text(7057) /* EN: ECU connection error. No serial port specified.   */ +
-                         I18n::text(7058) /* EN: Select a serial device using "Edit settings" in the "Options" menu. */);
-  }
-  else
-  {
-    showConnectionError(this, I18n::text(7059) /* EN: Error */,
-                         I18n::text(7060) /* EN: ECU connection error on port %1. Check the wiring and make sure the ECU is powered. */.arg(dev));
-  }
+  handleConnectionOutcome(outcome,dev);
 }
 
 /**
@@ -2061,7 +2063,7 @@ void MainWindow::onFailedToConnect(QString dev)
  */
 void MainWindow::onNotConnected()
 {
-  if (m_closing || m_silentReconnect)
+  if (m_closing || (!m_reconnectPolicy.idle() && !m_reconnectPolicy.connected()))
     return;
 
   if (m_pleaseWaitBox != 0)

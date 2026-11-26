@@ -1,5 +1,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
+#include "ecureconnectpolicy.h"
 
 #include <QMainWindow>
 #include <QThread>
@@ -183,8 +184,9 @@ private:
     Logger *m_logger;
 
     QTimer *m_reconnectTimer;
-    bool m_autoReconnectEnabled;
-    bool m_silentReconnect = false;
+    EcuReconnectPolicy m_reconnectPolicy;
+    void startConnectionAttempt();
+    void handleConnectionOutcome(EcuReconnectPolicy::Outcome outcome,const QString &device=QString());
     bool m_closing = false;
 
     quint32 m_prevFaultMask;

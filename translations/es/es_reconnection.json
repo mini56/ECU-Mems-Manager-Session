@@ -1,0 +1,4 @@
+{
+  "29160": "Conexión con la ECU perdida",
+  "29161": "La reconexión automática ha fallado tras %1 intentos. Compruebe el contacto, el cable y la alimentación de la ECU y pulse Conectar."
+}
