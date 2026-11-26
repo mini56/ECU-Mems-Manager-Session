@@ -1,0 +1,15 @@
+{
+  "29240": "Detección reciente de dientes del cigüeñal (estado)",
+  "29241": "Indicador de sincronización del árbol de levas (asignación por confirmar)",
+  "29242": "Fallo circuito interno 34h",
+  "29243": "Fallo circuito interno 29h",
+  "29244": "Indicador circuito DA (componente sin confirmar)",
+  "29245": "Fallo canal eléctrico de inyección AA",
+  "29246": "Fallo canal eléctrico de inyección AB",
+  "29247": "Fallo circuito testigo de temperatura del compartimento motor",
+  "29248": "Fallo circuito mando ventilador del compartimento motor",
+  "29249": "Fallo circuito señal motor hacia HDC",
+  "29250": "Fallo circuito mando control de crucero",
+  "29251": "Fallo salida BD (asignación de ventilador por confirmar)",
+  "29252": "Fallo salida AD (asignación de ventilador por confirmar)"
+}

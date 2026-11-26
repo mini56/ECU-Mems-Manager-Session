@@ -161,6 +161,10 @@ if(MEMS_USE_ONNX_GENAI)
     add_dependencies(${PNAME} local_ai_onnx_selftest)
 endif()
 
+add_executable(mems_extended_dtc_selftest memsextendeddtc_test.cpp memsextendeddtc.h)
+add_dependencies(${PNAME} mems_extended_dtc_selftest)
+add_custom_command(TARGET ${PNAME} POST_BUILD COMMAND "$<TARGET_FILE:mems_extended_dtc_selftest>")
+
 add_executable(protocol_context_selftest protocolcontext_test.cpp protocolcontext.h)
 add_dependencies(${PNAME} protocol_context_selftest)
 add_custom_command(TARGET ${PNAME} POST_BUILD

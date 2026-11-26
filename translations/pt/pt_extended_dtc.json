@@ -1,0 +1,15 @@
+{
+  "29240": "Deteção recente de dentes da cambota (estado)",
+  "29241": "Indicador de sincronização da árvore de cames (atribuição por confirmar)",
+  "29242": "Falha circuito interno 34h",
+  "29243": "Falha circuito interno 29h",
+  "29244": "Indicador circuito DA (componente não confirmado)",
+  "29245": "Falha canal elétrico de injeção AA",
+  "29246": "Falha canal elétrico de injeção AB",
+  "29247": "Falha circuito aviso temperatura compartimento do motor",
+  "29248": "Falha circuito comando ventilador compartimento do motor",
+  "29249": "Falha circuito sinal motor para HDC",
+  "29250": "Falha circuito comando controlo de velocidade",
+  "29251": "Falha saída BD (atribuição do ventilador a confirmar)",
+  "29252": "Falha saída AD (atribuição do ventilador a confirmar)"
+}

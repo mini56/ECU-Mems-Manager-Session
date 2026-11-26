@@ -1,0 +1,15 @@
+{
+  "29240": "Rilevamento recente denti albero motore (stato)",
+  "29241": "Indicatore sincronizzazione albero a camme (attribuzione da confermare)",
+  "29242": "Guasto circuito interno 34h",
+  "29243": "Guasto circuito interno 29h",
+  "29244": "Indicatore circuito DA (componente non confermato)",
+  "29245": "Guasto canale elettrico iniezione AA",
+  "29246": "Guasto canale elettrico iniezione AB",
+  "29247": "Guasto circuito spia temperatura vano motore",
+  "29248": "Guasto circuito comando ventola vano motore",
+  "29249": "Guasto circuito segnale motore verso HDC",
+  "29250": "Guasto circuito comando cruise control",
+  "29251": "Guasto uscita BD (attribuzione ventola da confermare)",
+  "29252": "Guasto uscita AD (attribuzione ventola da confermare)"
+}

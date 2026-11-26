@@ -18,6 +18,7 @@
 #include <QVBoxLayout>
 #include "i18n.h"
 #include "mems16na_presentation.h"
+#include "memsextendeddtc_presentation.h"
 #define tr I18n::text
 
 namespace {
@@ -104,7 +105,7 @@ void DiagnosticPanel::updateData(const mems_data *data,const Mems16Na::SessionEv
     const auto *profile=na?na->identifiedProfile():nullptr;
     if(m_naEvidence.identifiedProfile()!=profile||
        (profile&&m_naEvidence.identity()!=na->identity()))m_naReference=Snapshot();
-    if(profile)m_naEvidence=*na;
+    if(na)m_naEvidence=*na;
     else m_naEvidence.reset();
     m_showing2J=false;
     m_last = *data;
@@ -115,7 +116,7 @@ void DiagnosticPanel::updateData(const mems_data *data,const Mems16Na::SessionEv
 void DiagnosticPanel::endNaSession()
 {
     restoreNaChecksStyle();
-    if(!m_naEvidence.identifiedProfile())return;
+    if(!m_naEvidence.identifiedProfile()&&m_naEvidence.firmwareName().empty())return;
     m_naEvidence.reset();
     m_naReference=Snapshot();
     m_haveData=false;
@@ -147,13 +148,25 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     int issues = 0;
     int warnings = 0;
 
-    const bool hasDtc = (d.dtc0 != 0 || d.dtc1 != 0 || d.dtc2 != 0);
+    const bool knownDtc2=MemsExtendedDtc::dtc2Known(m_naEvidence.firmwareName().c_str());
+    const unsigned fault2=knownDtc2?m_naEvidence.extendedDtc(2).faults:d.dtc2;
+    const bool hasDtc = (d.dtc0 != 0 || d.dtc1 != 0 || fault2 != 0);
+    const bool incompleteDtc2=knownDtc2&&m_naEvidence.extendedDtc(2).status!=MemsExtendedDtc::Status::Decoded;
     addCheck(I18n::text(6813) /* EN: ECU faults */,
              I18n::text(6814) /* EN: DTC0=%1  DTC1=%2  DTC2=%3 */.arg(hexByte(d.dtc0), hexByte(d.dtc1), hexByte(d.dtc2)),
-             hasDtc ? I18n::text(6815) /* EN: anomaly */ : I18n::text(6816) /* EN: OK */,
+             hasDtc ? I18n::text(6815) /* EN: anomaly */ : incompleteDtc2?I18n::text(29002):I18n::text(6816) /* EN: OK */,
              hasDtc ? I18n::text(6817) /* EN: Read the relevant bits before clearing anything. */
-                    : I18n::text(6818) /* EN: No active fault bit in 0x7D/0x80 frames. */);
+                    : incompleteDtc2?I18n::text(29002):I18n::text(6818) /* EN: No active fault bit in 0x7D/0x80 frames. */);
     if (hasDtc) ++issues;
+    for(int group=knownDtc2?2:3;group<=5;++group){
+        const auto r=m_naEvidence.extendedDtc(group);
+        const unsigned legacy=group==2?d.dtc2:group==3?d.dtc3:group==4?d.dtc4:d.dtc5;
+        addCheck(QStringLiteral("DTC %1").arg(group),MemsExtendedDtc::raw(&m_naEvidence,group,legacy),
+            r.faults?I18n::text(29051):I18n::text(6841),MemsExtendedDtc::text(&m_naEvidence,group));
+        // DTC2/10 and DTC3/01 are the same stored synchronization fault on KBHBG009.
+        const unsigned duplicate=(group==3&&knownDtc2&&(fault2&0x10))?1u:0u;
+        if(group!=2&&(r.faults&~duplicate))++issues;
+    }
 
     const double battery = d.battery_voltage / 10.0;
     const bool batteryOk = battery >= 11.5 && battery <= 15.2;
@@ -189,12 +202,12 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     const bool tpsPlausible = d.throttle_pot <= 255;
     addCheck(I18n::text(6835) /* EN: TPS */, QStringLiteral("%1 / 255").arg(d.throttle_pot),
              stateFor(tpsPlausible),
-             (d.dtc1 & 0x80) || (d.dtc2 & 0x01)
+             (d.dtc1 & 0x80) || (fault2 & 0x01)
                  ? I18n::text(6836) /* EN: A TPS/TPS-supply fault is reported: check supply, ground and sensor progression. */
                  : I18n::text(6837) /* EN: No known active TPS fault in the monitored bits. */);
-    if ((d.dtc1 & 0x80) || (d.dtc2 & 0x01)) ++issues;
+    if ((d.dtc1 & 0x80) || (fault2 & 0x01)) ++issues;
 
-    const bool lambdaFault = (d.dtc2 & 0x04) || (d.dtc2 & 0x08);
+    const bool lambdaFault = (fault2 & 0x04) || (fault2 & 0x08);
     addCheck(I18n::text(6838) /* EN: lambda */,
              I18n::text(6839) /* EN: U=%1  freq=%2  duty=%3  status=%4 */
                  .arg(d.lambda_voltage).arg(d.lambda_sensor_frequency)
@@ -356,6 +369,8 @@ QString DiagnosticPanel::buildReport() const
     text += I18n::text(6880) /* EN: Date : %1  */.arg(QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss"));
     if (!m_ecuId.isEmpty()) text += I18n::text(6881) /* EN: Identification : %1  */.arg(QString::fromLatin1(m_ecuId.toHex(' ').toUpper()));
     text += I18n::text(6882) /* EN: DTC : %1 %2 %3  */.arg(hexByte(d.dtc0), hexByte(d.dtc1), hexByte(d.dtc2));
+    for(int group=2;group<=5;++group)if(group!=2||MemsExtendedDtc::dtc2Known(m_naEvidence.firmwareName().c_str()))
+        text+=QStringLiteral("\nDTC %1 : ").arg(group)+MemsExtendedDtc::text(&m_naEvidence,group);
     const int raw7d1415 = (static_cast<int>(d.idle_error2) << 8) | static_cast<int>(d.uk10);
     const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
     const int hotIdleErrorCorrected = (raw7d1415 - 32768) - hotIdleCorrection;

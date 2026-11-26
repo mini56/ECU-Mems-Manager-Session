@@ -539,6 +539,11 @@ bool MEMSInterface::connectToECU()
         }
         m_connectedState.storeRelease(1);
         m_deviceName = adapter.devicePath;
+        m_naSession.reset();
+        m_naSession.tx({0xD0});
+        m_naSession.rx({0xD0,m_d0_response_buffer[0],m_d0_response_buffer[1],m_d0_response_buffer[2],m_d0_response_buffer[3]});
+        m_naSession.finish();
+        { QMutexLocker locker(&m_dataMutex); m_naSnapshot.reset(); }
         emit gotEcuId(m_d0_response_buffer);
 #else
         if (!tryRoscoConnect(adapter.devicePath))

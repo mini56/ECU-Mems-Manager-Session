@@ -1,0 +1,15 @@
+{
+  "29240": "Détection récente de dents du vilebrequin (état)",
+  "29241": "Indicateur de synchronisation arbre à cames (attribution à confirmer)",
+  "29242": "Défaut circuit interne 34h",
+  "29243": "Défaut circuit interne 29h",
+  "29244": "Indicateur circuit DA (organe non confirmé)",
+  "29245": "Défaut voie électrique d’injection AA",
+  "29246": "Défaut voie électrique d’injection AB",
+  "29247": "Défaut circuit témoin de température du compartiment moteur",
+  "29248": "Défaut commande ventilateur du compartiment moteur",
+  "29249": "Défaut circuit signal moteur vers HDC",
+  "29250": "Défaut circuit commande régulateur de vitesse",
+  "29251": "Défaut sortie BD (ventilateur, attribution à confirmer)",
+  "29252": "Défaut sortie AD (ventilateur, attribution à confirmer)"
+}

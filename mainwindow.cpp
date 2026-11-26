@@ -18,6 +18,7 @@
 #include <QGraphicsOpacityEffect>
 #include "mainwindow.h"
 #include "mems16na_presentation.h"
+#include "memsextendeddtc_presentation.h"
 #include "expert/IaMemsService.h"
 #include <QSizePolicy>
 #include "overviewramlive.h"
@@ -1175,7 +1176,14 @@ void MainWindow::onDataReady()
   } else clearNaIdentityStatus();
   const quint8 fault0=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc0).faultBits:data->dtc0;
   const quint8 fault1=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc1).faultBits:data->dtc1;
-  const quint8 fault2=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc2).faultBits:data->dtc2;
+  const bool knownDtc2=!naIdentified&&MemsExtendedDtc::dtc2Known(naEvidence.firmwareName().c_str());
+  const quint8 fault2=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc2).faultBits:knownDtc2?naEvidence.extendedDtc(2).faults:data->dtc2;
+  if(knownDtc2){
+    rememberNaLabel(m_ui->m_faultCode19Label);m_ui->m_faultCode19Label->setText(I18n::text(29017));
+    rememberNaLabel(m_ui->m_faultCode21Label);m_ui->m_faultCode21Label->setText(I18n::text(29018));
+    rememberNaLabel(m_ui->m_faultCode22Label);m_ui->m_faultCode22Label->setText(I18n::text(29251));
+    rememberNaLabel(m_ui->m_faultCode24Label);m_ui->m_faultCode24Label->setText(I18n::text(29252));
+  }
   m_summaryTab->updateData(data,&naEvidence);
   if (m_diagnosticPanel) m_diagnosticPanel->updateData(data,&naEvidence);
   if(naIdentified && m_diagnosticPanel)
@@ -1443,6 +1451,7 @@ void MainWindow::onDataReady()
     {m_ui->r_7D_05->setText(I18n::text(7021) /* EN: FAULTS */);}
     else
     {m_ui->r_7D_05->setText(I18n::text(7022) /* EN: no fault */);} 
+ if(knownDtc2){m_ui->m_7D_05->setText(MemsExtendedDtc::raw(&naEvidence,2,data->dtc2));m_ui->r_7D_05->setText(MemsExtendedDtc::text(&naEvidence,2));}
  m_ui->m_7D_06->setText(QString::number(data->lambda_voltage));
  m_ui->r_7D_06->setText(QString::number(data->lambda_voltage * 5) + " mV" );
  m_ui->m_7D_07->setText(QString::number(data->lambda_sensor_frequency));
@@ -1463,23 +1472,14 @@ void MainWindow::onDataReady()
  m_ui->r_7D_0C->setText(QString::number(data->short_term_fuel_trim - 100) + "%");
  m_ui->m_7D_0D->setText(QString::number(data->carbon_canister_dutycycle));
  m_ui->r_7D_0D->setText(QString::number(data->carbon_canister_dutycycle) + "%");
- m_ui->m_7D_0E->setText(QString::number(data->dtc3));
-    if ((data->dtc3)!= 255)
-    {m_ui->r_7D_0E->setText(I18n::text(7027) /* EN: FAULTS */);}
-    else
-    {m_ui->r_7D_0E->setText(I18n::text(7028) /* EN: no fault */);}  
+ m_ui->m_7D_0E->setText(MemsExtendedDtc::raw(&naEvidence,3,data->dtc3));
+ m_ui->r_7D_0E->setText(MemsExtendedDtc::text(&naEvidence,3));  
  m_ui->m_7D_0F->setText(QString::number(data->idle_base_pos));
  m_ui->r_7D_0F->setText("");
- m_ui->m_7D_10->setText(QString::number(data->uk7));
-     if ((data->uk7)!= 255)
-    {m_ui->r_7D_10->setText(I18n::text(7029) /* EN: FAULTS */);}
-    else
-    {m_ui->r_7D_10->setText(I18n::text(7030) /* EN: no fault */);} 
- m_ui->m_7D_11->setText(QString::number(data->dtc4));
-    if ((data->dtc4)!= 255)
-    {m_ui->r_7D_11->setText(I18n::text(7031) /* EN: FAULTS */);}
-    else
-    {m_ui->r_7D_11->setText(I18n::text(7032) /* EN: no fault */);} 
+ m_ui->m_7D_10->setText(MemsExtendedDtc::raw(&naEvidence,6,data->uk7));
+ m_ui->r_7D_10->setText(MemsExtendedDtc::text(&naEvidence,6)); 
+ m_ui->m_7D_11->setText(MemsExtendedDtc::raw(&naEvidence,4,data->dtc4));
+ m_ui->r_7D_11->setText(MemsExtendedDtc::text(&naEvidence,4)); 
  m_ui->m_7D_12->setText(QString::number(data->ignition_advance2));
  m_ui->r_7D_12->setText(QString::number(data->ignition_advance2 - 48));
  m_ui->m_7D_13->setText(QString::number(data->idle_speed_offset));
@@ -1490,11 +1490,8 @@ void MainWindow::onDataReady()
  const int idleErrorHotCorrected = (raw7d1415 - 32768) - idleHotCorrection;
  m_ui->m_7D_15->setText(QString::number(idleErrorHotCorrected));
  m_ui->m_7D_15->setToolTip(I18n::text(7033));
- m_ui->m_7D_16->setText(QString::number(data->dtc5));
-     if ((data->dtc5)!= 255)
-    {m_ui->r_7D_16->setText(I18n::text(7034) /* EN: FAULTS */);}
-    else
-    {m_ui->r_7D_16->setText(I18n::text(7035) /* EN: no fault */);} 
+ m_ui->m_7D_16->setText(MemsExtendedDtc::raw(&naEvidence,5,data->dtc5));
+ m_ui->r_7D_16->setText(MemsExtendedDtc::text(&naEvidence,5)); 
  m_ui->m_7D_17->setText(QString::number(data->uk11));
  m_ui->m_7D_18->setText(QString::number(data->uk12));
  m_ui->m_7D_19->setText(QString::number(data->uk13));

@@ -9,6 +9,7 @@
 #include <QSize>
 #include "i18n.h"
 #include "mems16na_presentation.h"
+#include "memsextendeddtc_presentation.h"
 #include "tooltipbubblemanager.h"
 #define tr I18n::text
 
@@ -463,21 +464,15 @@ void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
            QString::number(data->carbon_canister_dutycycle),
            QString::number(data->carbon_canister_dutycycle) + " %");
 
-  setValue(m_rowDtc3,
-           QString::number(data->dtc3),
-           data->dtc3 != 255 ? I18n::text(6675) /* EN: FAULTS */ : I18n::text(6676) /* EN: no fault */);
+  setValue(m_rowDtc3,MemsExtendedDtc::raw(na,3,data->dtc3),MemsExtendedDtc::text(na,3));
 
   setValue(m_rowIdleBasePos,
            QString::number(data->idle_base_pos),
            QString::number(data->idle_base_pos));
 
-  setValue(m_rowUk7,
-           QString::number(data->uk7),
-           data->uk7 != 255 ? I18n::text(6677) /* EN: FAULTS */ : I18n::text(6678) /* EN: no fault */);
+  setValue(m_rowUk7,MemsExtendedDtc::raw(na,6,data->uk7),MemsExtendedDtc::text(na,6));
 
-  setValue(m_rowDtc4,
-           QString::number(data->dtc4),
-           data->dtc4 != 255 ? I18n::text(6679) /* EN: FAULTS */ : I18n::text(6680) /* EN: no fault */);
+  setValue(m_rowDtc4,MemsExtendedDtc::raw(na,4,data->dtc4),MemsExtendedDtc::text(na,4));
 
   setValue(m_rowIgnitionAdvance2,
            QString::number(data->ignition_advance2),
@@ -502,9 +497,7 @@ void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
            QString::number(raw7d1415),
            QString::number(raw7d1415));
 
-  setValue(m_rowDtc5,
-           QString::number(data->dtc5),
-           data->dtc5 != 255 ? I18n::text(6681) /* EN: FAULTS */ : I18n::text(6682) /* EN: no fault */);
+  setValue(m_rowDtc5,MemsExtendedDtc::raw(na,5,data->dtc5),MemsExtendedDtc::text(na,5));
 
   setValue(m_rowUk11, QString::number(data->uk11), QString::number(data->uk11));
   setValue(m_rowUk12, QString::number(data->uk12), QString::number(data->uk12));
@@ -523,6 +516,7 @@ void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
            QString::number(data->dtc1),
            data->dtc1 != 0 ? I18n::text(6685) /* EN: FAULTS */ : I18n::text(6686) /* EN: no fault */);
   if(na && na->identifiedProfile())applyNaPresentation(*na);
+  else if(na&&MemsExtendedDtc::dtc2Known(na->firmwareName().c_str()))setValue(m_rowDtc2,MemsExtendedDtc::raw(na,2,data->dtc2),MemsExtendedDtc::text(na,2));
 }
 
 

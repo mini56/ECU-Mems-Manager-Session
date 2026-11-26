@@ -276,7 +276,7 @@ mems_data* MEMSInterface::getData(Mems16Na::SessionEvidence *naEvidence)
   QMutexLocker locker(&m_dataMutex);
   snapshot = m_data;
   if (naEvidence) {
-    if (ecuFamily()==MemsEcuFamily::Rosco13_16 && isConnected())
+    if ((ecuFamily()==MemsEcuFamily::Rosco13_16 || ecuFamily()==MemsEcuFamily::Mems19) && isConnected())
       *naEvidence=m_naSnapshot;
     else naEvidence->reset();
   }
@@ -385,7 +385,7 @@ void MEMSInterface::runServiceLoop()
     qint64 naTraceStart=-1;
     m_naSession.discardPair();
 #ifdef WIN32
-    if (family==MemsEcuFamily::Rosco13_16 && m_naSession.identifiedProfile()) {
+    if ((family==MemsEcuFamily::Rosco13_16 || family==MemsEcuFamily::Mems19) && !m_naSession.firmwareName().empty()) {
       wchar_t path[4096];
       const DWORD n=GetEnvironmentVariableW(L"ECU_MEMS_COMM_TRACE_FILE",path,4096);
       if(n && n<4096) {
@@ -413,7 +413,10 @@ void MEMSInterface::runServiceLoop()
           const qint64 count=trace.size()-naTraceStart;
           if(count>0 && count<=8192 && trace.seek(naTraceStart)) {
             const QByteArray bytes=trace.read(count);
-            if(bytes.size()==count &&
+            if(bytes.size()==count && !m_naSession.identifiedProfile()) {
+              Mems16Na::consumeExtendedPair(m_naSession,bytes.toStdString(),family==MemsEcuFamily::Mems19 && m_kline19LocalEcho,
+                  nextData.engine_rpm,nextData.dtc2,nextData.dtc3,nextData.dtc4,nextData.dtc5);
+            } else if(bytes.size()==count &&
                Mems16Na::consumeLivePair(m_naSession,bytes.toStdString())) {
               const auto a=m_naSession.frame80();
               const auto b=m_naSession.frame7d();
@@ -1034,7 +1037,7 @@ void MEMSInterface::sendRoscoReadCommand(quint8 command)
 #endif
 
   if (m_shutdownRequested.loadAcquire() == 0) {
-    if (ecuFamily()==MemsEcuFamily::Rosco13_16 && (command==0xD0 || command==0xD1)) {
+    if ((ecuFamily()==MemsEcuFamily::Rosco13_16 || ecuFamily()==MemsEcuFamily::Mems19) && (command==0xD0 || command==0xD1)) {
       m_naSession.tx({command});
       m_naSession.rx(std::vector<std::uint8_t>(response.begin(),response.end()));
       m_naSession.finish();

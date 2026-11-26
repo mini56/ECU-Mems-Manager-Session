@@ -1,0 +1,15 @@
+{
+  "29240": "Recent crankshaft tooth detection (state)",
+  "29241": "Camshaft synchronization indicator (assignment to be confirmed)",
+  "29242": "Internal circuit 34h fault",
+  "29243": "Internal circuit 29h fault",
+  "29244": "DA circuit indicator (component unconfirmed)",
+  "29245": "Injection electrical channel AA fault",
+  "29246": "Injection electrical channel AB fault",
+  "29247": "Engine compartment temperature warning circuit fault",
+  "29248": "Engine compartment fan control circuit fault",
+  "29249": "Engine signal to HDC circuit fault",
+  "29250": "Cruise control output circuit fault",
+  "29251": "BD output fault (fan assignment to be confirmed)",
+  "29252": "AD output fault (fan assignment to be confirmed)"
+}

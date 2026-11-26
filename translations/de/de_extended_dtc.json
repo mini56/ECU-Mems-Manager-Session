@@ -1,0 +1,15 @@
+{
+  "29240": "Kürzliche Erkennung von Kurbelwellenzähnen (Status)",
+  "29241": "Nockenwellensynchronisationsanzeige (Zuordnung unbestätigt)",
+  "29242": "Fehler interner Stromkreis 34h",
+  "29243": "Fehler interner Stromkreis 29h",
+  "29244": "Anzeige Stromkreis DA (Bauteil unbestätigt)",
+  "29245": "Fehler Einspritzkanal AA",
+  "29246": "Fehler Einspritzkanal AB",
+  "29247": "Fehler Warnleuchtenkreis Motorraumtemperatur",
+  "29248": "Fehler Steuerkreis Motorraumlüfter",
+  "29249": "Fehler Motorsignalkreis zum HDC",
+  "29250": "Fehler Ausgangskreis Geschwindigkeitsregelung",
+  "29251": "Fehler Ausgang BD (Lüfterzuordnung unbestätigt)",
+  "29252": "Fehler Ausgang AD (Lüfterzuordnung unbestätigt)"
+}

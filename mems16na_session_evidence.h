@@ -2,6 +2,7 @@
 // Passive observation of existing ROSCO communications; no ECU I/O.
 // V0.43 ch.47: never select a profile from numeric ID alone.
 #include "mems16na_decoder.h"
+#include "memsextendeddtc.h"
 #include <array>
 #include <vector>
 #include <string>
@@ -11,8 +12,8 @@ namespace Mems16Na {
 class SessionEvidence {
 public:
     void reset() {
-        identity_.fill(0); haveIdentity_=false; profile_=nullptr;
-        have80_=false; havePair_=false; command_=-1; reply_.clear(); overflow_=false;
+        identity_.fill(0); haveIdentity_=false; profile_=nullptr; firmware_.clear(); extended7d_.clear();
+        have80_=false; havePair_=false; extended7d_.clear(); command_=-1; reply_.clear(); overflow_=false;
     }
     // Only feed records from the current connection, with the original TX/RX direction.
     // A new TX closes the previous transaction. No serial command is generated.
@@ -21,7 +22,7 @@ public:
         command_=bytes.size()==1 ? int(bytes[0]) : -1;
         reply_.clear(); overflow_=false;
         if(command_!=0x7D) have80_=false;
-        if(command_==0xD0 || command_==0xD1) havePair_=false;
+        if(command_==0xD0 || command_==0xD1) {havePair_=false; firmware_.clear(); extended7d_.clear();}
         if(command_==0xD0) { haveIdentity_=false; profile_=nullptr; }
         if(command_==0xD1) profile_=nullptr;
     }
@@ -64,6 +65,7 @@ public:
                         const std::uint32_t id=(std::uint32_t(identity_[0])<<16)|
                             (std::uint32_t(identity_[1])<<8)|identity_[2];
                         // Full exact name in the NA-only catalogue establishes family.
+                        firmware_=name;
                         profile_=select(true,name.c_str(),true,id);
                     }
                 }
@@ -84,10 +86,16 @@ public:
     }
     // Invalidate the last sample without losing the verified firmware identity.
     void discardPair() {
-        have80_=false; havePair_=false; command_=-1; reply_.clear(); overflow_=false;
+        have80_=false; havePair_=false; extended7d_.clear(); command_=-1; reply_.clear(); overflow_=false;
     }
     const std::array<std::uint8_t,4>& identity() const { return identity_; }
     const Profile* identifiedProfile() const { return profile_; }
+    const std::string& firmwareName() const {return firmware_;}
+    void setExtended7d(const std::vector<std::uint8_t>& b) {extended7d_=b;}
+    const std::vector<std::uint8_t>& extended7d() const {return extended7d_;}
+    MemsExtendedDtc::Result extendedDtc(int group) const {
+        return MemsExtendedDtc::decode(firmware_.c_str(),group,extended7d_.data(),extended7d_.size());
+    }
     bool ready() const { return profile_ && havePair_; }
     Frame frame80() const { return ready()?Frame{a_.data(),a_.size()}:Frame{nullptr,0}; }
     Frame frame7d() const { return ready()?Frame{b_.data(),b_.size()}:Frame{nullptr,0}; }
@@ -97,6 +105,8 @@ private:
     std::array<std::uint8_t,4> identity_{};
     bool haveIdentity_=false;
     const Profile* profile_=nullptr;
+    std::string firmware_;
+    std::vector<std::uint8_t> extended7d_;
     std::array<std::uint8_t,28> a_{};
     std::array<std::uint8_t,32> b_{};
     bool have80_=false,havePair_=false;
