@@ -11,5 +11,6 @@
   "29249": "Fehler Motorsignalkreis zum HDC",
   "29250": "Fehler Ausgangskreis Geschwindigkeitsregelung",
   "29251": "Fehler Ausgang BD (Lüfterzuordnung unbestätigt)",
-  "29252": "Fehler Ausgang AD (Lüfterzuordnung unbestätigt)"
+  "29252": "Fehler Ausgang AD (Lüfterzuordnung unbestätigt)",
+  "29253": "03 - Fehler Druckleitung"
 }

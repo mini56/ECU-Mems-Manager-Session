@@ -1178,6 +1178,10 @@ void MainWindow::onDataReady()
   const quint8 fault1=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc1).faultBits:data->dtc1;
   const bool knownDtc2=!naIdentified&&MemsExtendedDtc::dtc2Known(naEvidence.firmwareName().c_str());
   const quint8 fault2=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc2).faultBits:knownDtc2?naEvidence.extendedDtc(2).faults:data->dtc2;
+  if(!naIdentified&&MemsExtendedDtc::pressurePipeFaultKnown(naEvidence.firmwareName().c_str())){
+    rememberNaLabel(m_ui->m_faultCode03Label);
+    m_ui->m_faultCode03Label->setText(I18n::text(29253));
+  }
   if(knownDtc2){
     rememberNaLabel(m_ui->m_faultCode19Label);m_ui->m_faultCode19Label->setText(I18n::text(29017));
     rememberNaLabel(m_ui->m_faultCode21Label);m_ui->m_faultCode21Label->setText(I18n::text(29018));

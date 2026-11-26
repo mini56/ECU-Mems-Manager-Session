@@ -11,5 +11,6 @@
   "29249": "Guasto circuito segnale motore verso HDC",
   "29250": "Guasto circuito comando cruise control",
   "29251": "Guasto uscita BD (attribuzione ventola da confermare)",
-  "29252": "Guasto uscita AD (attribuzione ventola da confermare)"
+  "29252": "Guasto uscita AD (attribuzione ventola da confermare)",
+  "29253": "03 - Guasto condotto di pressione"
 }

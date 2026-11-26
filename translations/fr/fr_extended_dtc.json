@@ -11,5 +11,6 @@
   "29249": "Défaut circuit signal moteur vers HDC",
   "29250": "Défaut circuit commande régulateur de vitesse",
   "29251": "Défaut sortie BD (ventilateur, attribution à confirmer)",
-  "29252": "Défaut sortie AD (ventilateur, attribution à confirmer)"
+  "29252": "Défaut sortie AD (ventilateur, attribution à confirmer)",
+  "29253": "03 - Défaut conduit de pression"
 }

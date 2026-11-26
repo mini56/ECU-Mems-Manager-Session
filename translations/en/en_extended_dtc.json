@@ -11,5 +11,6 @@
   "29249": "Engine signal to HDC circuit fault",
   "29250": "Cruise control output circuit fault",
   "29251": "BD output fault (fan assignment to be confirmed)",
-  "29252": "AD output fault (fan assignment to be confirmed)"
+  "29252": "AD output fault (fan assignment to be confirmed)",
+  "29253": "03 - Pressure pipe fault"
 }

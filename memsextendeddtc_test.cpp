@@ -4,6 +4,9 @@
 using namespace MemsExtendedDtc;
 static void require(bool b){if(!b){std::fprintf(stderr,"DTC regression\n");std::exit(1);}}
 int main(){
+    for(const char *f:{"KBHBG009","KBHBG010","KBHBV002","KFHBG009","KLH3G015","REGI1224","REGI1360","REGI1417","TAH7G018","TAHHG019","TFHSG014"})require(pressurePipeFaultKnown(f));
+    for(const char *f:{"AANMP002","ABEMR002","TCF7X005","TBP7F015","SELFG007","UNKNOWN",""})require(!pressurePipeFaultKnown(f));
+    require(!pressurePipeFaultKnown(nullptr));
     std::uint8_t b[32]={32};
     for(unsigned r=0;r<256;++r){
         b[14]=static_cast<std::uint8_t>(r);

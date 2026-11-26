@@ -11,5 +11,6 @@
   "29249": "Falha circuito sinal motor para HDC",
   "29250": "Falha circuito comando controlo de velocidade",
   "29251": "Falha saída BD (atribuição do ventilador a confirmar)",
-  "29252": "Falha saída AD (atribuição do ventilador a confirmar)"
+  "29252": "Falha saída AD (atribuição do ventilador a confirmar)",
+  "29253": "03 - Falha na conduta de pressão"
 }

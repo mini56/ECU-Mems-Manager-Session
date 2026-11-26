@@ -11,5 +11,6 @@
   "29249": "Fallo circuito señal motor hacia HDC",
   "29250": "Fallo circuito mando control de crucero",
   "29251": "Fallo salida BD (asignación de ventilador por confirmar)",
-  "29252": "Fallo salida AD (asignación de ventilador por confirmar)"
+  "29252": "Fallo salida AD (asignación de ventilador por confirmar)",
+  "29253": "03 - Fallo del conducto de presión"
 }
