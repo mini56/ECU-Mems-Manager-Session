@@ -1,0 +1,91 @@
+name: Extraction et inventaire firmwares MEMS
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: mini56/ECU-Mems-Manager-Session
+    steps:
+      - name: Telecharger et controler l'archive privee
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = "$GH_REPO"
+          test "$(gh api "repos/$GH_REPO" --jq .private)" = true
+          gh release download research-firmwares-20261126 --repo "$GH_REPO" --pattern Firmwares_archive.zip
+          echo '5725ecd4655a410f2dda57a3e512f0ca426336c4c647aa48601cbb318f7aaa81  Firmwares_archive.zip' | sha256sum -c -
+      - name: Extraire sans executer les fichiers et generer l'inventaire
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import csv, hashlib, json, stat, zipfile
+          from pathlib import Path, PurePosixPath
+          from collections import Counter
+          source = Path("Firmwares_archive.zip")
+          root = Path("firmwares-extraits").resolve()
+          root.mkdir()
+          rows = []
+          with zipfile.ZipFile(source) as z:
+              infos = z.infolist()
+              total = sum(i.file_size for i in infos)
+              if total > 8 * 1024**3 or len(infos) > 100000:
+                  raise RuntimeError("Limite de securite de l'extraction depassee")
+              seen = set()
+              for i in infos:
+                  name = i.filename.replace("\\", "/")
+                  p = PurePosixPath(name)
+                  if p.is_absolute() or ".." in p.parts or not p.parts or ":" in p.parts[0]:
+                      raise RuntimeError(f"Chemin ZIP non sur : {name!r}")
+                  if stat.S_ISLNK(i.external_attr >> 16):
+                      raise RuntimeError(f"Lien symbolique refuse : {name!r}")
+                  target = root.joinpath(*p.parts)
+                  if i.is_dir():
+                      target.mkdir(parents=True, exist_ok=True)
+                      continue
+                  if target in seen or target.exists():
+                      raise RuntimeError(f"Chemin en double : {name!r}")
+                  seen.add(target)
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  h = hashlib.sha256()
+                  with z.open(i) as src, target.open("xb") as dst:
+                      for chunk in iter(lambda: src.read(1024*1024), b""):
+                          h.update(chunk)
+                          dst.write(chunk)
+                  rows.append((p.as_posix(), target.stat().st_size, h.hexdigest(), p.suffix.lower()))
+          counts = Counter(row[2] for row in rows)
+          rows.sort()
+          with open("inventaire-firmwares.csv", "w", encoding="utf-8-sig", newline="") as f:
+              w = csv.writer(f, delimiter=";")
+              w.writerow(["chemin", "octets", "sha256", "extension", "occurrences_sha256"])
+              for row in rows:
+                  w.writerow([*row, counts[row[2]]])
+          result = {"archive": source.name, "fichiers_extraits": len(rows),
+                    "octets_extraits": sum(row[1] for row in rows),
+                    "contenus_distincts": len(counts),
+                    "doublons_exacts": len(rows)-len(counts),
+                    "extensions": dict(sorted(Counter(row[3] for row in rows).items()))}
+          Path("resume-firmwares.json").write_text(json.dumps(result, ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
+          print(json.dumps(result, ensure_ascii=False, indent=2))
+          PY
+          cat resume-firmwares.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Conserver les fichiers extraits comme artefact prive
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmwares-mems-extraits
+          path: |
+            firmwares-extraits/
+            inventaire-firmwares.csv
+            resume-firmwares.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30
+      - name: Conserver l'inventaire dans la Release privee
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload research-firmwares-20261126 inventaire-firmwares.csv resume-firmwares.json --repo "$GH_REPO"
