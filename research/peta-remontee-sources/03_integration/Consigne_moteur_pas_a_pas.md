@@ -1,0 +1,7 @@
+# Manager — consigne réelle du moteur pas à pas et vitesse demandée
+Nouvelles mesures, absentes des sources Manager 216 examinées (488dc8c) : position cible interne et vitesse de déplacement demandée, distinctes de la position comptée déjà affichée.
+| Profil | Position demandée (pas) | Vitesse demandée (pas/s) | Position comptée (pas) | Preuve appel |
+|---|---|---|---|---|
+| AANMP002 | E7 | E8 | 8E | 676B/676E/6771/6774 -> 2AA1 |
+| KBHBG009 | CD | CE | 60 | 7832/7835/7838/783B -> 31A5 |
+PETA i_req_step_pos et i_req_step_spd : octets, échelle 1, unités steps et steps/sec. i_step_pos : position logicielle. AANMP002 646B/6472/6482 écrit E7, 6485 écrit E8. KBHBG009 763B/763E et 77F5/77F8 écrivent CD/CE. Les deux routines de pilotage reçoivent ces deux valeurs, commande interne 1. Les trames ordinaires ne transmettent pas ces consignes; lecture mémoire mode 4 à étudier en lecture seule: ASM AANMP002 3C78–3C98; KBHBG009 5073–5096. Manager dispose de readMappedByteInBlock. Extraction des octets des mots alignés E6/E8 et CC/CE. Lire aussi la position comptée du même échantillon (8E ou 60), jamais mélanger trames anciennes et nouvelles. Ecart signé = cible - position comptée. Cet écart est normal en mouvement; il ne prouve pas un moteur bloqué, le calculateur ne dispose pas ici d'une mesure physique indépendante. Aucune lecture réelle de ces adresses, aucun seuil de panne inventé. Ne pas entrer automatiquement en mode 4. Aucun changement Manager/DLL, aucune compilation.
