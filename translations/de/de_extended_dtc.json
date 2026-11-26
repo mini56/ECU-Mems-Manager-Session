@@ -12,5 +12,7 @@
   "29250": "Fehler Ausgangskreis Geschwindigkeitsregelung",
   "29251": "Fehler Ausgang BD (Lüfterzuordnung unbestätigt)",
   "29252": "Fehler Ausgang AD (Lüfterzuordnung unbestätigt)",
-  "29253": "03 - Fehler Druckleitung"
+  "29253": "03 - Fehler Druckleitung",
+  "29254": "03 - Bei diesem Modell nicht auswertbar",
+  "29255": "03 - Bei diesem Modell nicht verwendet"
 }

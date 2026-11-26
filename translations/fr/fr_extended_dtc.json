@@ -12,5 +12,7 @@
   "29250": "Défaut circuit commande régulateur de vitesse",
   "29251": "Défaut sortie BD (ventilateur, attribution à confirmer)",
   "29252": "Défaut sortie AD (ventilateur, attribution à confirmer)",
-  "29253": "03 - Défaut conduit de pression"
+  "29253": "03 - Défaut conduit de pression",
+  "29254": "03 - Non exploitable sur ce modèle",
+  "29255": "03 - Non utilisé sur ce modèle"
 }

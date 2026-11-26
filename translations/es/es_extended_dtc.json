@@ -12,5 +12,7 @@
   "29250": "Fallo circuito mando control de crucero",
   "29251": "Fallo salida BD (asignación de ventilador por confirmar)",
   "29252": "Fallo salida AD (asignación de ventilador por confirmar)",
-  "29253": "03 - Fallo del conducto de presión"
+  "29253": "03 - Fallo del conducto de presión",
+  "29254": "03 - No interpretable en este modelo",
+  "29255": "03 - No utilizado en este modelo"
 }

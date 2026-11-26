@@ -1178,9 +1178,9 @@ void MainWindow::onDataReady()
   const quint8 fault1=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc1).faultBits:data->dtc1;
   const bool knownDtc2=!naIdentified&&MemsExtendedDtc::dtc2Known(naEvidence.firmwareName().c_str());
   const quint8 fault2=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc2).faultBits:knownDtc2?naEvidence.extendedDtc(2).faults:data->dtc2;
-  if(!naIdentified&&MemsExtendedDtc::pressurePipeFaultKnown(naEvidence.firmwareName().c_str())){
+  if(!naIdentified){
     rememberNaLabel(m_ui->m_faultCode03Label);
-    m_ui->m_faultCode03Label->setText(I18n::text(29253));
+    m_ui->m_faultCode03Label->setText(I18n::text(MemsExtendedDtc::pressurePipeLabelKey(naEvidence.firmwareName().c_str(),false)));
   }
   if(knownDtc2){
     rememberNaLabel(m_ui->m_faultCode19Label);m_ui->m_faultCode19Label->setText(I18n::text(29017));
@@ -2795,7 +2795,8 @@ void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na,bool documentat
       QLabel *label=faultLabels[g*8+i];
       rememberNaLabel(label);
       const bool supported=((def.faultMask|def.stateMask)&mask)!=0;
-      const QString name=supported?describe(circuit(p,group,mask),mask):I18n::text(29004);
+      const QString name=supported?describe(circuit(p,group,mask),mask):
+          (g==0&&i==2?I18n::text(MemsExtendedDtc::pressurePipeLabelKey(p->firmware,true)):I18n::text(29004));
       QString detail=name;
       if(supported && circuit(p,group,mask)==Circuit::AuxiliaryPtc)
         detail+=QStringLiteral("\n")+I18n::text(29020);

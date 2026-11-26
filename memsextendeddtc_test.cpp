@@ -7,6 +7,10 @@ int main(){
     for(const char *f:{"KBHBG009","KBHBG010","KBHBV002","KFHBG009","KLH3G015","REGI1224","REGI1360","REGI1417","TAH7G018","TAHHG019","TFHSG014"})require(pressurePipeFaultKnown(f));
     for(const char *f:{"AANMP002","ABEMR002","TCF7X005","TBP7F015","SELFG007","UNKNOWN",""})require(!pressurePipeFaultKnown(f));
     require(!pressurePipeFaultKnown(nullptr));
+    require(pressurePipeLabelKey("KBHBG009",false)==29253);
+    require(pressurePipeLabelKey("AANMP002",true)==29255);
+    require(pressurePipeLabelKey("UNKNOWN",false)==29254);
+    require(pressurePipeLabelKey(nullptr,false)==29254);
     std::uint8_t b[32]={32};
     for(unsigned r=0;r<256;++r){
         b[14]=static_cast<std::uint8_t>(r);

@@ -21,6 +21,10 @@ inline bool constant19(const char *f) {return eq(f,"TBP7F015")||eq(f,"SELFG007")
 inline bool da19(const char *f) {return eq(f,"KLH3G015")||eq(f,"TAH7G018")||eq(f,"REGI1224")||eq(f,"TFHSG014");}
 // DTC0 bit 04: ROM table and matching Rover symbol m_pbu_fault_log.
 inline bool pressurePipeFaultKnown(const char *f) {return eq(f,"KBHBG009")||eq(f,"KBHBG010")||eq(f,"KBHBV002")||eq(f,"KFHBG009")||eq(f,"KLH3G015")||eq(f,"REGI1224")||eq(f,"REGI1360")||eq(f,"REGI1417")||eq(f,"TAH7G018")||eq(f,"TAHHG019")||eq(f,"TFHSG014");}
+// Label only: distinguish absent interpretation from a documented unused bit.
+inline int pressurePipeLabelKey(const char *f,bool documentedUnused) {
+    return pressurePipeFaultKnown(f)?29253:documentedUnused?29255:29254;
+}
 inline bool dtc2Known(const char *f) {return eq(f,"KBHBG009");}
 inline unsigned offset(int group) {
     switch(group){case 2:return 5;case 3:return 14;case 4:return 17;case 5:return 22;case 6:return 16;default:return 256;}

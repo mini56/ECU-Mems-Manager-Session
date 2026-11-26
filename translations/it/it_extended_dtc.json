@@ -12,5 +12,7 @@
   "29250": "Guasto circuito comando cruise control",
   "29251": "Guasto uscita BD (attribuzione ventola da confermare)",
   "29252": "Guasto uscita AD (attribuzione ventola da confermare)",
-  "29253": "03 - Guasto condotto di pressione"
+  "29253": "03 - Guasto condotto di pressione",
+  "29254": "03 - Non interpretabile su questo modello",
+  "29255": "03 - Non utilizzato su questo modello"
 }

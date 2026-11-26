@@ -12,5 +12,7 @@
   "29250": "Falha circuito comando controlo de velocidade",
   "29251": "Falha saída BD (atribuição do ventilador a confirmar)",
   "29252": "Falha saída AD (atribuição do ventilador a confirmar)",
-  "29253": "03 - Falha na conduta de pressão"
+  "29253": "03 - Falha na conduta de pressão",
+  "29254": "03 - Não interpretável neste modelo",
+  "29255": "03 - Não utilizado neste modelo"
 }

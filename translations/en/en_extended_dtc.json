@@ -12,5 +12,7 @@
   "29250": "Cruise control output circuit fault",
   "29251": "BD output fault (fan assignment to be confirmed)",
   "29252": "AD output fault (fan assignment to be confirmed)",
-  "29253": "03 - Pressure pipe fault"
+  "29253": "03 - Pressure pipe fault",
+  "29254": "03 - Not interpretable on this model",
+  "29255": "03 - Not used on this model"
 }
