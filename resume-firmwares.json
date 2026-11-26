@@ -1,0 +1,16 @@
+{
+  "archive": "Firmwares_archive.zip",
+  "fichiers_extraits": 1409,
+  "octets_extraits": 882936530,
+  "contenus_distincts": 1409,
+  "doublons_exacts": 0,
+  "extensions": {
+    ".asm": 484,
+    ".bin": 134,
+    ".hex": 342,
+    ".html": 14,
+    ".rom": 3,
+    ".xf1": 177,
+    ".xf3": 255
+  }
+}

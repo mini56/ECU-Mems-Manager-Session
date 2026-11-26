@@ -1,0 +1,873 @@
+;* PETA transfer file created 10/11/1992 Time 11:56 from file KBP8P005.rcp
+;*
+;*<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Code Size >>>>>>>>>>>>>>>>>>>>>>>>>>>>*
+;7000
+;*<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Tune Area Start >>>>>>>>>>>>>>>>>>>>>>>>>>>>*
+;8700
+;*<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Tune Area Size >>>>>>>>>>>>>>>>>>>>>>>>>>>>*
+2304
+;*<<<<<<<<<<<<<<<<<<<<<<<< ECU SOFTWARE IDENTIFICATION >>>>>>>>>>>>>>>>>>>>>>>*
+IDENT 93 00 05
+;*<<<<<<<<<<<<<<<<<<<<<<<<< TUNE CONSTANT INDEX >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*
+Tune ptr offset     0   ;2,0,1,%
+a_bat_backup        171 ;1,0,0.1,volts
+a_bat_filter        24  ;2,0,1,
+a_bat_max_raw       170 ;1,0,0.01961,Volts
+a_bat_min_raw       169 ;1,0,0.01961,Volts
+a_clnt_backup       167 ;1,-40,0.705882,degC
+a_iat_backup        168 ;1,-40,0.705882,degC
+a_map_backup        164 ;1,9,0.390912,kPa
+a_map_filter        20  ;2,0,1,
+a_map_max_raw       162 ;1,0,0.01961,Volts
+a_map_min_raw       163 ;1,0,0.01961,Volts
+a_temp_ip_filt      22  ;2,0,1,
+a_temp_ip_max       165 ;1,0,0.01961,Volts
+a_temp_ip_min       166 ;1,0,0.01961,Volts
+a_thp_backup        161 ;1,0,1,bits
+a_thp_filter        18  ;2,0,1,
+a_thp_max_raw       159 ;1,0,0.01961,Volts
+a_thp_min_raw       160 ;1,0,0.01961,Volts
+d_air_temp_thr      152 ;1,0,0.1,volts
+d_cool_temp_thr     153 ;1,0,0.1,volts
+ee_num_of_pages     149 ;1,0,1,
+ee_page_length      148 ;1,0,1,
+ee_powdn_limit      48  ;2,0,1,
+ee_timeout          4   ;2,0.008,0.003833,msec
+ee_tune_ident       6   ;2,0,1,
+ee_zero_dif_12      199 ;1,0,0.25,bits
+ee_zero_dif_23      200 ;1,0,0.25,bits
+ee_zero_dif_34      201 ;1,0,0.25,bits
+ee_zero_init_1      198 ;1,0,0.25,bits
+f_adpt_bv_dis       268 ;1,0,0.1,volts
+f_adpt_clnt_dis     266 ;1,-40,0.705882,degC
+f_adpt_clnt_enb     267 ;1,-40,0.705882,degC
+f_adpt_dly_time     272 ;1,0,2.048,secs
+f_adpt_iat_dis      269 ;1,-40,0.705882,degC
+f_adpt_init_off     275 ;1,-1024,8,us_offset
+f_adpt_max_no       271 ;1,0,1,
+f_adpt_max_ofst     273 ;1,-1024,8,us_offset
+f_adpt_min_ofst     274 ;1,-1024,8,us_offset
+f_adpt_switch_n     270 ;1,0,1,
+f_adpt_wdw_hi       116 ;2,0,0.004,percent
+f_adpt_wdw_lo       118 ;2,0,0.004,percent
+f_blip_time         265 ;1,0,8,ms
+f_clmp_prg_time     259 ;1,0,2.048,secs
+f_clnt_enbl         261 ;1,-40,0.705882,degC
+f_dly_orf_thopn     251 ;1,0,2,revs
+f_dly_orf_thsht     252 ;1,0,2,revs
+f_force_bump_sw     249 ;1,0,1,
+f_frc_abump_cor     114 ;2,0,0.004,percent
+f_hi_clamp          110 ;2,0,0.004,percent
+f_hi_clamp_time     257 ;1,0,2.048,secs
+f_lo_clamp          112 ;2,0,0.004,percent
+f_lo_clamp_time     258 ;1,0,2.048,secs
+f_min_pw            108 ;2,0,0.001,ms
+f_o2_enb_thr_hi     255 ;1,0,0.01961,Volts
+f_o2_enb_thr_lo     256 ;1,0,0.01961,Volts
+f_o2_ht_clnt_en     248 ;1,-40,0.705882,degC
+f_o2_ht_map_thr     247 ;1,9,0.390912,kPa
+f_o2_ht_spd_thr     246 ;1,500,25,rpm
+f_o2_vlt_ln_thr     254 ;1,0,0.01961,Volts
+f_o2_vlt_rch_th     253 ;1,0,0.01961,Volts
+f_o2s_dis_count     250 ;1,0,8,revs
+f_o2s_filt          172 ;1,0,1,
+f_off_a_time        262 ;1,0,0.064,sec
+f_off_s_time        263 ;1,0,0.064,sec
+f_on_idle_time      264 ;1,0,0.064,sec
+f_stoich_afr        260 ;1,0,0.1,afrs
+i_ac_clnt_hi        277 ;1,-40,0.705882,degC
+i_ac_clnt_lo        278 ;1,-40,0.705882,degC
+i_ac_eng_spd_hi     120 ;2,0,1,rpm
+i_ac_eng_spd_lo     122 ;2,0,1,rpm
+i_ac_ff_lim_ofs     283 ;1,0,1,steps
+i_ac_ff_neg_stp     282 ;1,0,1,nom_steps
+i_ac_ff_pos_stp     281 ;1,0,1,nom_steps
+i_ac_return_off     276 ;1,0,1,nom_steps
+i_ac_throt_hi       279 ;1,0,0.5,degrees
+i_ac_throt_lo       280 ;1,0,0.5,degrees
+i_cable_thr_hi      192 ;1,0,1,bits
+i_cable_thr_lo      193 ;1,0,1,bits
+i_ctrl_press_th     303 ;1,9,0.390912,kPa
+i_ctrl_rpm_step     298 ;1,0,1,rpm/step
+i_db_learn_dely     316 ;1,0,0.064,sec
+i_db_wdw_inner      126 ;2,0,1,rpm
+i_db_wdw_outer      128 ;2,0,1,rpm
+i_dbpos_clnt_hi     313 ;1,-40,0.705882,degC
+i_dbpos_wait_ti     315 ;1,0,0.034,min
+i_fast_idl_hld      302 ;1,0,0.064,sec
+i_fast_idl_inc      132 ;2,-32768,1,rpm
+i_fast_idl_timo     301 ;1,0,0.064,sec
+i_fstidl_ratmul     304 ;1,0,0.003922,stp_rate_mult
+i_hotdbpos_filt     317 ;1,0,1,
+i_init_hotdbpos     312 ;1,0,1,steps
+i_init_max_bv       314 ;1,0,0.1,volts
+i_lv_dis_thr        285 ;1,0,0.1,volts
+i_lv_enbl_thr       284 ;1,0,0.1,volts
+i_lv_setpnt_off     286 ;1,0,25,rpm
+i_lv_step_offs      287 ;1,0,1,nom_steps
+i_max_hotdbpos      318 ;1,0,1,steps
+i_max_step_rate     151 ;1,0,1,steps/sec
+i_mechdmp_decay     140 ;2,0,1,mdmp_decay
+i_mechdmp_gain      321 ;1,0,0.0625,mdmp_gain
+i_mechdmp_offs      322 ;1,0,1,steps
+i_nom_hotdbpos      299 ;1,0,1,steps
+i_orpc_setpoint     239 ;1,9,0.390912,kPa
+i_orpc_step_spd     323 ;1,0,1,steps/sec
+i_outer_db_dly      297 ;1,0,0.064,sec
+i_pwdn_step_off     300 ;1,0,1,steps
+i_rtn_hold_spd      130 ;2,-32768,1,rpm
+i_rtn_max_step      295 ;1,0,1,steps,%
+i_rtn_orf_mult      294 ;1,0,0.1,step_mult
+i_rtn_step_spd      305 ;1,0,1,steps/sec
+i_rtn_to_db_mul     296 ;1,0,0.003922,stp_rate_mult
+i_step_down_dly     291 ;1,0,0.064,sec
+i_step_down_lmt     289 ;1,0,1,nom_steps
+i_step_down_off     290 ;1,0,1,steps
+i_step_up_lmt       288 ;1,0,1,nom_steps
+i_test_clnt_thr     310 ;1,-40,0.705882,degC
+i_test_hi_time      309 ;1,0,0.064,sec
+i_test_ign_dly      311 ;1,0,0.064,sec
+i_test_ign_off      134 ;2,90,-0.1,deg
+i_test_lo_time      308 ;1,0,0.064,sec
+i_test_max_inc      307 ;1,0,5,rpm
+i_test_min_inc      306 ;1,0,5,rpm
+i_testign_of_ac     136 ;2,90,-0.1,deg
+i_unknown_n_dly     320 ;1,0,0.064,sec
+i_unknown_n_flt     138 ;2,0,1,
+i_unknown_n_lmt     319 ;1,0,1,nom_steps
+i_unknown_n_mul     293 ;1,0,0.78125,percent_mult
+ign_crkg_adv        144 ;2,90,-0.1,deg
+ign_iat_ramp        334 ;1,0,2,revs
+ign_iat_rtd_dly     333 ;1,0,8,revs
+ign_idl_ramprev     335 ;1,0,2,revs
+ign_idle_adv        146 ;2,90,-0.1,deg
+ign_max_ch_ang      8   ;2,0,0.1,deg,%
+ign_noise_teeth     154 ;1,0,1,,%
+ign_off_calc_t      12  ;2,0,0.001333,mS,%
+ign_on_calc_tim     10  ;2,0,0.001333,mS,%
+ign_rosco_pres      336 ;1,9,0.390912,kPa
+ign_sw_cnt_off      158 ;1,0,1,,%
+ign_sw_cnt_on       157 ;1,0,1,,%
+ign_t_adv_init      329 ;1,0,0.1,deg
+ign_t_clnt_hwdw     332 ;1,-40,0.705882,degC
+ign_t_clnt_lwdw     331 ;1,-40,0.705882,degC
+ign_t_decay_rev     330 ;1,0,2,revs
+ign_t_dly_oilbn     328 ;1,0,2,revs
+ign_t_enabl_spd     142 ;2,0,1,rpm
+ign_t_ld_high       326 ;1,9,0.390912,kPa
+ign_t_ld_light      325 ;1,9,0.390912,kPa
+ign_t_ld_overun     324 ;1,9,0.390912,kPa
+ign_t_qual_rev      327 ;1,0,2,revs
+inj_pw_rosco        14  ;2,0,0.001333,mS
+m_0_4_soft_sw       188 ;1,0,1,
+m_crkg_speed_th     26  ;2,0,1,rpm
+m_cycle_to_strt     173 ;1,0,1,
+m_eng_strted_th     28  ;2,0,1,rpm
+m_fuel_primetim     174 ;1,0,0.064,sec
+m_fullywrm_clnt     175 ;1,-40,0.705882,degC
+m_idl_afrig_hys     292 ;1,0,1,rpm
+m_idl_hld_off       34  ;2,0,0.003906,bits
+m_idl_hld_on        32  ;2,0,0.003906,bits
+m_idle_afrign       124 ;2,-32768,1,rpm
+m_oiladj_clt_of     229 ;1,0,0.705882,degC
+m_pbu_press_thr     52  ;2,9,0.001527,kPa
+m_pbu_rev_cnt       202 ;1,0,2,revs
+m_thr_ang_range     191 ;1,0,0.5,degrees
+m_thr_anti_roo      36  ;2,0,0.003906,bits
+m_thr_dead_band     38  ;2,0,0.003906,bits
+m_thr_fst_delay     184 ;1,0,8,ms
+m_thr_fst_filt      185 ;1,0,1,
+m_thr_fst_i_dly     186 ;1,0,8,ms
+m_thr_fst_stps      183 ;1,0,1,steps
+m_thr_fst_updly     187 ;1,0,8,ms
+m_thr_ini_check     50  ;2,0,0.003906,bits
+m_thr_ini_delay     197 ;1,0,8,ms
+m_thr_jack_dly      189 ;1,0,2.048,secs
+m_thr_jack_thr      46  ;2,0,0.003906,bits
+m_thr_lrn_delay     181 ;1,0,8,ms
+m_thr_lrn_ofst      40  ;2,0,0.003906,bits
+m_thr_pot_range     190 ;1,0,1,bits
+m_thr_roo_delay     182 ;1,0,8,ms
+m_thr_z_brk_1       177 ;1,0,1,steps
+m_thr_z_brk_2       178 ;1,0,1,steps
+m_thr_z_brk_3       179 ;1,0,1,steps
+m_thr_z_ini_lim     194 ;1,0,1,
+m_thr_z_ini_ofs     195 ;1,0,0.25,bits
+m_thr_z_ini_stp     196 ;1,0,1,steps
+m_thr_z_stp_inc     180 ;1,0,1,steps
+m_thr_z_up_lim      30  ;2,0,0.003906,bits
+m_thrfastsw_off     42  ;2,0,0.003906,bits
+m_thrfastsw_on      44  ;2,0,0.003906,bits
+orf_hys_abort       82  ;2,0,1,rpm
+orf_hys_map_hi      237 ;1,0,0.390912,kPa
+orf_hys_map_lo      238 ;1,0,0.390912,kPa
+orf_hystersis       80  ;2,0,1,rpm
+orf_rmp_on_inc      78  ;2,0,0.001526,percentage
+orf_rmp_on_init     84  ;2,0,0.001526,percentage
+purg_ac_mult        207 ;1,0,0.01,multiplier
+purg_clnt_dis       203 ;1,-40,0.705882,degC
+purg_clnt_enbl      204 ;1,-40,0.705882,degC
+purg_max_orf_dr     208 ;1,0,4,percent
+purg_or_dis_spd     205 ;1,500,25,rpm
+purg_or_hys_inc     206 ;1,0,25,rpm
+s_ambp_full_thr     226 ;1,0,0.5,degrees
+s_ambp_ref_map      225 ;1,9,0.390912,kPa
+s_ase_decy_mult     236 ;1,0,0.003906,decay_mult
+s_coolant_bckup     176 ;1,-40,0.705882,degC
+s_crkg_cycle        243 ;1,0,1,fires
+s_crkg_on_count     244 ;1,0,1,fires
+s_crkg_pw_decr      242 ;1,0,0.391,percent_decay
+s_crkg_r_injcon     100 ;2,0,0.007,kg/hr
+s_crkg_ref_map      102 ;2,0,0.003906,KPa
+s_dr_0_4_syncmp     228 ;1,0,1,
+s_eng_capacity      76  ;2,0,0.1,c.c.
+s_fw_idle_afr       230 ;1,0,0.1,afrs
+s_hspfco_clnt       241 ;1,-40,0.705882,degC
+s_hspfco_hold       96  ;2,0,2,revs
+s_hspfco_hyst       92  ;2,0,1,rpm
+s_hspfco_lower      90  ;2,0,1,rpm
+s_hspfco_ramp       98  ;2,0,2,revs
+s_hspfco_reset      94  ;2,0,1,rpm
+s_hspfco_upper      88  ;2,0,1,rpm
+s_iat_0_4_idle      234 ;1,0,1,
+s_inj_0_4_eoi       245 ;1,0,1,
+s_inj_1pr_thr       104 ;2,0,0.001,ms
+s_min_pw            106 ;2,0,0.001,ms
+s_perf_afr_chng     68  ;2,0,2,revs
+s_perf_base_hld     66  ;2,0,2,revs
+s_perf_clnt_afr     233 ;1,0,0.1,afrs
+s_perf_clnt_thr     232 ;1,-40,0.705882,degC
+s_perf_entrycnt     74  ;2,0,2,revs
+s_perf_max_perf     70  ;2,0,2,revs
+s_perf_pressthr     231 ;1,9,0.390912,kPa
+s_perf_rpc_perf     72  ;2,0,2,revs
+s_pow_d_clnt_en     240 ;1,-40,0.705882,degC
+s_pow_d_spd_thr     86  ;2,0,1,rpm
+s_press_offset      227 ;1,0,1,KPa,%
+s_press_range       64  ;2,0,1,KPa,%
+s_stall_timeout     235 ;1,0,2.048,secs
+strt_tune_ident     2   ;2,0,1,
+sync_ftr_ms_lck     155 ;1,0,1,
+sync_speed_thr      16  ;2,0,1,rpm
+t_asyn_abort_th     338 ;1,0,1,bits
+t_asyn_det_thr      337 ;1,0,1,bits
+t_asyn_samp_int     339 ;1,0,10,deg
+t_enl_enabl_hys     58  ;2,0,1,rpm
+t_enlabt_hi_ld      224 ;1,9,0.390912,kPa
+t_enlabt_hi_spd     62  ;2,0,1,rpm
+t_enr_enabl_spd     56  ;2,0,1,rpm
+t_fin_coa_neg       218 ;1,0,0.390912,kPa
+t_fin_coa_pos       217 ;1,0,0.390912,kPa
+t_hisp_abort        60  ;2,0,1,rpm
+t_max_asyn_fire     340 ;1,0,1,count
+t_mpabs_neg_abt     221 ;1,0,0.390912,kPa
+t_mpabs_pos_abt     219 ;1,0,0.390912,kPa
+t_mpchg_neg_abt     222 ;1,0,0.390912,kPa/180
+t_mpchg_neg_thr     213 ;1,0,0.390912,kPa/360
+t_mpchg_pos_idl     212 ;1,0,0.390912,kPa/360
+t_mpchg_pos_thr     211 ;1,0,0.390912,kPa/360
+t_orf_adj_base      210 ;1,0,0.5,percent
+t_orf_pdcy_mult     54  ;2,0,0.000015,dcy_mult
+t_orf_periodmax     209 ;1,0,2,revs
+t_tpabs_neg_abt     223 ;1,0,1,bits
+t_tpabs_pos_abt     220 ;1,0,1,bits
+t_tpchg_neg_thr     216 ;1,0,1,bits/360
+t_tpchg_pos_idl     215 ;1,0,1,bits/360
+t_tpchg_pos_thr     214 ;1,0,1,bits/360
+wdt_back_time       156 ;1,0,4,mS
+wdt_eeinit_time     150 ;1,0,4,mS
+;*<<<<<<<<<<<<<<<<<<<<<<<<< TUNE MAP INDEX >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*
+max_ign_ct_id       0   ;0,0.1,a_filt_bat,,,,0,0.1,ms
+ign_adv_corr_id     1   ;0,25,m_engine_speed,,,,0,0.1,deg
+a_temp_ip_corr      2   ;0,1,raw_thermistor,,,,-40,0.705882,degC
+m_press_backup      3   ;0,0.5,m_thottle_angle,500,25,m_eng_spd_8bit,9,0.390912,
+purge_base_duty     4   ;9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,0,4,
+t_decay_mults       5   ;-40,0.705882,m_coolant_temp,0,1,t_interp_row,0.75,0.000977,
+t_max_adj           6   ;-40,0.705882,m_coolant_temp,0,1,t_interp_row,100,4,
+t_trim_max_adj      7   ;500,25,m_eng_spd_8bit,-40,0.705882,m_coolant_temp,0,2,
+t_ful_throt_ang     8   ;500,25,m_eng_spd_8bit,,,,0,0.5,degrees
+t_pp_tp_grad        9   ;500,25,m_eng_spd_8bit,,,,0,0.039091,kPa/bit
+t_enl_enable        10  ;-40,0.705882,m_coolant_temp,,,,0,25,rpm
+t_inc_coarse        11  ;-50.037,0.390912,t_mp_chg_used,9,0.390912,m_sync_manpres,0,0.5,
+t_inc_fine          12  ;-50.037,0.390912,t_mp_chg_used,9,0.390912,m_sync_manpres,0,0.0625,
+t_inc_clnt_adj      13  ;-50.037,0.390912,t_mp_chg_used,-40,0.705882,m_coolant_temp,0,2,
+t_inc_adj_trim      14  ;500,25,m_eng_spd_8bit,-40,0.705882,m_coolant_temp,0,2,
+m_oil_temp_pred     15  ;-40,0.705882,m_coolant_temp,,,,0,512,revs
+s_iat_charg_fct     16  ;9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,0,0.01,
+s_charg_std_iat     17  ;9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,-40,0.705882,
+s_del_ratio         18  ;9,0.390912,s_dr_manpress,500,25,m_eng_spd_8bit,0,0.004705,
+s_base_afr          19  ;9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,0,0.1,
+s_perf_afr          20  ;9,0.390912,s_interp_manpre,500,25,m_eng_spd_8bit,0,0.1,
+s_perf_max_thrt     21  ;500,25,m_eng_spd_8bit,-40,0.705882,m_coolant_temp,0,0.5,
+s_pw_idlclt_mul     22  ;-40,0.705882,m_oiladj_clt_te,,,,0.8,0.01,pw_mult
+s_pw_clt_mult       23  ;-40,0.705882,m_oiladj_clt_te,9,0.390912,m_sync_manpres,0.8,0.01,
+s_pw_iat_mult       24  ;-40,0.705882,m_strat_iat,-40,0.705882,m_oiladj_clt_te,0.8,0.01,
+s_pw_mult_ase       25  ;-40,0.705882,m_coolant_temp,,,,1,0.01,pw_mult
+s_inj_constant1     26  ;0,0.1,a_filt_bat,,,,16.247,0.056,kg/hr
+orfco_reinstate     27  ;-40,0.705882,m_oiladj_clt_te,,,,0,25,rpm
+s_cranking_pw       28  ;-40,0.705882,m_coolant_temp,,,,0,0.256,crkg_pw_ms
+s_inj_deadtime1     29  ;0,0.1,a_filt_bat,,,,0,0.031,ms
+s_inj_mp_angle      30  ;9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,0,5,
+s_inj_ta_angle      31  ;0,0.5,m_thottle_angle,500,25,m_eng_spd_8bit,0,5,
+s_pw_crkg_mult      32  ;-40,0.705882,m_coolant_temp,,,,0,.03125,pw_mult
+f_bump_clnt_mul     33  ;-40,0.705882,m_coolant_temp,,,,1,0.02,bump_mult
+f_abump             34  ;9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,0,0.032,
+f_sbump             35  ;9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,0,0.032,
+f_ablip             36  ;9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,0,0.004,
+f_sblip             37  ;9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,0,0.004,
+i_runline_offs      38  ;-40,0.705882,m_oiladj_clt_te,-40,0.705882,m_startup_temp,0,1,
+i_m_setpoint        39  ;-40,0.705882,m_oiladj_clt_te,,,,0,25,rpm
+i_return_offset     40  ;-40,0.705882,m_oiladj_clt_te,-40,0.705882,m_startup_temp,0,1,
+i_step_speed        41  ;-512,4,i_err_spd_8bit,,,,0,1,steps
+i_f_step_to_rpm     42  ;0,1,i_step_pos,,,,587.5,7.5,nom_rpm
+i_c_step_to_rpm     43  ;0,1,i_step_pos,,,,2500,15,nom_rpm
+i_f_rpm_to_step     44  ;587.5,7.5,i_nom_dpos_erpm,,,,0,1,steps
+i_c_rpm_to_step     45  ;2500,15,i_rpm_debug,,,,0,1,steps
+i_crank_steps       46  ;-40,0.705882,i_coolant_temp,,,,0,1,steps
+i_mdmp_max_stp      47  ;500,25,m_eng_spd_8bit,,,,0,1,steps
+i_orpc_step_off     48  ;500,25,m_eng_spd_8bit,,,,0,1,steps
+i_ign_offset        49  ;-512,4,i_err_spd_8bit,,,,90,-0.5,ang_deg
+ign_clnt_offset     50  ;9,0.390912,m_sync_manpres,-40,0.705882,m_oiladj_clt_te,64,-0.5,
+ign_iat_offset      51  ;9,0.390912,m_sync_manpres,-40,0.705882,m_strat_iat,64,-0.5,
+ign_base_adv        52  ;9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,90,-0.5,
+ign_max_retard      53  ;500,25,m_eng_spd_8bit,,,,0,0.5,deg
+t_asyn_pwidth       54  ;-40,0.705882,m_coolant_temp,,,,0,0.064,secs
+t_asyn_base_mul     55  ;9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,0,0.0078125,
+;*<<<<<<<<<<<<<<<<<<<<<<<<< VOLATILE STORAGE >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*
+a_filt_bat          01;F4;W;DEAD;0,0.000391,Volts
+a_filt_clnt         01;F8;W;DEAD;-40,0.002757,degC
+a_filt_iat          01;F6;W;DEAD;-40,0.002757,degC
+a_filt_map          01;FA;W;DEAD;9,0.001527,kPa
+a_filt_thp          01;FC;W;DEAD;0,0.003906,bits
+ang_180_counter     00;9C;B;DEAD;0,10,deg
+ang_720_counter     00;9B;B;DEAD;0,10,deg
+background_cnt      00;8A;B;DEAD;0,1,
+cycle_counter       00;74;W;DEAD;0,1,
+cylinder_number     01;53;B;DEAD;0,1,
+d_diag_level        00;99;B;DEAD;0,1,
+d_diag_timer        00;BF;B;DEAD;0,8,ms
+d_input_command     00;9A;B;DEAD;0,1,
+d_int_diag_lev      00;98;B;DEAD;0,1,
+d_old_lev           01;4E;B;DEAD;0,1,
+decu_mpp            01;4F;B;DEAD;0,1,
+ee_powdn_count      00;40;W;DEAD;0,1,
+ee_read_page        00;A7;B;DEAD;0,1,
+ee_wr_stat_addr     00;A8;B;DEAD;0,1,
+ee_zero_bit_1       00;49;B;DEAD;0,0.25,bits
+ee_zero_bit_2       00;4A;B;DEAD;0,0.25,bits
+ee_zero_bit_3       00;4B;B;DEAD;0,0.25,bits
+ee_zero_bit_4       00;4C;B;DEAD;0,0.25,bits
+f_adj_dcy_revs      01;D4;B;DEAD;0,8,revs
+f_adpt_acc_lsw      02;62;W;DEAD;0,1,
+f_adpt_acc_msw      02;64;W;DEAD;0,1,
+f_adpt_idle_cnt     02;70;B;DEAD;0,1,
+f_adpt_offset       00;43;B;DEAD;-1024,8,us_offset
+f_adpt_sw_cnt       01;D5;B;DEAD;0,1,
+f_adpt_timer        00;B3;B;DEAD;0,2.048,secs
+f_blip_timer        00;C5;B;DEAD;0,8,ms
+f_blips             03;D1;B;DEAD;0,0.004,percent
+f_bump_clnt_adj     00;C9;B;DEAD;1,0.02,bump_mult
+f_bumps             03;D2;B;DEAD;0,0.004,percent
+f_clamp_timer       00;B2;B;DEAD;0,2.048,secs
+f_frc_bump_cnt      01;D3;B;DEAD;0,1,
+f_last_pw_cor       01;4A;W;DEAD;0,0.008,percent
+f_o2h_counter       00;C8;B;DEAD;0,8,revs
+f_o2s_volts         01;42;W;DEAD;0,0.0766,mV
+f_offidle_timer     00;B6;B;DEAD;0,0.064,sec
+f_onidle_timer      00;B7;B;DEAD;0,0.064,sec
+f_orfco_delay       00;CE;B;DEAD;0,2,revs
+f_pw_corr_aver      02;60;W;DEAD;0,0.004,percent
+f_pw_correction     00;D6;W;DEAD;0,0.004,percent
+fault_mask          00;A5;B;DEAD;0,1,
+flagbyte1           00;4E;B;DEAD;0,1,
+flagbyte10          00;AE;B;DEAD;0,1,
+flagbyte11          00;AF;B;DEAD;0,1,
+flagbyte12          00;F6;B;DEAD;0,1,
+flagbyte13          00;F7;B;DEAD;0,1,
+flagbyte14          00;F8;B;DEAD;0,1,
+flagbyte15          00;F9;B;DEAD;0,1,
+flagbyte16          00;FA;B;DEAD;0,1,
+flagbyte17          00;FB;B;DEAD;0,1,
+flagbyte18          00;FC;B;DEAD;0,1,
+flagbyte19          00;FD;B;DEAD;0,1,
+flagbyte2           00;51;B;DEAD;0,1,
+flagbyte20          00;FE;B;DEAD;0,1,
+flagbyte21          00;FF;B;DEAD;0,1,
+flagbyte3           00;52;B;DEAD;0,1,
+flagbyte4           00;55;B;DEAD;0,1,
+flagbyte5           00;A9;B;DEAD;0,1,
+flagbyte6           00;AA;B;DEAD;0,1,
+flagbyte7           00;AB;B;DEAD;0,1,
+flagbyte8           00;AC;B;DEAD;0,1,
+flagbyte9           00;AD;B;DEAD;0,1,
+hot_db_pos_lsb      02;79;B;DEAD;0,1,,%
+hsi_event_msb       00;8C;B;DEAD;0,1,
+hsi_event_pend      00;8D;B;DEAD;0,1,
+hsi_event_time      00;58;W;DEAD;0,0.001333,mS
+i_act_dpos_erpm     02;76;B;DEAD;587.5,7.5,nom_rpm
+i_base_step_pos     00;E5;B;DEAD;0,1,steps
+i_base_step_spd     00;E6;B;DEAD;0,1,steps/sec
+i_coolant_temp      01;AD;B;DEAD;-40,0.705882,degC
+i_crankg_steps      03;D6;B;DEAD;0,1,steps
+i_ctign_dly_tmr     00;BC;B;DEAD;0,0.064,sec
+i_ctrl_min_spd      02;68;W;DEAD;-32768,1,rpm
+i_ctrl_test_tmr     00;BB;B;DEAD;0,0.064,sec
+i_ctrl_tst_diff     02;6A;W;DEAD;0,1,rpm
+i_dbpos_db_tmr      00;BD;B;DEAD;0,0.064,sec
+i_dbpos_dly_tmr     00;B4;B;DEAD;0,2.048,secs
+i_dbpos_max_bv      00;47;B;DEAD;0,0.1,volts
+i_err_spd_8bit      00;E4;B;DEAD;-512,4,rpm
+i_error_speed       00;D4;W;DEAD;-32768,1,rpm
+i_fast_idle_tmr     00;BA;B;DEAD;0,0.064,sec
+i_hotdbpos          00;42;B;DEAD;0,1,steps
+i_known_load_st     00;E1;B;DEAD;0,1,steps
+i_mdmp_base_stp     02;7C;B;DEAD;0,1,steps
+i_mdmp_base_tps     02;7B;B;DEAD;0,1,bits
+i_mdmp_decy_tmr     00;C6;B;DEAD;0,8,ms
+i_mdmp_max_pos      03;D8;B;DEAD;0,1,steps
+i_mdmp_step_pos     00;EA;B;DEAD;0,1,steps
+i_mdmp_target       03;D7;B;DEAD;0,1,steps
+i_nom_dpos_erpm     02;75;B;DEAD;587.5,7.5,nom_rpm
+i_old_step_pos      02;78;B;DEAD;0,1,steps
+i_orpc_aim_pos      03;D9;B;DEAD;0,1,steps
+i_orpc_base_stp     03;DA;B;DEAD;0,1,steps
+i_orpc_max_stps     02;7D;B;DEAD;0,1,steps
+i_outer_db_tmr      00;B9;B;DEAD;0,0.064,sec
+i_req_step_pos      00;E7;B;DEAD;0,1,steps
+i_req_step_spd      00;E8;B;DEAD;0,1,steps/sec
+i_return_offs       03;D4;B;DEAD;0,1,steps
+i_rpm_break_stp     02;77;B;DEAD;0,1,steps,%
+i_rpm_debug         03;D5;B;DEAD;2500,15,nom_rpm
+i_run_idl_state     00;E9;B;DEAD;0,1,
+i_runline_off       03;D3;B;DEAD;0,1,steps
+i_runline_pos       00;F3;B;DEAD;0,1,steps
+i_setpoint          00;E2;B;DEAD;0,25,rpm
+i_setpt_rosco       00;45;B;DEAD;-3200,25,rpm
+i_step_down_lim     02;71;B;DEAD;0,1,steps
+i_step_down_tmr     00;B8;B;DEAD;0,0.064,sec
+i_step_ff_pos       00;DE;B;DEAD;0,1,steps
+i_step_ff_spd       00;E3;B;DEAD;0,1,steps/sec
+i_step_pos          00;8E;B;DEAD;0,1,steps
+i_step_up_limit     02;72;B;DEAD;0,1,steps
+i_total_rtn_pos     02;74;B;DEAD;0,1,steps
+i_unknown_n_tmr     00;BE;B;DEAD;0,0.064,sec
+i_unknown_steps     02;73;B;DEAD;0,1,nom_steps
+ign_adv_ang         00;DC;W;DEAD;90,-0.1,deg
+ign_base            03;DE;B;DEAD;90,-0.5,ang_deg
+ign_charg_tim1      03;BC;W;DEAD;0,0.001333,mS
+ign_charg_tim2      03;BE;W;DEAD;0,0.001333,mS
+ign_coil_no         00;82;W;DEAD;0,1,
+ign_debug_chg       02;00;W;DEAD;0,0.001333,mS
+ign_flags           00;97;B;DEAD;0,1,
+ign_iat_raw         03;DD;B;DEAD;64,-0.5,ang_deg
+ign_iat_rmp_cnt     00;D0;B;DEAD;0,2,revs
+ign_iat_rtd_cnt     00;CA;B;DEAD;0,8,revs
+ign_idl_rmp_rev     00;D1;B;DEAD;0,2,revs
+ign_limit_time      01;48;W;DEAD;0,0.001333,mS
+ign_max_charg_b     01;40;W;DEAD;0,0.001333,mS
+ign_max_charg_t     00;88;W;DEAD;0,0.001333,mS
+ign_next_on_off     00;95;B;DEAD;0,1,
+ign_next_tooth      00;96;B;DEAD;0,10,deg
+ign_now_off_tth     00;94;B;DEAD;0,10,deg
+ign_off_ang1        01;38;W;DEAD;720,-0.1,Degrees
+ign_off_ang2        01;3A;W;DEAD;540,-0.1,Degrees
+ign_off_ang3        01;3C;W;DEAD;180,-0.1,Degrees
+ign_off_ang4        01;3E;W;DEAD;360,-0.1,Degrees
+ign_off_tooth0      01;30;B;DEAD;0,10,deg
+ign_off_tooth1      01;31;B;DEAD;0,10,deg
+ign_off_tooth2      01;32;B;DEAD;0,10,deg
+ign_off_tooth3      01;33;B;DEAD;0,10,deg
+ign_offs_rosco      00;44;B;DEAD;64,-0.5,ang_deg
+ign_offs_trans      02;22;W;DEAD;0,0.1,deg
+ign_offset_clnt     03;DB;B;DEAD;64,-0.5,ang_deg
+ign_offset_iat      03;DC;B;DEAD;64,-0.5,ang_deg
+ign_offset_idle     02;66;W;DEAD;90,-0.1,deg
+ign_on_time         00;60;W;DEAD;0,0.001333,mS
+ign_on_tooth0       01;34;B;DEAD;0,10,deg
+ign_on_tooth1       01;35;B;DEAD;0,10,deg
+ign_on_tooth2       01;36;B;DEAD;0,10,deg
+ign_on_tooth3       01;37;B;DEAD;0,10,deg
+ign_phase_comp      01;4C;B;DEAD;0,0.1,deg
+ign_ramp_start      02;6C;W;DEAD;90,-0.1,deg
+ign_retard_max      03;DF;B;DEAD;0,0.5,deg
+ign_sw_count        01;54;B;DEAD;0,1,
+ign_t_counter       00;CF;B;DEAD;0,2,revs
+ign_t_state_no      02;27;B;DEAD;0,1,
+inj_deadtime        00;64;W;DEAD;-43.680,0.001333,ms
+inj_fire_offset     00;A2;B;DEAD;0,1,
+inj_off_angle       00;62;W;DEAD;0,0.1,deg
+inj_on_angle        01;4D;B;DEAD;0,10,deg
+inj_powup_count     00;9D;B;DEAD;0,1,
+inj_powup_pw        00;78;W;DEAD;0,0.001333,mS
+inj_pulsewidth      00;66;W;DEAD;0,0.001333,mS
+inj_pw_fired        03;C0;W;DEAD;0,0.001333,mS
+inj_pw_pending      00;76;W;DEAD;0,0.001333,mS
+io_force_req        01;51;B;DEAD;0,1,
+io_forced_ops       01;50;B;DEAD;0,1,
+io_port3_copy       01;55;B;DEAD;0,1,
+io_strat_req        00;A3;B;DEAD;0,1,
+io_tripped_log      00;50;B;DEAD;0,1,
+io_tripped_ops      00;54;B;DEAD;0,1,
+ioconreg0_copy      00;28;B;DEAD;0,1,
+ioconreg1_copy      00;29;B;DEAD;0,1,
+ioport1_copy        00;26;B;DEAD;0,1,
+ioport2_copy        00;27;B;DEAD;0,1,
+iostatreg1_copy     00;2A;B;DEAD;0,1,
+isc_lst_idl_lsb     02;7A;B;DEAD;0,1,,%
+latest_int_msb      00;A0;B;DEAD;0,1,
+latest_sync_int     00;7E;W;DEAD;0,1,
+latest_sync_tim     00;7A;W;DEAD;0,1,
+latest_tim_msb      00;9E;B;DEAD;0,1,
+m_backup_map        00;F4;B;DEAD;9,0.390912,kPa
+m_coolant_temp      01;AB;B;DEAD;-40,0.705882,degC
+m_cycs_to_start     00;CB;B;DEAD;0,2,revs
+m_eng_spd_8bit      01;AA;B;DEAD;500,25,rpm
+m_engine_speed      00;5E;W;DEAD;0,1,rpm
+m_fuel_pump_tmr     00;B5;B;DEAD;0,0.064,sec
+m_low_thr           02;20;W;DEAD;-127.99,0.003906,bits
+m_oil_ee_cnt        00;46;B;DEAD;0,512,revs
+m_oil_pred_cnt      01;C6;B;DEAD;0,512,revs
+m_oil_temp_cnt      01;C7;B;DEAD;0,512,revs,%
+m_oil_wrmup_cnt     03;CF;B;DEAD;0,512,revs
+m_oiladj_clt_te     01;C5;B;DEAD;-40,0.705882,degC
+m_old_step_pos      02;25;B;DEAD;0,1,steps
+m_pbu_rev_count     00;CC;B;DEAD;0,2,revs
+m_stall_timer       00;B1;B;DEAD;0,2.048,secs
+m_startup_temp      01;AC;B;DEAD;-40,0.705882,degC
+m_strat_iat         01;C8;B;DEAD;-40,0.705882,degC
+m_strat_manpres     01;8C;W;DEAD;0,0.003906,KPa
+m_sync_manpres      00;DF;B;DEAD;9,0.390912,kPa
+m_tdi_sync_mp       00;D8;W;DEAD;9,0.001527,kPa
+m_tdi_sync_tp       00;F5;B;DEAD;0,1,bits
+m_tend_throttle     01;46;W;DEAD;0,1,
+m_thottle_angle     00;F1;B;DEAD;0,0.5,degrees
+m_thr_fst_timer     00;C2;B;DEAD;0,8,ms
+m_thr_ini_timer     00;C3;B;DEAD;0,8,ms
+m_thr_jack_cnt      00;48;B;DEAD;0,1,
+m_thr_jack_stat     01;AF;B;DEAD;0,1,
+m_thr_jack_tmr      00;B0;B;DEAD;0,2.048,secs
+m_thr_lrn_timer     00;C0;B;DEAD;0,8,ms
+m_thr_max_ofstp     01;76;W;DEAD;-127.99,0.003906,bits
+m_thr_max_step      01;B1;B;DEAD;0,1,steps
+m_thr_min_ofstp     01;74;W;DEAD;-127.99,0.003906,bits
+m_thr_min_step      01;B0;B;DEAD;0,1,steps
+m_thr_move_cmnd     01;B4;B;DEAD;0,1,
+m_thr_off_stepr     01;70;W;DEAD;-127.99,0.003906,bits
+m_thr_on_stepr      01;72;W;DEAD;0,0.003906,bits
+m_thr_roo_timer     00;C1;B;DEAD;0,8,ms
+m_thr_step_peak     01;AE;B;DEAD;0,1,steps
+m_thr_z_error       01;52;B;DEAD;0,1,
+m_thr_z_ini_aim     01;B2;B;DEAD;0,1,steps
+m_thr_z_ini_cnt     02;26;B;DEAD;0,1,
+m_thr_z_ini_nxt     01;B3;B;DEAD;0,1,steps
+m_thr_z_ini_thp     01;78;W;DEAD;0,0.003906,bits
+m_thr_z_old_stp     02;24;B;DEAD;0,1,steps
+m_thr_z_temp        01;7A;W;DEAD;0,0.003906,bits
+m_thr_z_temp_1      01;7C;W;DEAD;0,0.003906,bits
+m_thr_z_temp_2      01;7E;W;DEAD;0,0.003906,bits
+m_thr_z_temp_3      01;80;W;DEAD;0,0.003906,bits
+m_thr_z_temp_4      01;82;W;DEAD;0,0.003906,bits
+m_thr_zero_bit1     02;40;W;DEAD;0,0.003906,bits
+m_thr_zero_bit2     02;42;W;DEAD;0,0.003906,bits
+m_thr_zero_bit3     02;44;W;DEAD;0,0.003906,bits
+m_thr_zero_bit4     02;46;W;DEAD;0,0.003906,bits
+master_restemp      00;24;W;DEAD;0,1,
+next_analg_chan     00;A6;B;DEAD;0,1,
+next_rti_time       00;86;W;DEAD;0,0.001333,mS
+orf_ramp_level      01;9E;W;DEAD;0,0.001526,percentage
+orfco_ramp_quad     01;CF;B;DEAD;0,1,,%
+output_int          00;5C;W;DEAD;0,0.001333,mS
+output_time         00;80;W;DEAD;0,0.001333,mS
+prev_int_msb        00;9F;B;DEAD;0,1,
+prev_spd_msb        00;A1;B;DEAD;0,1,
+prev_spd_time       01;44;W;DEAD;0,1,
+prev_sync_int       00;7C;W;DEAD;0,1,
+purg_duty_ratio     00;F2;B;DEAD;0,4,percent
+purg_pwm_count      00;A4;B;DEAD;0,1,
+raw_thermistor      03;CE;B;DEAD;0,1,
+real_time_clock     00;84;W;DEAD;0,0.004,secs
+s_180_p_width       01;98;W;DEAD;0,0.001,ms
+s_afr_base          03;D0;B;DEAD;0,0.1,afrs
+s_afr_final         00;D3;B;DEAD;0,0.1,afrs
+s_afr_perf          01;CC;B;DEAD;0,0.1,afrs
+s_ase_dcy_timer     00;C4;B;DEAD;0,0.008,mS
+s_ase_pw_mult       01;94;W;DEAD;0,0.005,afr_mult
+s_ase_state_no      00;E0;B;DEAD;0,1,
+s_base_pw           03;CA;W;DEAD;0,0.001,ms
+s_charg_iat_fct     01;C9;B;DEAD;0,0.01,cht_factor
+s_charg_iat_tem     01;8E;W;DEAD;-273,0.705882,degC
+s_ck_last_fire      01;D1;B;DEAD;0,10,deg,%
+s_clnt_pw_mult      01;CD;B;DEAD;0.8,0.01,pw_mult
+s_corr_pw           00;DA;W;DEAD;0,0.001,ms
+s_cranking_cnt      01;D0;B;DEAD;0,1,fires
+s_deliv_ratio       01;CB;B;DEAD;0,0.004705,DR
+s_dr_manpress       01;C4;B;DEAD;9,0.390912,kPa
+s_hfc_old_pw        01;A4;W;DEAD;0,0.001333,mS,%
+s_hspfco_revs       01;A0;W;DEAD;0,2,revs
+s_hspfco_thres      01;A2;W;DEAD;0,1,rpm
+s_iatemp_pw_mul     01;CE;B;DEAD;0.8,0.01,pw_mult
+s_inj_fire_mode     01;D2;B;DEAD;0,1,
+s_injector_cons     01;96;W;DEAD;0,0.007,kg/hr
+s_injector_dt       01;A6;W;DEAD;-32.768,0.001,ms
+s_injectr_angle     01;A8;W;DEAD;0,0.1,deg
+s_interp_manpre     01;C3;B;DEAD;9,0.390912,kPa
+s_mass_air          01;9C;W;DEAD;0,0.03906,mg
+s_mass_fuel         01;9A;W;DEAD;0,0.03906,mg
+s_perf_afr_cnt      01;90;W;DEAD;0,2,revs
+s_perf_last_cyc     01;92;W;DEAD;0,1,
+s_pulsewidth        03;CC;W;DEAD;0,0.001333,mS
+s_std_iat           01;CA;B;DEAD;-40,0.705882,degC
+stp_aim_pos         00;8F;B;DEAD;0,1,steps
+stp_decel_count     00;92;B;DEAD;0,1,
+stp_delay           00;90;B;DEAD;0,4,mS
+stp_delay_count     00;91;B;DEAD;0,4,mS
+stp_save_aim        00;4D;B;DEAD;0,1,steps
+strt_tune_point     00;56;W;DEAD;0,1,
+sys_fault_addr      00;5A;W;DEAD;0,1,
+t1_ovfl_count       00;8B;B;DEAD;0,1,
+t_add_final_inc     03;C8;W;DEAD;0,0.015625,percent
+t_add_sub_res       03;C6;W;DEAD;100,0.015625,percent
+t_asyn_fire_cnt     02;7E;B;DEAD;0,1,
+t_asyn_pw           02;6E;W;DEAD;0,0.001,ms
+t_asyn_sample_1     00;EC;B;DEAD;0,1,bits
+t_asyn_sample_2     00;ED;B;DEAD;0,1,bits
+t_asyn_sample_3     00;EE;B;DEAD;0,1,bits
+t_asyn_sample_4     00;EF;B;DEAD;0,1,bits
+t_asyn_sample_5     00;F0;B;DEAD;0,1,bits
+t_asyn_thro_str     02;7F;B;DEAD;0,1,bits
+t_enl_enabl_spd     01;84;W;DEAD;0,1,rpm
+t_ful_last_180      01;D6;B;DEAD;0,1,bits
+t_ful_last_360      01;D7;B;DEAD;0,1,bits
+t_ful_throt_pos     01;B6;B;DEAD;0,1,bits
+t_interp_row        01;B5;B;DEAD;0,1,
+t_ltd_throt_pos     01;B9;B;DEAD;0,1,bits
+t_max_mp            01;C0;B;DEAD;9,0.390912,kPa
+t_max_tp            01;BF;B;DEAD;0,1,bits
+t_min_mp            01;C2;B;DEAD;9,0.390912,kPa
+t_min_tp            01;C1;B;DEAD;0,1,bits
+t_mp_chg_in_180     01;BA;B;DEAD;-50.037,0.390912,KPa/180
+t_mp_chg_used       01;BD;B;DEAD;-50.037,0.390912,KPa/180
+t_mp_inc_used       03;C2;W;DEAD;0,0.015625,percent
+t_mp_last_180       01;F0;B;DEAD;9,0.390912,kPa
+t_mp_last_360       01;F1;B;DEAD;9,0.390912,kPa
+t_mp_ndcy_mult      01;DC;W;DEAD;0,0.000977,dcy_mult
+t_mp_neg_maxadj     01;E4;W;DEAD;100,0.015625,percent
+t_mp_pdcy_mult      01;D8;W;DEAD;0,0.000977,dcy_mult
+t_mp_pos_maxadj     01;E0;W;DEAD;100,0.015625,percent
+t_orf_adj           01;B8;B;DEAD;0,0.5,percent
+t_orf_count         01;86;W;DEAD;0,0.78125,cnt/100
+t_orf_period        00;CD;B;DEAD;0,2,revs
+t_pp_chg_used       01;BE;B;DEAD;-50.037,0.390912,KPa/180
+t_pp_gradient       01;B7;B;DEAD;0,0.039091,kPa/bit
+t_pp_inc_used       03;C4;W;DEAD;0,0.015625,percent
+t_pp_ndcy_mult      01;DE;W;DEAD;0,0.000977,dcy_mult
+t_pp_neg_maxadj     01;E6;W;DEAD;100,0.015625,percent
+t_pp_pdcy_mult      01;DA;W;DEAD;0,0.000977,dcy_mult
+t_pp_pos_maxadj     01;E2;W;DEAD;100,0.015625,percent
+t_totadj_mp_neg     01;EC;W;DEAD;100,0.015625,percent
+t_totadj_mp_pos     01;E8;W;DEAD;100,0.015625,percent
+t_totadj_pp_neg     01;EE;W;DEAD;100,0.015625,percent
+t_totadj_pp_pos     01;EA;W;DEAD;100,0.015625,percent
+t_total_adj_neg     01;8A;W;DEAD;100,0.015625,percent
+t_total_adj_pos     01;88;W;DEAD;100,0.015625,percent
+t_tp_chg_in_180     01;BB;B;DEAD;-128,1,bits
+t_tp_chg_used       01;BC;B;DEAD;-128,1,bits
+t_tp_last_180       01;F2;B;DEAD;0,1,bits
+t_tp_last_360       01;F3;B;DEAD;0,1,bits
+tendi_scratch0      00;68;W;DEAD;0,1,
+tendi_scratch1      00;6A;W;DEAD;0,1,
+tendi_scratch2      00;6C;W;DEAD;0,1,
+tendi_scratch3      00;6E;W;DEAD;0,1,
+tendi_scratch4      00;70;W;DEAD;0,1,
+tendi_scratch5      00;72;W;DEAD;0,1,
+trs_nxt_count       00;EB;B;DEAD;0,1,
+wdt_back_timer      00;93;B;DEAD;0,4,mS
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte1 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+cam_full_flag,CAM has never overflowed,CAM has overflowed
+fifo_full_flag,HSI FIFO ok,HSI FIFO buffer FULL !!!!
+ign_max_ct,Coil charge time not too big,Coil charge time exceeded (open cct?)
+ign_coil_sc,Coil not shorted,Coil short circuit detected
+ign_still_on_er,Ign off calc ok,Ign off mis-timed
+out_of_stack,Stack OK,System stack OVERFLOW
+ign_min_ct,Coil charge time not too short,Coil charge time too short (short cct?
+%
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte2 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+inj_trip_log,Injector never tripped,Injector has tripped
+%
+%
+%
+%
+%
+%
+%
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte3 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+sync_loss_log,No sync fault        ,Sync fault occured        
+a_clnt_log_flt,Coolant never faulty,Coolant was faulty
+a_iat_log_flt,IAT never faulty,IAT was faulty
+a_map_log_flt,MAP_never_faulty,MAP_was_faulty
+a_thp_log_flt,Throttle_Pot_Never_Faulty,Throttle_Pot_Was_Faulty
+a_bat_log_flt,Battery never faulty,Battery was faulty
+m_thr_bad_init,Initialised zero bits OK!,Last zero bits init was a duffer
+f_o2s_fault_log,o2 sensor hasn't been faulty,o2 sensor has been faulty
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte4 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+a_thp_cur_flt,Throttle_Pot_OK,Throttle_Pot_Faulty
+a_iat_cur_flt,IAT sensor OK,IAT sensor fault
+a_map_cur_flt,MAP_OK,MAP_faulty
+a_clnt_cur_flt,Coolant sensor ok,Coolant sensor fault
+a_bat_cur_flt,Battery volts OK,Battery volts faulty
+%
+%
+%
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte5 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+rst_loop_init,1st Rst Loop,Rst init done
+load_realt_req,Realt needs loading,Realt OK
+tend_mtf_flag,HSI FIFO interrupt,Missing tooth filler
+rti_run_flag,Not in RTI,RTI in progress
+stp_reference,Not referencing,Referencing
+stp_ref_speed,Fast Reference,Slow Reference
+stp_ref_zero,Referenced open,Referenced closed
+stp_after_ref,Step referenced off,Step reference on
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte6 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+stp_force,Stepper no force,Stepper forced
+stp_locked,Stepper no lock,Stepper locked
+stp_decelerate,Normal stepper ,Decel stepper
+stp_opening,Not Opening Stepper,Opening Stepper 
+stp_closing,Not Closing Stepper,Closing Stepper 
+receive_flag,nochar_received,char_received
+xmit_flag,xmit_buff_full,xmit_buff_empt
+ee_powerdown_rq,No power down request,Power down request
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte7 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+ee_powdn_dely,Waiting for loop delay,Power down loop delay done
+ee_powdn_done,Power down not done,Power down done
+ee_refrnce_rq,EE Referencing not requested,EE Reference requested
+ee_stp_aiming,stepper not moving to aim position,stepper moving to aim position
+m_ign_sw_status,Ignition_Sw_Off,Ignition_Sw_On
+ign_coil_on,CAM - coil off loaded,CAM - coil on loaded
+sync_180_flag,engine not in sync,engine in sync
+ign_enable,Ignition off,Ignition on
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte8 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+inj_fire_mode,Firing twice per rev,Firing once per rev
+inj_soi_eoi,Using end of injection,Using start of injection
+d_cmd_rcvd_flag,no command,command ready
+byt_left_flag,no byte left,byte left
+rosc_fbk_close,not forcing closed loop fuelling,forcing closed loop fuelling
+rosc_fbk_open,not forcing open loop fuelling,forcing open loop fuelling
+d_tpg_force,not forcing temperature gauge,forcing temperature gauge
+d_tpg_onoff,forcing temperature gauge OFF,forcing temperature gauge to FSD
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte9 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+d_thr_sw_force,Throttle switch not forced,Throttle switch FORCED
+d_thr_sw_onoff,Throttle switch forced OFF,Throttle switch forced ON
+m_thr_sw_ok,Not yet seen both states        ,Both states seen        
+m_thr_sw_status,Throttle closed,Throttle is OPEN
+m_dn_sw_status,Car_In_Park/Neutral,Car_Not_In_Park/Neutral
+m_ac_sw_status,Aircon_Sw_Off,Aircon_Sw_On
+d_scan_force,rosco stepper scan not in progress,rosco stepper scan in progress
+wdt_tdi_status,Ten Deg Period ended,Ten Deg Period started
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte10 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+sync_360_flag,engine not in 360 degree sync,engine in 360 degree sync
+sync_720_flag,engine not in 720 degree sync,engine in 720 degree sync
+miss_tooth_det,Not looking for 2nd missing tooth,Looking for 2nd missing tooth
+ign_charg_reach,Coil charge time not reached,Coil charge time reached
+ign_charg_det,Coil charge limit not reached,Coil charge limit detected
+eng_speed_synch,not just achieved sync.,just achieved sync
+stp_step_half,Full step,Half step
+m_thr_sw_hard,Hardware throttle switch closed,Hardware throttle switch open
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte11 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+thr_sw_prev,Throttle_Sw_Was_Shut   ,Throttle_Sw_Was_Open   
+thr_open_det,Throttle_Sw_Not_Opened ,Throttle_Sw_Opened     
+ac_sw_prev,Aircon_Sw_Was_Off  ,Aircon_Sw_Was_On 
+pn_sw_prev,Car_Was_In_Park/Neutral,Car_Was_Not_In_Park/Neutral
+m_thr_sw_soft,Software throttle switch closed,Software throttle switch open
+%
+%
+%
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte12 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+m_thr_do_rescan,No need to scan stepper,Do stepper scan next key off
+m_cranking,engine running,engine cranking
+f_fbk_status,feedback disabled            ,feedback enabled             
+f_o2s_fault,o2 sensor ok        ,o2 sensor faulty        
+m_pbu_status,test for pressure backup,using pressure backup
+m_eng_started,engine not started,engine started
+m_eng_stopped,engine not stopped,engine stopped
+m_count_2_start,not counting cranking cycles,counting cranking cycles
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte13 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+m_eng_had_start,engine has NOT started since poweron,engine has started since po
+m_fuel_pump_req,fuel pump off,fuel pump on
+m_thr_doing_ini,Not initialising zero bits,Initialising throttle zero bits
+i_ign_prv_stb,Not controlling ignition for idle,Performing ignition stabilisatio
+m_fwrm_oil, oil is not fully warm, oil is fully warm
+m_thr_lrn_up,Learn down this time.,Learn up this time.
+m_thr_sw_fast,Throttle switch status unknown!,Throttle switch opening
+m_thr_fst_idle,NOT idling (fst_timer = updly),idling (fst_timer = i_dly)
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte14 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+m_fst_stp_state,stepper was closing,stepper was opening
+i_fastidle_done,At or returning from fast idle,Fast idle period complete
+m_thr_fst_first,fst_timer used for first learn,fst_timer used for learn up
+i_cable_setting,Normal (not setting cable),In Throttle cable setting mode
+m_thr_ini_state,waiting for throttle to open,waiting for throttle to close
+m_pbu_rev_stat,PBU counter complete,PBU counter started
+f_fbk_susp_purg,fbk fault enable purge     ,fbk fault disable purge
+s_orfco_status,ORFCO OFF,ORFCO ON
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte15 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+m_aircon_status,Aircon clutch off,Aircon clutch on
+purg_status,purge disabled,purge enabled          
+purg_in_orfco,overrun purge off  ,overrun purge on       
+t_was_in_orfco,t_orf WASN'T in orfco ,t_orf WAS in orfco 
+t_180_occured,waiting_for_180_degree,run_transients
+s_ase_apply,No ASE applied,Applying ASE
+m_stal_timeout,stall timer has elapsed,stall timeout in progress
+t_enl_low_spd,speed NOT too low for enleanment,speed too low for enleanment
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte16 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+m_fwrm_coolant,engine not fully warm,engine fully warm
+chtcorr_strt,oil timer off,oil timer taken
+m_idle_afr_ign,base fuelling & ign mode,idle fuelling & ign mode
+s_perfafr,not at performance afr,at performance afr 
+m_stal_indicate,wait until engine starts again,initiate stall timer if engine st
+s_orfco_map_lo,orfco lo pressure not achieved,orfco lo pressure achieved
+orfco_in_progrs,no orfco,orfco in progress
+hispfco,hispfco inactive,hispfco active
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte17 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+hispfco_hold,not hispfco hold period,hispfco hold period
+hispfco_ramp,not hispfco,hispfco ramp
+f_minpw_dis,ssf enables fbk,ssf disables fbk
+m_first_pulse,No first pulse occured,First pulse occured
+f_o2_htr_status,o2 heater off,o2 heater on
+f_o2_htr_safe,o2h coolant disable,o2h coolant enable
+f_fbk_dis_count,Testing for o2s valid,Tested o2s valid
+f_o2h_interp,o2s warmup interp not done,o2s warmup interp done
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte18 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+f_o2s_fitted,o2 sensor not fitted,o2 sensor fitted
+f_orfco_dis_fbk,enbl fbk no orfco,dsble fbk for orfco
+f_fbk_was_on,feedback was off           ,feedback was on        
+f_rich_lean,fuelling is lean           ,fuelling is rich       
+f_fbk_switch,there hasn't been a switch ,there has been a switch
+f_frc_bump_enb,a bump correction disabled,a bump correction enabled
+i_ac_not_off,Aircon not requested,Aircon requested
+i_lv_comp_prv,Not compensating for low bat,Compensating for low battery
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte19 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+i_isc_enabled,Not in idle control,Idle control active
+i_step_down_adj,Stepper not at lower limit,Timing at stepper lower limit
+spd_abv_innr_db,Speed in or below deadband,Speed above inner deadband
+i_inner_db,Speed outside inner deadband,Speed within inner deadband
+i_outer_db,Not in outer deadband only,Speed within outer deadband
+i_rtn_pos_state,Using Return Offset,Return Offset Not Needed
+i_chs_mv_prv_db,Still returning to deadband,Been in deadband this idle
+ict_now_testing,Not testing for idle control,Idle control test in progress
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte20 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+ign_ramp_end,NOT yet using idle ignition,using idle ignition
+ict_testing_hi,Testing for idle low,Testing for idle high
+idb_lrn_dly_dun,Delaying next dbpos learn,Ready to learn dbpos when stable
+idb_prv_lrn_ok,Can't learn or been out of idle,Was ok to learn or have learned
+idb_done_bv_tst,not learned max bv yet this journey,learned max batt volts this 
+i_tmg_unknown,Not ok to learn unknown loads,Timing/learning unknown loads
+i_mdmp_status,Mechanical damper tracking,Mechanical damper decaying
+i_orpc_apply,Not Applying Pressure Control,Applying Pressure Control
+;*<<<<<<<<<<<<<<<<<<<<<<<<< flagbyte21 >>>>>>>>>>>>>>>>>>>>>>>>>>*
+ign_iat_retard,0 or advance / delaying,     ramping / retarding
+ign_iat_delayed,0 or advance / retarding,     ramping / delaying
+ign_iat_calc,D calculate IAT,E calculate IAT
+ign_was_in_base, base timing NOT used in last ign calc, base timing used in last
+%
+%
+%
+%

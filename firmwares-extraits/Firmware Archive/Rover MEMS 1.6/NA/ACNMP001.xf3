@@ -1,0 +1,884 @@
+;* <<<<<<<<<< PETA3 TRANSFER FILE HEADER $Revision:   1.8  $>>>>>>>>>>
+PHYSICAL LAYER = ISO9141
+ENDIAN = LITTLE
+WAKEUP ADDRESS = NULL
+WRITE PROTECT ON ADDRESS = 0CA0
+WRITE PROTECT ON DATA = 00
+WRITE PROTECT OFF ADDRESS = 0CC0
+WRITE PROTECT OFF DATA = 00
+DOWNLOAD ADDRESS = 2000
+CODE SIZE = 6D00
+TUNE AREA START ADDRESS = 8400
+TUNE AREA SIZE = 0900
+ECU IDENTIFICATION = ACNMP001, 9A, 00, 01
+NUMBER OF MAPS = 3C
+;* <<<<<<<<<< PETA3 LOGGING >>>>>>>>>>
+INTERVAL 0 = 
+INTERVAL 1 = 
+INTERVAL 2 = 
+INTERVAL 3 = 
+INTERVAL 4 = 
+INTERVAL 5 = 
+INTERVAL 6 = 
+INTERVAL 7 = 
+INTERVAL 9 = 
+;*<<<<<<<<<<<<<<<<<<<<<<<<< TUNE CONSTANT INDEX >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*
+Tune_ptr_offset       ,0000,W,0,1,0,65535,NULL,H
+a_bat_backup          ,00A9,B,0,0.1, 0.00000000E+0, 2.55000000E+1,volts,V
+a_bat_filter          ,0018,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+a_bat_max_raw         ,00A8,B,0,0.01961, 0.00000000E+0, 5.00055000E+0,Volts,V
+a_bat_min_raw         ,00A7,B,0,0.01961, 0.00000000E+0, 5.00055000E+0,Volts,V
+a_clnt_backup         ,00A5,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+a_iat_backup          ,00A6,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+a_map_backup          ,00A2,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+a_map_filter          ,0014,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+a_map_max_raw         ,00A0,B,0,0.01961, 0.00000000E+0, 5.00055000E+0,Volts,V
+a_map_min_raw         ,00A1,B,0,0.01961, 0.00000000E+0, 5.00055000E+0,Volts,V
+a_temp_ip_filt        ,0016,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+a_temp_ip_max         ,00A3,B,0,0.01961, 0.00000000E+0, 5.00055000E+0,Volts,V
+a_temp_ip_min         ,00A4,B,0,0.01961, 0.00000000E+0, 5.00055000E+0,Volts,V
+a_thp_backup          ,009F,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+a_thp_filter          ,0012,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+a_thp_max_raw         ,009D,B,0,0.01961, 0.00000000E+0, 5.00055000E+0,Volts,V
+a_thp_min_raw         ,009E,B,0,0.01961, 0.00000000E+0, 5.00055000E+0,Volts,V
+d_air_temp_thr        ,0096,B,0,0.1, 0.00000000E+0, 2.55000000E+1,volts,V
+d_cool_temp_thr       ,0097,B,0,0.1, 0.00000000E+0, 2.55000000E+1,volts,V
+ee_num_of_pages       ,0093,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+ee_page_length        ,0092,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+ee_powdn_limit        ,0030,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+ee_tune_ident         ,0006,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+ee_wr_delay           ,0004,W,0.008,0.003833, 8.00000000E-3, 2.51203655E+2,msec,V
+ee_zero_dif_12        ,00C7,B,0,0.25, 0.00000000E+0, 6.37500000E+1,bits,V
+ee_zero_dif_23        ,00C8,B,0,0.25, 0.00000000E+0, 6.37500000E+1,bits,V
+ee_zero_dif_34        ,00C9,B,0,0.25, 0.00000000E+0, 6.37500000E+1,bits,V
+ee_zero_init_1        ,00C6,B,0,0.25, 0.00000000E+0, 6.37500000E+1,bits,V
+f_adpt_bv_dis         ,0109,B,0,0.1, 0.00000000E+0, 2.55000000E+1,volts,V
+f_adpt_clnt_dis       ,0107,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+f_adpt_clnt_enb       ,0108,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+f_adpt_dly_time       ,010D,B,0,2.048, 0.00000000E+0, 5.22240000E+2,secs,V
+f_adpt_iat_dis        ,010A,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+f_adpt_init_off       ,0110,B,-1024,8,-1.02400000E+3, 1.01600000E+3,us_offset,V
+f_adpt_max_no         ,010C,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+f_adpt_max_ofst       ,010E,B,-1024,8,-1.02400000E+3, 1.01600000E+3,us_offset,V
+f_adpt_min_ofst       ,010F,B,-1024,8,-1.02400000E+3, 1.01600000E+3,us_offset,V
+f_adpt_switch_n       ,010B,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+f_adpt_wdw_hi         ,0072,W,0,0.004, 0.00000000E+0, 2.62140000E+2,percent,V
+f_adpt_wdw_lo         ,0074,W,0,0.004, 0.00000000E+0, 2.62140000E+2,percent,V
+f_blip_time           ,0106,B,0,8, 0.00000000E+0, 2.04000000E+3,ms,V
+f_clmp_prg_time       ,0101,B,0,2.048, 0.00000000E+0, 5.22240000E+2,secs,V
+f_clnt_enbl           ,0103,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+f_dly_orf_thopn       ,00F9,B,0,2, 0.00000000E+0, 5.10000000E+2,revs,V
+f_dly_orf_thsht       ,00FA,B,0,2, 0.00000000E+0, 5.10000000E+2,revs,V
+f_force_bump_sw       ,00F7,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+f_hi_clamp            ,006E,W,0,0.004, 0.00000000E+0, 2.62140000E+2,percent,V
+f_hi_clamp_time       ,00FF,B,0,2.048, 0.00000000E+0, 5.22240000E+2,secs,V
+f_lo_clamp            ,0070,W,0,0.004, 0.00000000E+0, 2.62140000E+2,percent,V
+f_lo_clamp_time       ,0100,B,0,2.048, 0.00000000E+0, 5.22240000E+2,secs,V
+f_min_pw              ,006C,W,0,0.001, 0.00000000E+0, 6.55350000E+1,ms,V
+f_o2_enb_thr_hi       ,00FD,B,0,0.01961, 0.00000000E+0, 5.00055000E+0,Volts,V
+f_o2_enb_thr_lo       ,00FE,B,0,0.01961, 0.00000000E+0, 5.00055000E+0,Volts,V
+f_o2_ht_clnt_en       ,00F6,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+f_o2_ht_map_thr       ,00F5,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+f_o2_ht_spd_thr       ,00F4,B,500,25, 5.00000000E+2, 6.87500000E+3,rpm,V
+f_o2_vlt_ln_thr       ,00FC,B,0,0.01961, 0.00000000E+0, 5.00055000E+0,Volts,V
+f_o2_vlt_rch_th       ,00FB,B,0,0.01961, 0.00000000E+0, 5.00055000E+0,Volts,V
+f_o2s_dis_count       ,00F8,B,0,8, 0.00000000E+0, 2.04000000E+3,revs,V
+f_o2s_filt            ,00AA,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+f_off_idle_time       ,0104,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+f_on_idle_time        ,0105,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+f_stoich_afr          ,0102,B,0,0.1, 0.00000000E+0, 2.55000000E+1,afrs,V
+i_ac_clnt_hi          ,0114,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+i_ac_clnt_lo          ,0115,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+i_ac_eng_spd_hi       ,0076,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+i_ac_eng_spd_lo       ,0078,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+i_ac_ff_lim_ofs       ,011A,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_ac_ff_neg_stp       ,0119,B,0,1, 0.00000000E+0, 2.55000000E+2,nom_steps,V
+i_ac_ff_pos_stp       ,0118,B,0,1, 0.00000000E+0, 2.55000000E+2,nom_steps,V
+i_ac_return_off       ,0113,B,0,1, 0.00000000E+0, 2.55000000E+2,nom_steps,V
+i_ac_throt_hi         ,0116,B,0,0.5, 0.00000000E+0, 1.27500000E+2,degrees,V
+i_ac_throt_lo         ,0117,B,0,0.5, 0.00000000E+0, 1.27500000E+2,degrees,V
+i_cable_thr_hi        ,00C0,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+i_cable_thr_lo        ,00C1,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+i_ctrl_press_th       ,012D,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+i_ctrl_rpm_step       ,0128,B,0,1, 0.00000000E+0, 2.55000000E+2,rpm/step,V
+i_db_learn_dely       ,013A,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+i_db_wdw_inner        ,007C,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+i_db_wdw_outer        ,007E,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+i_dbpos_clnt_hi       ,0137,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+i_dbpos_wait_ti       ,0139,B,0,0.034, 0.00000000E+0, 8.67000000E+0,min,V
+i_dn_ff_limit         ,0111,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_dn_ff_speed         ,0112,B,0,1, 0.00000000E+0, 2.55000000E+2,steps/sec,V
+i_fast_idl_hld        ,012C,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+i_fast_idl_inc        ,0082,W,-32768,1,-3.27680000E+4, 3.27670000E+4,rpm,V
+i_fast_idl_timo       ,012B,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+i_fstidl_ratmul       ,012E,B,0,0.003922, 0.00000000E+0, 1.00011000E+0,stp_rate_mult,V
+i_hotdbpos_filt       ,013B,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+i_init_hotdbpos       ,0136,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_init_max_bv         ,0138,B,0,0.1, 0.00000000E+0, 2.55000000E+1,volts,V
+i_lv_dis_thr          ,011C,B,0,0.1, 0.00000000E+0, 2.55000000E+1,volts,V
+i_lv_enbl_thr         ,011B,B,0,0.1, 0.00000000E+0, 2.55000000E+1,volts,V
+i_lv_setpnt_off       ,011D,B,0,25, 0.00000000E+0, 6.37500000E+3,rpm,V
+i_lv_step_offs        ,011E,B,0,1, 0.00000000E+0, 2.55000000E+2,nom_steps,V
+i_max_hotdbpos        ,013C,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_max_step_rate       ,0095,B,0,1, 0.00000000E+0, 2.55000000E+2,steps/sec,V
+i_mechdmp_decay       ,008A,W,0,1, 0.00000000E+0, 6.55350000E+4,mdmp_decay,V
+i_mechdmp_gain        ,013F,B,0,0.0625, 0.00000000E+0, 1.59375000E+1,mdmp_gain,V
+i_mechdmp_offs        ,0140,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_nom_hotdbpos        ,0129,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_orpc_setpoint       ,00ED,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+i_orpc_step_spd       ,0141,B,0,1, 0.00000000E+0, 2.55000000E+2,steps/sec,V
+i_outer_db_dly        ,0127,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+i_pwdn_step_off       ,012A,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_rtn_hold_spd        ,0080,W,-32768,1,-3.27680000E+4, 3.27670000E+4,rpm,V
+i_rtn_max_step        ,0125,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,H
+i_rtn_orf_mult        ,0124,B,0,0.1, 0.00000000E+0, 2.55000000E+1,step_mult,V
+i_rtn_step_spd        ,012F,B,0,1, 0.00000000E+0, 2.55000000E+2,steps/sec,V
+i_rtn_to_db_mul       ,0126,B,0,0.003922, 0.00000000E+0, 1.00011000E+0,stp_rate_mult,V
+i_step_down_dly       ,0121,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+i_step_down_off       ,0120,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_step_up_lmt         ,011F,B,0,1, 0.00000000E+0, 2.55000000E+2,nom_steps,V
+i_test_clnt_thr       ,0134,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+i_test_hi_time        ,0133,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+i_test_ign_dly        ,0135,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+i_test_ign_off        ,0084,W,90,-0.1, 9.00000000E+1,-6.46350000E+3,deg,V
+i_test_lo_time        ,0132,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+i_test_max_inc        ,0131,B,0,5, 0.00000000E+0, 1.27500000E+3,rpm,V
+i_test_min_inc        ,0130,B,0,5, 0.00000000E+0, 1.27500000E+3,rpm,V
+i_testign_of_ac       ,0086,W,90,-0.1, 9.00000000E+1,-6.46350000E+3,deg,V
+i_unknown_n_dly       ,013E,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+i_unknown_n_flt       ,0088,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+i_unknown_n_lmt       ,013D,B,0,1, 0.00000000E+0, 2.55000000E+2,nom_steps,V
+i_unknown_n_mul       ,0123,B,0,0.78125, 0.00000000E+0, 1.99218750E+2,percent_mult,V
+ign_crkg_adv          ,008E,W,90,-0.1, 9.00000000E+1,-6.46350000E+3,deg,V
+ign_iat_ramp          ,014C,B,0,2, 0.00000000E+0, 5.10000000E+2,revs,V
+ign_iat_rtd_dly       ,014B,B,0,8, 0.00000000E+0, 2.04000000E+3,revs,V
+ign_idl_ramprev       ,014D,B,0,2, 0.00000000E+0, 5.10000000E+2,revs,V
+ign_idle_adv          ,0090,W,90,-0.1, 9.00000000E+1,-6.46350000E+3,deg,V
+ign_max_ch_ang        ,0008,W,0,0.1, 0.00000000E+0, 6.55350000E+3,deg,H
+ign_noise_teeth       ,0098,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,H
+ign_off_calc_t        ,000C,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,H
+ign_on_calc_tim       ,000A,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,H
+ign_rosco_pres        ,014E,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+ign_sw_cnt_off        ,009C,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,H
+ign_sw_cnt_on         ,009B,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,H
+ign_t_adv_init        ,0147,B,0,0.1, 0.00000000E+0, 2.55000000E+1,deg,V
+ign_t_clnt_hwdw       ,014A,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+ign_t_clnt_lwdw       ,0149,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+ign_t_decay_rev       ,0148,B,0,2, 0.00000000E+0, 5.10000000E+2,revs,V
+ign_t_dly_oilbn       ,0146,B,0,2, 0.00000000E+0, 5.10000000E+2,revs,V
+ign_t_enabl_spd       ,008C,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+ign_t_ld_high         ,0144,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+ign_t_ld_light        ,0143,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+ign_t_ld_overun       ,0142,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+ign_t_qual_rev        ,0145,B,0,2, 0.00000000E+0, 5.10000000E+2,revs,V
+inj_pw_rosco          ,000E,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+m_0_4_soft_sw         ,00BC,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+m_crkg_speed_th       ,001A,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+m_cycle_to_strt       ,00AB,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+m_eng_strted_th       ,001C,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+m_fuel_primetim       ,00AC,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+m_fullywrm_clnt       ,00AF,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+m_idl_afrig_hys       ,0122,B,0,1, 0.00000000E+0, 2.55000000E+2,rpm,V
+m_idl_hld_off         ,0022,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_idl_hld_on          ,0020,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_idle_afrign         ,007A,W,-32768,1,-3.27680000E+4, 3.27670000E+4,rpm,V
+m_oiladj_clt_of       ,00E3,B,0,0.705882, 0.00000000E+0, 1.79999910E+2,degC,V
+m_pbu_press_thr       ,0034,W,9,0.001527, 9.00000000E+0, 1.09071945E+2,kPa,V
+m_pbu_rev_cnt         ,00CA,B,0,2, 0.00000000E+0, 5.10000000E+2,revs,V
+m_ptc_clnt_dis        ,00AE,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+m_ptc_clnt_enbl       ,00AD,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+m_thr_ang_range       ,00BF,B,0,0.5, 0.00000000E+0, 1.27500000E+2,degrees,V
+m_thr_anti_roo        ,0024,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thr_dead_band       ,0026,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thr_fst_delay       ,00B8,B,0,8, 0.00000000E+0, 2.04000000E+3,ms,V
+m_thr_fst_filt        ,00B9,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+m_thr_fst_i_dly       ,00BA,B,0,8, 0.00000000E+0, 2.04000000E+3,ms,V
+m_thr_fst_stps        ,00B7,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+m_thr_fst_updly       ,00BB,B,0,8, 0.00000000E+0, 2.04000000E+3,ms,V
+m_thr_ini_check       ,0032,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thr_ini_delay       ,00C5,B,0,8, 0.00000000E+0, 2.04000000E+3,ms,V
+m_thr_jack_dly        ,00BD,B,0,2.048, 0.00000000E+0, 5.22240000E+2,secs,V
+m_thr_jack_thr        ,002E,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thr_lrn_delay       ,00B5,B,0,8, 0.00000000E+0, 2.04000000E+3,ms,V
+m_thr_lrn_ofst        ,0028,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thr_pot_range       ,00BE,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+m_thr_roo_delay       ,00B6,B,0,8, 0.00000000E+0, 2.04000000E+3,ms,V
+m_thr_z_brk_1         ,00B1,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+m_thr_z_brk_2         ,00B2,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+m_thr_z_brk_3         ,00B3,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+m_thr_z_ini_lim       ,00C2,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+m_thr_z_ini_ofs       ,00C3,B,0,0.25, 0.00000000E+0, 6.37500000E+1,bits,V
+m_thr_z_ini_stp       ,00C4,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+m_thr_z_stp_inc       ,00B4,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+m_thr_z_up_lim        ,001E,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thrfastsw_off       ,002A,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thrfastsw_on        ,002C,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+orf_hys_abort         ,0052,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+orf_hys_map_hi        ,00EB,B,0,0.390912, 0.00000000E+0, 9.96825600E+1,kPa,V
+orf_hys_map_lo        ,00EC,B,0,0.390912, 0.00000000E+0, 9.96825600E+1,kPa,V
+orf_hystersis         ,0050,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+orf_rmp_on_inc        ,004E,W,0,0.001526, 0.00000000E+0, 1.00006410E+2,percentage,V
+orf_rmp_on_init       ,0054,W,0,0.001526, 0.00000000E+0, 1.00006410E+2,percentage,V
+purg_ac_mult          ,00CF,B,0,0.01, 0.00000000E+0, 2.55000000E+0,multiplier,V
+purg_clnt_dis         ,00CB,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+purg_clnt_enbl        ,00CC,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+purg_max_orf_dr       ,00D0,B,0,4, 0.00000000E+0, 1.02000000E+3,percent,V
+purg_or_dis_spd       ,00CD,B,500,25, 5.00000000E+2, 6.87500000E+3,rpm,V
+purg_or_hys_inc       ,00CE,B,0,25, 0.00000000E+0, 6.37500000E+3,rpm,V
+s_ambp_full_thr       ,00E0,B,0,0.5, 0.00000000E+0, 1.27500000E+2,degrees,V
+s_ambp_ref_map        ,00DF,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+s_ase_decy_mult       ,00EA,B,0,0.003906, 0.00000000E+0, 9.96030000E-1,decay_mult,V
+s_coolant_bckup       ,00B0,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+s_crkg_cycle          ,00F1,B,0,1, 0.00000000E+0, 2.55000000E+2,fires,V
+s_crkg_on_count       ,00F2,B,0,1, 0.00000000E+0, 2.55000000E+2,fires,V
+s_crkg_pw_decr        ,00F0,B,0,0.391, 0.00000000E+0, 9.97050000E+1,percent_decay,V
+s_crkg_r_injcon       ,0064,W,0,0.007, 0.00000000E+0, 4.58745000E+2,kg/hr,V
+s_crkg_ref_map        ,0066,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,KPa,V
+s_dr_0_4_syncmp       ,00E2,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+s_eng_capacity        ,004C,W,0,0.1, 0.00000000E+0, 6.55350000E+3,c.c.,V
+s_fw_idle_afr         ,00E4,B,0,0.1, 0.00000000E+0, 2.55000000E+1,afrs,V
+s_hspfco_clnt         ,00EF,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+s_hspfco_hold         ,0060,W,0,2, 0.00000000E+0, 1.31070000E+5,revs,V
+s_hspfco_hyst         ,005C,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+s_hspfco_lower        ,005A,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+s_hspfco_ramp         ,0062,W,0,2, 0.00000000E+0, 1.31070000E+5,revs,V
+s_hspfco_reset        ,005E,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+s_hspfco_upper        ,0058,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+s_iat_0_4_idle        ,00E8,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+s_inj_0_4_eoi         ,00F3,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+s_inj_1pr_thr         ,0068,W,0,0.001, 0.00000000E+0, 6.55350000E+1,ms,V
+s_min_pw              ,006A,W,0,0.001, 0.00000000E+0, 6.55350000E+1,ms,V
+s_perf_afr_chng       ,0044,W,0,2, 0.00000000E+0, 1.31070000E+5,revs,V
+s_perf_base_hld       ,0042,W,0,2, 0.00000000E+0, 1.31070000E+5,revs,V
+s_perf_clnt_afr       ,00E7,B,0,0.1, 0.00000000E+0, 2.55000000E+1,afrs,V
+s_perf_clnt_thr       ,00E6,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+s_perf_entrycnt       ,004A,W,0,2, 0.00000000E+0, 1.31070000E+5,revs,V
+s_perf_max_perf       ,0046,W,0,2, 0.00000000E+0, 1.31070000E+5,revs,V
+s_perf_pressthr       ,00E5,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+s_perf_rpc_perf       ,0048,W,0,2, 0.00000000E+0, 1.31070000E+5,revs,V
+s_pow_d_clnt_en       ,00EE,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+s_pow_d_spd_thr       ,0056,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+s_press_offset        ,00E1,B,0,1, 0.00000000E+0, 2.55000000E+2,KPa,H
+s_press_range         ,0040,W,0,1, 0.00000000E+0, 6.55350000E+4,KPa,H
+s_stall_timeout       ,00E9,B,0,2.048, 0.00000000E+0, 5.22240000E+2,secs,V
+strt_tune_ident       ,0002,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+sync_ftr_ms_lck       ,0099,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+sync_speed_thr        ,0010,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+t_asyn_abort_th       ,0150,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_asyn_det_thr        ,014F,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_asyn_samp_int       ,0151,B,0,10, 0.00000000E+0, 2.55000000E+3,deg,V
+t_enl_enabl_hys       ,003A,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+t_enlabt_hi_ld        ,00DE,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+t_enlabt_hi_spd       ,003E,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+t_enr_enabl_spd       ,0038,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+t_fin_coa_neg         ,00D8,B,0,0.390912, 0.00000000E+0, 9.96825600E+1,kPa,V
+t_fin_coa_pos         ,00D7,B,0,0.390912, 0.00000000E+0, 9.96825600E+1,kPa,V
+t_hisp_abort          ,003C,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+t_max_asyn_fire       ,0152,B,0,1, 0.00000000E+0, 2.55000000E+2,count,V
+t_mpabs_neg_abt       ,00DB,B,0,0.390912, 0.00000000E+0, 9.96825600E+1,kPa,V
+t_mpabs_pos_abt       ,00D9,B,0,0.390912, 0.00000000E+0, 9.96825600E+1,kPa,V
+t_mpchg_neg_abt       ,00DC,B,0,0.390912, 0.00000000E+0, 9.96825600E+1,kPa/180,V
+t_mpchg_neg_thr       ,00D4,B,0,0.390912, 0.00000000E+0, 9.96825600E+1,kPa/360,V
+t_mpchg_pos_thr       ,00D3,B,0,0.390912, 0.00000000E+0, 9.96825600E+1,kPa/360,V
+t_orf_adj_base        ,00D2,B,0,0.5, 0.00000000E+0, 1.27500000E+2,percent,V
+t_orf_pdcy_mult       ,0036,W,0,0.000015, 0.00000000E+0, 9.83025000E-1,dcy_mult,V
+t_orf_periodmax       ,00D1,B,0,2, 0.00000000E+0, 5.10000000E+2,revs,V
+t_tpabs_neg_abt       ,00DD,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_tpabs_pos_abt       ,00DA,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_tpchg_neg_thr       ,00D6,B,0,1, 0.00000000E+0, 2.55000000E+2,bits/360,V
+t_tpchg_pos_thr       ,00D5,B,0,1, 0.00000000E+0, 2.55000000E+2,bits/360,V
+wdt_back_time         ,009A,B,0,4, 0.00000000E+0, 1.02000000E+3,mS,V
+wdt_eeinit_time       ,0094,B,0,4, 0.00000000E+0, 1.02000000E+3,mS,V
+;*<<<<<<<<<<<<<<<<<<<<<<<<< TUNE MAP INDEX >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*
+a_temp_ip_corr        ,2,0,1,raw_thermistor,0,1,NULL,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+f_ablip               ,35,9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,B,0,0.004, 0.00000000E+0, 1.02000000E+0,percent,V
+f_abump               ,33,9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,B,0,0.032, 0.00000000E+0, 8.16000000E+0,percent,V
+f_bump_clnt_mul       ,32,-40,0.705882,m_coolant_temp,0,1,NULL,B,1,0.02, 1.00000000E+0, 6.10000000E+0,bump_mult,V
+f_sblip               ,36,9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,B,0,0.004, 0.00000000E+0, 1.02000000E+0,percent,V
+f_sbump               ,34,9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,B,0,0.032, 0.00000000E+0, 8.16000000E+0,percent,V
+i_c_rpm_to_step       ,49,2500,15,i_rpm_debug,0,1,NULL,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_c_step_to_rpm       ,47,0,1,i_step_pos,0,1,NULL,B,2500,15, 2.50000000E+3, 6.32500000E+3,nom_rpm,V
+i_crank_steps         ,50,-40,0.705882,i_coolant_temp,0,1,NULL,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_d_setpoint          ,42,-40,0.705882,m_oiladj_clt_te,0,1,NULL,B,0,25, 0.00000000E+0, 6.37500000E+3,rpm,V
+i_dn_load_steps       ,40,-40,0.705882,m_oiladj_clt_te,0,1,NULL,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_dn_neg_ff           ,39,-40,0.705882,i_coolant_temp,0,1,NULL,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_dn_pos_ff           ,38,-40,0.705882,i_coolant_temp,0,1,NULL,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_f_rpm_to_step       ,48,587.5,7.5,i_nom_dpos_erpm,0,1,NULL,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_f_step_to_rpm       ,46,0,1,i_step_pos,0,1,NULL,B,587.5,7.5, 5.87500000E+2, 2.50000000E+3,nom_rpm,V
+i_ign_offset          ,53,-512,4,i_err_spd_8bit,0,1,NULL,B,90,-0.5, 9.00000000E+1,-3.75000000E+1,ang_deg,V
+i_mdmp_max_stp        ,51,500,25,m_eng_spd_8bit,0,1,NULL,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_n_setpoint          ,41,-40,0.705882,m_oiladj_clt_te,0,1,NULL,B,0,25, 0.00000000E+0, 6.37500000E+3,rpm,V
+i_orpc_step_off       ,52,500,25,m_eng_spd_8bit,0,1,NULL,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_return_offset       ,44,-40,0.705882,m_oiladj_clt_te,-40,0.705882,m_startup_temp,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_runline_offs        ,37,-40,0.705882,m_oiladj_clt_te,-40,0.705882,m_startup_temp,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_step_down_lmt       ,43,-40,0.705882,i_coolant_temp,0,1,NULL,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_step_speed          ,45,-512,4,i_err_spd_8bit,0,1,NULL,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+ign_adv_corr_id       ,1,0,25,m_engine_speed,0,1,NULL,B,0,0.1, 0.00000000E+0, 2.55000000E+1,deg,V
+ign_base_adv          ,56,9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,B,90,-0.5, 9.00000000E+1,-3.75000000E+1,ang_deg,V
+ign_clnt_offset       ,54,9,0.390912,m_sync_manpres,-40,0.705882,m_oiladj_clt_te,B,64,-0.5, 6.40000000E+1,-6.35000000E+1,ang_deg,V
+ign_iat_offset        ,55,9,0.390912,m_sync_manpres,-40,0.705882,m_strat_iat,B,64,-0.5, 6.40000000E+1,-6.35000000E+1,ang_deg,V
+ign_max_retard        ,57,500,25,m_eng_spd_8bit,0,1,NULL,B,0,0.5, 0.00000000E+0, 1.27500000E+2,deg,V
+m_oil_temp_pred       ,14,-40,0.705882,m_coolant_temp,0,1,NULL,B,0,512, 0.00000000E+0, 1.30560000E+5,revs,V
+m_press_backup        ,4,0,0.5,m_thottle_angle,500,25,m_eng_spd_8bit,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+m_tmp_gauge_dr        ,3,-40,0.705882,m_coolant_temp,0,1,NULL,B,0,0.392156, 0.00000000E+0, 9.99997800E+1,percent,V
+max_ign_ct_id         ,0,0,0.1,a_filt_bat,0,1,NULL,B,0,0.1, 0.00000000E+0, 2.55000000E+1,ms,V
+orfco_reinstate       ,26,-40,0.705882,m_oiladj_clt_te,0,1,NULL,B,0,25, 0.00000000E+0, 6.37500000E+3,rpm,V
+purge_base_duty       ,5,9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,B,0,4, 0.00000000E+0, 1.02000000E+3,percent,V
+s_base_afr            ,18,9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,B,0,0.1, 0.00000000E+0, 2.55000000E+1,afrs,V
+s_charg_std_iat       ,16,9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+s_cranking_pw         ,27,-40,0.705882,m_coolant_temp,0,1,NULL,B,0,0.256, 0.00000000E+0, 6.52800000E+1,crkg_pw_ms,V
+s_del_ratio           ,17,9,0.390912,s_dr_manpress,500,25,m_eng_spd_8bit,B,0,0.004705, 0.00000000E+0, 1.19977500E+0,DR,V
+s_iat_charg_fct       ,15,9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,B,0,0.01, 0.00000000E+0, 2.55000000E+0,cht_factor,V
+s_inj_constant0       ,25,0,0.1,a_filt_bat,0,1,NULL,B,15,0.098, 1.50000000E+1, 3.99900000E+1,kg/hr,V
+s_inj_deadtime0       ,28,0,0.1,a_filt_bat,0,1,NULL,B,-1.024,0.008,-1.02400000E+0, 1.01600000E+0,ms,V
+s_inj_mp_angle        ,29,9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,B,0,5, 0.00000000E+0, 1.27500000E+3,ang_deg,V
+s_inj_ta_angle        ,30,0,0.5,m_thottle_angle,500,25,m_eng_spd_8bit,B,0,5, 0.00000000E+0, 1.27500000E+3,ang_deg,V
+s_perf_afr            ,19,9,0.390912,s_interp_manpre,500,25,m_eng_spd_8bit,B,0,0.1, 0.00000000E+0, 2.55000000E+1,afrs,V
+s_perf_max_thrt       ,20,500,25,m_eng_spd_8bit,-40,0.705882,m_coolant_temp,B,0,0.5, 0.00000000E+0, 1.27500000E+2,degrees,V
+s_pw_clt_mult         ,22,-40,0.705882,m_oiladj_clt_te,9,0.390912,m_sync_manpres,B,0.8,0.01, 8.00000000E-1, 3.35000000E+0,pw_mult,V
+s_pw_crkg_mult        ,31,-40,0.705882,m_coolant_temp,0,1,NULL,B,0,.03125, 0.00000000E+0, 7.96875000E+0,pw_mult,V
+s_pw_iat_mult         ,23,-40,0.705882,m_strat_iat,-40,0.705882,m_oiladj_clt_te,B,0.8,0.01, 8.00000000E-1, 3.35000000E+0,pw_mult,V
+s_pw_idlclt_mul       ,21,-40,0.705882,m_oiladj_clt_te,0,1,NULL,B,0.8,0.01, 8.00000000E-1, 3.35000000E+0,pw_mult,V
+s_pw_mult_ase         ,24,-40,0.705882,m_coolant_temp,0,1,NULL,B,1,0.01, 1.00000000E+0, 3.55000000E+0,pw_mult,V
+t_asyn_base_mul       ,59,9,0.390912,m_sync_manpres,500,25,m_eng_spd_8bit,B,0,0.0078125, 0.00000000E+0, 1.99218750E+0,async_pw_mul,V
+t_asyn_pwidth         ,58,-40,0.705882,m_coolant_temp,0,1,NULL,B,0,0.064, 0.00000000E+0, 1.63200000E+1,secs,V
+t_decay_mults         ,6,-40,0.705882,m_coolant_temp,0,1,t_interp_row,B,0.75,0.000977, 7.50000000E-1, 9.99135000E-1,dcy_mult,V
+t_enl_enable          ,10,-40,0.705882,m_coolant_temp,0,1,NULL,B,0,25, 0.00000000E+0, 6.37500000E+3,rpm,V
+t_ful_throt_ang       ,8,500,25,m_eng_spd_8bit,0,1,NULL,B,0,0.5, 0.00000000E+0, 1.27500000E+2,degrees,V
+t_inc_clnt_adj        ,13,-50.037,0.390912,t_mp_chg_used,-40,0.705882,m_coolant_temp,B,0,2, 0.00000000E+0, 5.10000000E+2,percent,V
+t_inc_coarse          ,11,-50.037,0.390912,t_mp_chg_used,9,0.390912,m_sync_manpres,B,0,0.5, 0.00000000E+0, 1.27500000E+2,percent,V
+t_inc_fine            ,12,-50.037,0.390912,t_mp_chg_used,9,0.390912,m_sync_manpres,B,0,0.0625, 0.00000000E+0, 1.59375000E+1,percent,V
+t_max_adj             ,7,-40,0.705882,m_coolant_temp,0,1,t_interp_row,B,100,4, 1.00000000E+2, 1.12000000E+3,percent,V
+t_pp_tp_grad          ,9,500,25,m_eng_spd_8bit,0,1,NULL,B,0,0.039091, 0.00000000E+0, 9.96820500E+0,kPa/bit,V
+;*<<<<<<<<<<<<<<<<<<<<<<<<< VOLATILE STORAGE >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*
+a_filt_bat            ,01F4,W,0,0.000391, 0.00000000E+0, 2.56241850E+1,Volts,V
+a_filt_clnt           ,01F8,W,-40,0.002757,-4.00000000E+1, 1.40679995E+2,degC,V
+a_filt_iat            ,01F6,W,-40,0.002757,-4.00000000E+1, 1.40679995E+2,degC,V
+a_filt_map            ,01FA,W,9,0.001527, 9.00000000E+0, 1.09071945E+2,kPa,V
+a_filt_thp            ,01FC,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+ang_180_counter       ,009C,B,0,10, 0.00000000E+0, 2.55000000E+3,deg,V
+ang_720_counter       ,009B,B,0,10, 0.00000000E+0, 2.55000000E+3,deg,V
+background_cnt        ,008A,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+cycle_counter         ,0074,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+cylinder_number       ,0154,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+d_diag_level          ,0099,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+d_diag_timer          ,00BF,B,0,8, 0.00000000E+0, 2.04000000E+3,ms,V
+d_input_command       ,009A,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+d_int_diag_lev        ,0098,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+d_old_lev             ,014F,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+decu_mpp              ,0150,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+ee_powdn_count        ,0040,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+ee_read_page          ,00A8,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+ee_wr_stat_addr       ,014C,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+ee_zero_bit_1         ,0049,B,0,0.25, 0.00000000E+0, 6.37500000E+1,bits,V
+ee_zero_bit_2         ,004A,B,0,0.25, 0.00000000E+0, 6.37500000E+1,bits,V
+ee_zero_bit_3         ,004B,B,0,0.25, 0.00000000E+0, 6.37500000E+1,bits,V
+ee_zero_bit_4         ,004C,B,0,0.25, 0.00000000E+0, 6.37500000E+1,bits,V
+f_adj_dcy_revs        ,0274,B,0,8, 0.00000000E+0, 2.04000000E+3,revs,V
+f_adpt_acc_lsw        ,0264,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+f_adpt_acc_msw        ,0266,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+f_adpt_idle_cnt       ,0276,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+f_adpt_offset         ,0043,B,-1024,8,-1.02400000E+3, 1.01600000E+3,us_offset,V
+f_adpt_sw_cnt         ,0275,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+f_adpt_timer          ,00B3,B,0,2.048, 0.00000000E+0, 5.22240000E+2,secs,V
+f_blip_timer          ,00C5,B,0,8, 0.00000000E+0, 2.04000000E+3,ms,V
+f_blips               ,03CD,B,0,0.004, 0.00000000E+0, 1.02000000E+0,percent,V
+f_bump_clnt_adj       ,00C9,B,1,0.02, 1.00000000E+0, 6.10000000E+0,bump_mult,V
+f_bumps               ,03CE,B,0,0.004, 0.00000000E+0, 1.02000000E+0,percent,V
+f_clamp_timer         ,00B2,B,0,2.048, 0.00000000E+0, 5.22240000E+2,secs,V
+f_frc_bump_cnt        ,0273,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+f_last_pw_cor         ,014A,W,0,0.008, 0.00000000E+0, 5.24280000E+2,percent,V
+f_o2h_counter         ,00C8,B,0,8, 0.00000000E+0, 2.04000000E+3,revs,V
+f_o2s_volts           ,0144,W,0,0.0766, 0.00000000E+0, 5.01998100E+3,mV,V
+f_offidle_timer       ,00B6,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+f_onidle_timer        ,00B7,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+f_orfco_delay         ,00CE,B,0,2, 0.00000000E+0, 5.10000000E+2,revs,V
+f_pw_corr_aver        ,0262,W,0,0.004, 0.00000000E+0, 2.62140000E+2,percent,V
+f_pw_correction       ,00D6,W,0,0.004, 0.00000000E+0, 2.62140000E+2,percent,V
+fault_mask            ,00A6,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte1             ,004E,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte10            ,00AF,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte11            ,00F6,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte12            ,00F7,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte13            ,00F8,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte14            ,00F9,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte15            ,00FA,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte16            ,00FB,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte17            ,00FC,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte18            ,00FD,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte19            ,00FE,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte2             ,0052,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte20            ,00FF,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte3             ,0055,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte4             ,00A9,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte5             ,00AA,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte6             ,00AB,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte7             ,00AC,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte8             ,00AD,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+flagbyte9             ,00AE,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+hot_db_pos_lsb        ,0280,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,H
+hsi_event_msb         ,008C,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+hsi_event_pend        ,008D,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+hsi_event_time        ,0058,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+i_act_dpos_erpm       ,027D,B,587.5,7.5, 5.87500000E+2, 2.50000000E+3,nom_rpm,V
+i_base_step_pos       ,00E6,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_base_step_spd       ,00E7,B,0,1, 0.00000000E+0, 2.55000000E+2,steps/sec,V
+i_coolant_temp        ,01B1,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+i_crankg_steps        ,03D2,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_ctign_dly_tmr       ,00BC,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+i_ctrl_min_spd        ,026A,W,-32768,1,-3.27680000E+4, 3.27670000E+4,rpm,V
+i_ctrl_test_tmr       ,00BB,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+i_ctrl_tst_diff       ,026C,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+i_dbpos_db_tmr        ,00BD,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+i_dbpos_dly_tmr       ,00B4,B,0,2.048, 0.00000000E+0, 5.22240000E+2,secs,V
+i_dbpos_max_bv        ,0047,B,0,0.1, 0.00000000E+0, 2.55000000E+1,volts,V
+i_dn_ctrl_state       ,00E4,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_dn_ff_old_pos       ,0277,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_err_spd_8bit        ,00E5,B,-512,4,-5.12000000E+2, 5.08000000E+2,rpm,V
+i_error_speed         ,00D4,W,-32768,1,-3.27680000E+4, 3.27670000E+4,rpm,V
+i_fast_idle_tmr       ,00BA,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+i_hotdbpos            ,0042,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_known_load_st       ,00E1,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_mdmp_base_stp       ,0283,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_mdmp_base_tps       ,0282,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+i_mdmp_decy_tmr       ,00C6,B,0,8, 0.00000000E+0, 2.04000000E+3,ms,V
+i_mdmp_max_pos        ,03D4,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_mdmp_step_pos       ,00EB,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_mdmp_target         ,03D3,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_nom_dpos_erpm       ,027C,B,587.5,7.5, 5.87500000E+2, 2.50000000E+3,nom_rpm,V
+i_old_step_pos        ,027F,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_orpc_aim_pos        ,03D5,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_orpc_base_stp       ,03D6,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_orpc_max_stps       ,0284,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_outer_db_tmr        ,00B9,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+i_req_step_pos        ,00E8,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_req_step_spd        ,00E9,B,0,1, 0.00000000E+0, 2.55000000E+2,steps/sec,V
+i_return_offs         ,03D0,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_rpm_break_stp       ,027E,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,H
+i_rpm_debug           ,03D1,B,2500,15, 2.50000000E+3, 6.32500000E+3,nom_rpm,V
+i_run_idl_state       ,00EA,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+i_runline_off         ,03CF,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_runline_pos         ,01AA,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_setpoint            ,00E2,B,0,25, 0.00000000E+0, 6.37500000E+3,rpm,V
+i_setpt_rosco         ,0045,B,-3200,25,-3.20000000E+3, 3.17500000E+3,rpm,V
+i_step_down_lim       ,0278,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_step_down_tmr       ,00B8,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+i_step_ff_pos         ,00DE,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_step_ff_spd         ,00E3,B,0,1, 0.00000000E+0, 2.55000000E+2,steps/sec,V
+i_step_pos            ,008E,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_step_up_limit       ,0279,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_total_rtn_pos       ,027B,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+i_unknown_n_tmr       ,00BE,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+i_unknown_steps       ,027A,B,0,1, 0.00000000E+0, 2.55000000E+2,nom_steps,V
+ign_adv_ang           ,0170,W,90,-0.1, 9.00000000E+1,-6.46350000E+3,deg,V
+ign_base              ,03DA,B,90,-0.5, 9.00000000E+1,-3.75000000E+1,ang_deg,V
+ign_charg_tim1        ,03BC,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+ign_charg_tim2        ,03BE,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+ign_coil_no           ,0082,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+ign_debug_chg         ,0200,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+ign_flags             ,0097,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+ign_iat_raw           ,03D9,B,64,-0.5, 6.40000000E+1,-6.35000000E+1,ang_deg,V
+ign_iat_rmp_cnt       ,00D0,B,0,2, 0.00000000E+0, 5.10000000E+2,revs,V
+ign_iat_rtd_cnt       ,00CA,B,0,8, 0.00000000E+0, 2.04000000E+3,revs,V
+ign_idl_rmp_rev       ,00D1,B,0,2, 0.00000000E+0, 5.10000000E+2,revs,V
+ign_limit_time        ,0148,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+ign_max_charg_b       ,0142,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+ign_max_charg_t       ,0140,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+ign_next_on_off       ,0095,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+ign_next_tooth        ,0096,B,0,10, 0.00000000E+0, 2.55000000E+3,deg,V
+ign_now_off_tth       ,0094,B,0,10, 0.00000000E+0, 2.55000000E+3,deg,V
+ign_off_ang1          ,0138,W,720,-0.1, 7.20000000E+2,-5.83350000E+3,Degrees,V
+ign_off_ang2          ,013A,W,540,-0.1, 5.40000000E+2,-6.01350000E+3,Degrees,V
+ign_off_ang3          ,013C,W,180,-0.1, 1.80000000E+2,-6.37350000E+3,Degrees,V
+ign_off_ang4          ,013E,W,360,-0.1, 3.60000000E+2,-6.19350000E+3,Degrees,V
+ign_off_tooth0        ,0130,B,0,10, 0.00000000E+0, 2.55000000E+3,deg,V
+ign_off_tooth1        ,0131,B,0,10, 0.00000000E+0, 2.55000000E+3,deg,V
+ign_off_tooth2        ,0132,B,0,10, 0.00000000E+0, 2.55000000E+3,deg,V
+ign_off_tooth3        ,0133,B,0,10, 0.00000000E+0, 2.55000000E+3,deg,V
+ign_offs_rosco        ,0044,B,64,-0.5, 6.40000000E+1,-6.35000000E+1,ang_deg,V
+ign_offs_trans        ,0222,W,0,0.1, 0.00000000E+0, 6.55350000E+3,deg,V
+ign_offset_clnt       ,03D7,B,64,-0.5, 6.40000000E+1,-6.35000000E+1,ang_deg,V
+ign_offset_iat        ,03D8,B,64,-0.5, 6.40000000E+1,-6.35000000E+1,ang_deg,V
+ign_offset_idle       ,0268,W,90,-0.1, 9.00000000E+1,-6.46350000E+3,deg,V
+ign_on_time           ,0060,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+ign_on_tooth0         ,0134,B,0,10, 0.00000000E+0, 2.55000000E+3,deg,V
+ign_on_tooth1         ,0135,B,0,10, 0.00000000E+0, 2.55000000E+3,deg,V
+ign_on_tooth2         ,0136,B,0,10, 0.00000000E+0, 2.55000000E+3,deg,V
+ign_on_tooth3         ,0137,B,0,10, 0.00000000E+0, 2.55000000E+3,deg,V
+ign_phase_comp        ,014D,B,0,0.1, 0.00000000E+0, 2.55000000E+1,deg,V
+ign_ramp_start        ,026E,W,90,-0.1, 9.00000000E+1,-6.46350000E+3,deg,V
+ign_retard_max        ,03DB,B,0,0.5, 0.00000000E+0, 1.27500000E+2,deg,V
+ign_sw_count          ,0155,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+ign_t_counter         ,00CF,B,0,2, 0.00000000E+0, 5.10000000E+2,revs,V
+ign_t_state_no        ,0227,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+inj_deadtime          ,0064,W,-43.680,0.001333,-4.36800000E+1, 4.36781550E+1,ms,V
+inj_fire_offset       ,00A2,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+inj_off_angle         ,0062,W,0,0.1, 0.00000000E+0, 6.55350000E+3,deg,V
+inj_on_angle          ,014E,B,0,10, 0.00000000E+0, 2.55000000E+3,deg,V
+inj_powup_count       ,009D,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+inj_powup_pw          ,0078,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+inj_pulsewidth        ,0066,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+inj_pw_fired          ,03C0,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+inj_pw_pending        ,0076,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+io_force_req          ,0152,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+io_forced_ops         ,0151,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+io_port3_copy         ,0156,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+io_strat_req          ,00A3,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+io_tripped_log        ,0050,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+io_tripped_ops        ,0054,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+ioconreg0_copy        ,0028,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+ioconreg1_copy        ,0029,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+ioport1_copy          ,0026,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+ioport2_copy          ,0027,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+iostatreg1_copy       ,002A,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+isc_lst_idl_lsb       ,0281,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,H
+latest_int_msb        ,00A0,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+latest_sync_int       ,007E,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+latest_sync_tim       ,007A,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+latest_tim_msb        ,009E,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+m_backup_map          ,01AB,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+m_coolant_temp        ,01AF,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+m_cycs_to_start       ,00CB,B,0,2, 0.00000000E+0, 5.10000000E+2,revs,V
+m_eng_spd_8bit        ,01AE,B,500,25, 5.00000000E+2, 6.87500000E+3,rpm,V
+m_engine_speed        ,005E,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+m_fuel_pump_tmr       ,00B5,B,0,0.064, 0.00000000E+0, 1.63200000E+1,sec,V
+m_low_thr             ,0220,W,-127.99,0.003906,-1.27990000E+2, 1.27989710E+2,bits,V
+m_oil_ee_cnt          ,0046,B,0,512, 0.00000000E+0, 1.30560000E+5,revs,V
+m_oil_pred_cnt        ,01CA,B,0,512, 0.00000000E+0, 1.30560000E+5,revs,V
+m_oil_temp_cnt        ,01CB,B,0,512, 0.00000000E+0, 1.30560000E+5,revs,H
+m_oil_wrmup_cnt       ,03CB,B,0,512, 0.00000000E+0, 1.30560000E+5,revs,V
+m_oiladj_clt_te       ,01C9,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+m_old_step_pos        ,0225,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+m_pbu_rev_count       ,00CC,B,0,2, 0.00000000E+0, 5.10000000E+2,revs,V
+m_stall_timer         ,00B1,B,0,2.048, 0.00000000E+0, 5.22240000E+2,secs,V
+m_startup_temp        ,01B0,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+m_strat_iat           ,01CC,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+m_strat_manpres       ,018E,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,KPa,V
+m_sync_manpres        ,00DF,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+m_tdi_sync_mp         ,00D8,W,9,0.001527, 9.00000000E+0, 1.09071945E+2,kPa,V
+m_tdi_sync_tp         ,01AC,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+m_tempg_pwm_cnt       ,00A5,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+m_tend_throttle       ,0084,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+m_thottle_angle       ,00F4,B,0,0.5, 0.00000000E+0, 1.27500000E+2,degrees,V
+m_thr_fst_timer       ,00C2,B,0,8, 0.00000000E+0, 2.04000000E+3,ms,V
+m_thr_ini_timer       ,00C3,B,0,8, 0.00000000E+0, 2.04000000E+3,ms,V
+m_thr_jack_cnt        ,0048,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+m_thr_jack_stat       ,01B3,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+m_thr_jack_tmr        ,00B0,B,0,2.048, 0.00000000E+0, 5.22240000E+2,secs,V
+m_thr_lrn_timer       ,00C0,B,0,8, 0.00000000E+0, 2.04000000E+3,ms,V
+m_thr_max_ofstp       ,0178,W,-127.99,0.003906,-1.27990000E+2, 1.27989710E+2,bits,V
+m_thr_max_step        ,01B5,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+m_thr_min_ofstp       ,0176,W,-127.99,0.003906,-1.27990000E+2, 1.27989710E+2,bits,V
+m_thr_min_step        ,01B4,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+m_thr_move_cmnd       ,01B8,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+m_thr_off_stepr       ,0172,W,-127.99,0.003906,-1.27990000E+2, 1.27989710E+2,bits,V
+m_thr_on_stepr        ,0174,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thr_roo_timer       ,00C1,B,0,8, 0.00000000E+0, 2.04000000E+3,ms,V
+m_thr_step_peak       ,01B2,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+m_thr_z_error         ,0153,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+m_thr_z_ini_aim       ,01B6,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+m_thr_z_ini_cnt       ,0226,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+m_thr_z_ini_nxt       ,01B7,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+m_thr_z_ini_thp       ,017A,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thr_z_old_stp       ,0224,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+m_thr_z_pointer       ,00DA,W,1,0.5, 1.00000000E+0, 3.27685000E+4,z_bit_ptr,V
+m_thr_z_temp          ,017C,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thr_z_temp_1        ,017E,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thr_z_temp_2        ,0180,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thr_z_temp_3        ,0182,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thr_z_temp_4        ,0184,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thr_zero_bit1       ,0240,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thr_zero_bit2       ,0242,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thr_zero_bit3       ,0244,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_thr_zero_bit4       ,0246,W,0,0.003906, 0.00000000E+0, 2.55979710E+2,bits,V
+m_tmpgauge_dr         ,01AD,B,0,0.392156, 0.00000000E+0, 9.99997800E+1,percent,V
+master_restemp        ,0024,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+next_analg_chan       ,00A7,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+next_rti_time         ,0088,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+orf_ramp_level        ,01A0,W,0,0.001526, 0.00000000E+0, 1.00006410E+2,percentage,V
+orfco_ramp_quad       ,01D3,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,H
+output_int            ,005C,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+output_time           ,0080,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+prev_int_msb          ,009F,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+prev_spd_msb          ,00A1,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+prev_spd_time         ,0146,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+prev_sync_int         ,007C,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+purg_duty_ratio       ,00F5,B,0,4, 0.00000000E+0, 1.02000000E+3,percent,V
+purg_pwm_count        ,00A4,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+raw_thermistor        ,03CA,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+real_time_clock       ,0086,W,0,0.004, 0.00000000E+0, 2.62140000E+2,secs,V
+s_180_p_width         ,019A,W,0,0.001, 0.00000000E+0, 6.55350000E+1,ms,V
+s_afr_base            ,03CC,B,0,0.1, 0.00000000E+0, 2.55000000E+1,afrs,V
+s_afr_final           ,00D3,B,0,0.1, 0.00000000E+0, 2.55000000E+1,afrs,V
+s_afr_perf            ,01D0,B,0,0.1, 0.00000000E+0, 2.55000000E+1,afrs,V
+s_ase_dcy_timer       ,00C4,B,0,0.008, 0.00000000E+0, 2.04000000E+0,mS,V
+s_ase_pw_mult         ,0196,W,0,0.005, 0.00000000E+0, 3.27675000E+2,afr_mult,V
+s_ase_state_no        ,00E0,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+s_base_pw             ,03C6,W,0,0.001, 0.00000000E+0, 6.55350000E+1,ms,V
+s_charg_iat_fct       ,01CD,B,0,0.01, 0.00000000E+0, 2.55000000E+0,cht_factor,V
+s_charg_iat_tem       ,0190,W,-273,0.705882,-2.73000000E+2, 4.59869769E+4,degC,V
+s_ck_last_fire        ,01D5,B,0,10, 0.00000000E+0, 2.55000000E+3,deg,H
+s_clnt_pw_mult        ,01D1,B,0.8,0.01, 8.00000000E-1, 3.35000000E+0,pw_mult,V
+s_corr_pw             ,00DC,W,0,0.001, 0.00000000E+0, 6.55350000E+1,ms,V
+s_cranking_cnt        ,01D4,B,0,1, 0.00000000E+0, 2.55000000E+2,fires,V
+s_deliv_ratio         ,01CF,B,0,0.004705, 0.00000000E+0, 1.19977500E+0,DR,V
+s_dr_manpress         ,01C8,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+s_hfc_old_pw          ,01A6,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,H
+s_hspfco_revs         ,01A2,W,0,2, 0.00000000E+0, 1.31070000E+5,revs,V
+s_hspfco_thres        ,01A4,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+s_iatemp_pw_mul       ,01D2,B,0.8,0.01, 8.00000000E-1, 3.35000000E+0,pw_mult,V
+s_inj_fire_mode       ,0272,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+s_injector_cons       ,0198,W,0,0.007, 0.00000000E+0, 4.58745000E+2,kg/hr,V
+s_injector_dt         ,01A8,W,-32.768,0.001,-3.27680000E+1, 3.27670000E+1,ms,V
+s_injectr_angle       ,0260,W,0,0.1, 0.00000000E+0, 6.55350000E+3,deg,V
+s_interp_manpre       ,01C7,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+s_mass_air            ,019E,W,0,0.03906, 0.00000000E+0, 2.55979710E+3,mg,V
+s_mass_fuel           ,019C,W,0,0.03906, 0.00000000E+0, 2.55979710E+3,mg,V
+s_perf_afr_cnt        ,0192,W,0,2, 0.00000000E+0, 1.31070000E+5,revs,V
+s_perf_last_cyc       ,0194,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+s_pulsewidth          ,03C8,W,0,0.001333, 0.00000000E+0, 8.73581550E+1,mS,V
+s_std_iat             ,01CE,B,-40,0.705882,-4.00000000E+1, 1.39999910E+2,degC,V
+stp_aim_pos           ,008F,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+stp_decel_count       ,0092,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+stp_delay             ,0090,B,0,4, 0.00000000E+0, 1.02000000E+3,mS,V
+stp_delay_count       ,0091,B,0,4, 0.00000000E+0, 1.02000000E+3,mS,V
+stp_save_aim          ,004D,B,0,1, 0.00000000E+0, 2.55000000E+2,steps,V
+strt_tune_point       ,0056,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+sys_fault_addr        ,005A,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+t1_ovfl_count         ,008B,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+t_asyn_fire_cnt       ,00EC,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+t_asyn_pw             ,0270,W,0,0.001, 0.00000000E+0, 6.55350000E+1,ms,V
+t_asyn_sample_1       ,00EF,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_asyn_sample_2       ,00F0,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_asyn_sample_3       ,00F1,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_asyn_sample_4       ,00F2,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_asyn_sample_5       ,00F3,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_asyn_thro_str       ,00ED,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_enl_enabl_spd       ,0186,W,0,1, 0.00000000E+0, 6.55350000E+4,rpm,V
+t_ful_last_180        ,01D6,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_ful_last_360        ,01D7,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_ful_throt_pos       ,01BA,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_interp_row          ,01B9,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+t_ltd_throt_pos       ,01BD,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_max_mp              ,01C4,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+t_max_tp              ,01C3,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_min_mp              ,01C6,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+t_min_tp              ,01C5,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_mp_chg_in_180       ,01BE,B,-50.037,0.390912,-5.00370000E+1, 4.96455600E+1,KPa/180,V
+t_mp_chg_used         ,01C1,B,-50.037,0.390912,-5.00370000E+1, 4.96455600E+1,KPa/180,V
+t_mp_inc_used         ,03C2,W,0,0.015625, 0.00000000E+0, 1.02398438E+3,percent,V
+t_mp_last_180         ,01F0,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+t_mp_last_360         ,01F1,B,9,0.390912, 9.00000000E+0, 1.08682560E+2,kPa,V
+t_mp_ndcy_mult        ,01DC,W,0,0.000977, 0.00000000E+0, 6.40276950E+1,dcy_mult,V
+t_mp_neg_maxadj       ,01E4,W,100,0.015625, 1.00000000E+2, 1.12398438E+3,percent,V
+t_mp_pdcy_mult        ,01D8,W,0,0.000977, 0.00000000E+0, 6.40276950E+1,dcy_mult,V
+t_mp_pos_maxadj       ,01E0,W,100,0.015625, 1.00000000E+2, 1.12398438E+3,percent,V
+t_orf_adj             ,01BC,B,0,0.5, 0.00000000E+0, 1.27500000E+2,percent,V
+t_orf_count           ,0188,W,0,0.78125, 0.00000000E+0, 5.11992188E+4,cnt/100,V
+t_orf_period          ,00CD,B,0,2, 0.00000000E+0, 5.10000000E+2,revs,V
+t_pp_chg_used         ,01C2,B,-50.037,0.390912,-5.00370000E+1, 4.96455600E+1,KPa/180,V
+t_pp_gradient         ,01BB,B,0,0.039091, 0.00000000E+0, 9.96820500E+0,kPa/bit,V
+t_pp_inc_used         ,03C4,W,0,0.015625, 0.00000000E+0, 1.02398438E+3,percent,V
+t_pp_ndcy_mult        ,01DE,W,0,0.000977, 0.00000000E+0, 6.40276950E+1,dcy_mult,V
+t_pp_neg_maxadj       ,01E6,W,100,0.015625, 1.00000000E+2, 1.12398438E+3,percent,V
+t_pp_pdcy_mult        ,01DA,W,0,0.000977, 0.00000000E+0, 6.40276950E+1,dcy_mult,V
+t_pp_pos_maxadj       ,01E2,W,100,0.015625, 1.00000000E+2, 1.12398438E+3,percent,V
+t_totadj_mp_neg       ,01EC,W,100,0.015625, 1.00000000E+2, 1.12398438E+3,percent,V
+t_totadj_mp_pos       ,01E8,W,100,0.015625, 1.00000000E+2, 1.12398438E+3,percent,V
+t_totadj_pp_neg       ,01EE,W,100,0.015625, 1.00000000E+2, 1.12398438E+3,percent,V
+t_totadj_pp_pos       ,01EA,W,100,0.015625, 1.00000000E+2, 1.12398438E+3,percent,V
+t_total_adj_neg       ,018C,W,100,0.015625, 1.00000000E+2, 1.12398438E+3,percent,V
+t_total_adj_pos       ,018A,W,100,0.015625, 1.00000000E+2, 1.12398438E+3,percent,V
+t_tp_chg_in_180       ,01BF,B,-128,1,-1.28000000E+2, 1.27000000E+2,bits,V
+t_tp_chg_used         ,01C0,B,-128,1,-1.28000000E+2, 1.27000000E+2,bits,V
+t_tp_last_180         ,01F2,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+t_tp_last_360         ,01F3,B,0,1, 0.00000000E+0, 2.55000000E+2,bits,V
+tendi_scratch0        ,0068,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+tendi_scratch1        ,006A,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+tendi_scratch2        ,006C,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+tendi_scratch3        ,006E,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+tendi_scratch4        ,0070,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+tendi_scratch5        ,0072,W,0,1, 0.00000000E+0, 6.55350000E+4,NULL,V
+trs_nxt_count         ,00EE,B,0,1, 0.00000000E+0, 2.55000000E+2,NULL,V
+wdt_back_timer        ,0093,B,0,4, 0.00000000E+0, 1.02000000E+3,mS,V
+;*<<<<<<<<<<<<<<<<<<<<<<<<<<<< FLAG INDEX >>>>>>>>>>>>>>>>>>>>>>>>>>>>*
+flagbyte1             ,004E
+cam_full_flag,CAM has never overflowed,CAM has overflowed
+fifo_full_flag,HSI FIFO ok,HSI FIFO buffer FULL !!!!
+ign_max_ct,Coil charge time not too big,Coil charge time exceeded (open cct?)
+ign_coil_sc,Coil not shorted,Coil short circuit detected
+ign_still_on_er,Ign off calc ok,Ign off mis-timed
+out_of_stack,Stack OK,System stack OVERFLOW
+ign_min_ct,Coil charge time not too short,Coil charge time too short (short cct?
+NULL
+flagbyte2             ,0052
+sync_loss_log,No sync fault        ,Sync fault occured        
+a_clnt_log_flt,Coolant never faulty,Coolant was faulty
+a_iat_log_flt,IAT never faulty,IAT was faulty
+a_map_log_flt,MAP_never_faulty,MAP_was_faulty
+a_thp_log_flt,Throttle_Pot_Never_Faulty,Throttle_Pot_Was_Faulty
+a_bat_log_flt,Battery never faulty,Battery was faulty
+m_thr_bad_init,Initialised zero bits OK!,Last zero bits init was a duffer
+f_o2s_fault_log,o2 sensor hasn't been faulty,o2 sensor has been faulty
+flagbyte3             ,0055
+a_thp_cur_flt,Throttle_Pot_OK,Throttle_Pot_Faulty
+a_iat_cur_flt,IAT sensor OK,IAT sensor fault
+a_map_cur_flt,MAP_OK,MAP_faulty
+a_clnt_cur_flt,Coolant sensor ok,Coolant sensor fault
+a_bat_cur_flt,Battery volts OK,Battery volts faulty
+NULL
+NULL
+NULL
+flagbyte4             ,00A9
+rst_loop_init,1st Rst Loop,Rst init done
+load_realt_req,Realt needs loading,Realt OK
+tend_mtf_flag,HSI FIFO interrupt,Missing tooth filler
+rti_run_flag,Not in RTI,RTI in progress
+stp_reference,Not referencing,Referencing
+stp_ref_speed,Fast Reference,Slow Reference
+stp_ref_zero,Referenced open,Referenced closed
+stp_after_ref,Step referenced off,Step reference on
+flagbyte5             ,00AA
+stp_force,Stepper no force,Stepper forced
+stp_locked,Stepper no lock,Stepper locked
+stp_decelerate,Normal stepper ,Decel stepper
+stp_opening,Not Opening Stepper,Opening Stepper 
+stp_closing,Not Closing Stepper,Closing Stepper 
+receive_flag,nochar_received,char_received
+xmit_flag,xmit_buff_full,xmit_buff_empt
+ee_powerdown_rq,No power down request,Power down request
+flagbyte6             ,00AB
+ee_powdn_dely,Waiting for loop delay,Power down loop delay done
+ee_powdn_done,Power down not done,Power down done
+ee_refrnce_rq,EE Referencing not requested,EE Reference requested
+ee_stp_aiming,stepper not moving to aim position,stepper moving to aim position
+m_ign_sw_status,Ignition_Sw_Off,Ignition_Sw_On
+ign_coil_on,CAM - coil off loaded,CAM - coil on loaded
+sync_180_flag,engine not in sync,engine in sync
+ign_enable,Ignition off,Ignition on
+flagbyte7             ,00AC
+inj_fire_mode,Firing twice per rev,Firing once per rev
+inj_soi_eoi,Using end of injection,Using start of injection
+d_cmd_rcvd_flag,no command,command ready
+byt_left_flag,no byte left,byte left
+rosc_fbk_close,not forcing closed loop fuelling,forcing closed loop fuelling
+rosc_fbk_open,not forcing open loop fuelling,forcing open loop fuelling
+d_tpg_force,not forcing temperature gauge,forcing temperature gauge
+d_tpg_onoff,forcing temperature gauge OFF,forcing temperature gauge to FSD
+flagbyte8             ,00AD
+d_thr_sw_force,Throttle switch not forced,Throttle switch FORCED
+d_thr_sw_onoff,Throttle switch forced OFF,Throttle switch forced ON
+m_thr_sw_ok,Not yet seen both states        ,Both states seen        
+m_thr_sw_status,Throttle closed,Throttle is OPEN
+m_dn_sw_status,Car_In_Park/Neutral,Car_Not_In_Park/Neutral
+m_ac_sw_status,Aircon_Sw_Off,Aircon_Sw_On
+d_scan_force,rosco stepper scan not in progress,rosco stepper scan in progress
+wdt_tdi_status,Ten Deg Period ended,Ten Deg Period started
+flagbyte9             ,00AE
+sync_360_flag,engine not in 360 degree sync,engine in 360 degree sync
+miss_tooth_det,Not looking for 2nd missing tooth,Looking for 2nd missing tooth
+ign_charg_reach,Coil charge time not reached,Coil charge time reached
+ign_charg_det,Coil charge limit not reached,Coil charge limit detected
+eng_speed_synch,not just achieved sync.,just achieved sync
+stp_step_half,Full step,Half step
+m_thr_sw_hard,Hardware throttle switch closed,Hardware throttle switch open
+thr_sw_prev,Throttle_Sw_Was_Shut   ,Throttle_Sw_Was_Open   
+flagbyte10            ,00AF
+thr_open_det,Throttle_Sw_Not_Opened ,Throttle_Sw_Opened     
+ac_sw_prev,Aircon_Sw_Was_Off  ,Aircon_Sw_Was_On 
+pn_sw_prev,Car_Was_In_Park/Neutral,Car_Was_Not_In_Park/Neutral
+m_thr_sw_soft,Software throttle switch closed,Software throttle switch open
+NULL
+NULL
+NULL
+NULL
+flagbyte11            ,00F6
+m_thr_do_rescan,No need to scan stepper,Do stepper scan next key off
+m_cranking,engine running,engine cranking
+f_fbk_status,feedback disabled            ,feedback enabled             
+f_o2s_fault,o2 sensor ok        ,o2 sensor faulty        
+m_pbu_status,test for pressure backup,using pressure backup
+m_eng_started,engine not started,engine started
+m_eng_stopped,engine not stopped,engine stopped
+m_count_2_start,not counting cranking cycles,counting cranking cycles
+flagbyte12            ,00F7
+m_eng_had_start,engine has NOT started since poweron,engine has started since po
+m_fuel_pump_req,fuel pump off,fuel pump on
+m_ptc_hyst_abt,Use PTC disable thr,Use PTC hysteresis thrs
+m_ptc_htr_req,PTC heater off,PTC heater on
+m_thr_doing_ini,Not initialising zero bits,Initialising throttle zero bits
+i_ign_prv_stb,Not controlling ignition for idle,Performing ignition stabilisatio
+m_fwrm_oil, oil is not fully warm, oil is fully warm
+m_thr_lrn_up,Learn down this time.,Learn up this time.
+flagbyte13            ,00F8
+m_thr_sw_fast,Throttle switch status unknown!,Throttle switch opening
+m_thr_fst_idle,NOT idling (fst_timer = updly),idling (fst_timer = i_dly)
+m_fst_stp_state,stepper was closing,stepper was opening
+i_fastidle_done,At or returning from fast idle,Fast idle period complete
+m_thr_fst_first,fst_timer used for first learn,fst_timer used for learn up
+i_cable_setting,Normal (not setting cable),In Throttle cable setting mode
+m_thr_ini_state,waiting for throttle to open,waiting for throttle to close
+m_pbu_rev_stat,PBU counter complete,PBU counter started
+flagbyte14            ,00F9
+f_fbk_susp_purg,fbk fault enable purge     ,fbk fault disable purge
+s_orfco_status,ORFCO OFF,ORFCO ON
+m_aircon_status,Aircon clutch off,Aircon clutch on
+purg_status,purge disabled,purge enabled          
+purg_in_orfco,overrun purge off  ,overrun purge on       
+t_was_in_orfco,t_orf WASN'T in orfco ,t_orf WAS in orfco 
+t_180_occured,waiting_for_180_degree,run_transients
+s_ase_apply,No ASE applied,Applying ASE
+flagbyte15            ,00FA
+m_stal_timeout,stall timer has elapsed,stall timeout in progress
+t_enl_low_spd,speed NOT too low for enleanment,speed too low for enleanment
+m_fwrm_coolant,engine not fully warm,engine fully warm
+chtcorr_strt,oil timer off,oil timer taken
+m_idle_afr_ign,base fuelling & ign mode,idle fuelling & ign mode
+s_perfafr,not at performance afr,at performance afr 
+m_stal_indicate,wait until engine starts again,initiate stall timer if engine st
+s_orfco_map_lo,orfco lo pressure not achieved,orfco lo pressure achieved
+flagbyte16            ,00FB
+orfco_in_progrs,no orfco,orfco in progress
+hispfco,hispfco inactive,hispfco active
+hispfco_hold,not hispfco hold period,hispfco hold period
+hispfco_ramp,not hispfco,hispfco ramp
+f_minpw_dis,ssf enables fbk,ssf disables fbk
+m_first_pulse,No first pulse occured,First pulse occured
+f_o2_htr_status,o2 heater off,o2 heater on
+f_o2_htr_safe,o2h coolant disable,o2h coolant enable
+flagbyte17            ,00FC
+f_fbk_dis_count,Testing for o2s valid,Tested o2s valid
+f_o2h_interp,o2s warmup interp not done,o2s warmup interp done
+f_o2s_fitted,o2 sensor not fitted,o2 sensor fitted
+f_orfco_dis_fbk,enbl fbk no orfco,dsble fbk for orfco
+f_fbk_was_on,feedback was off           ,feedback was on        
+f_rich_lean,fuelling is lean           ,fuelling is rich       
+f_fbk_switch,there hasn't been a switch ,there has been a switch
+m_dn_sw_fault,no fault on pn switch,definite fault on pn switch
+flagbyte18            ,00FD
+i_ac_not_off,Aircon not requested,Aircon requested
+i_lv_comp_prv,Not compensating for low bat,Compensating for low battery
+i_isc_enabled,Not in idle control,Idle control active
+i_step_down_adj,Stepper not at lower limit,Timing at stepper lower limit
+spd_abv_innr_db,Speed in or below deadband,Speed above inner deadband
+i_inner_db,Speed outside inner deadband,Speed within inner deadband
+i_outer_db,Not in outer deadband only,Speed within outer deadband
+i_rtn_pos_state,Using Return Offset,Return Offset Not Needed
+flagbyte19            ,00FE
+i_chs_mv_prv_db,Still returning to deadband,Been in deadband this idle
+ict_now_testing,Not testing for idle control,Idle control test in progress
+ign_ramp_end,NOT yet using idle ignition,using idle ignition
+ict_testing_hi,Testing for idle low,Testing for idle high
+idb_lrn_dly_dun,Delaying next dbpos learn,Ready to learn dbpos when stable
+idb_prv_lrn_ok,Can't learn or been out of idle,Was ok to learn or have learned
+idb_done_bv_tst,not learned max bv yet this journey,learned max batt volts this 
+i_tmg_unknown,Not ok to learn unknown loads,Timing/learning unknown loads
+flagbyte20            ,00FF
+i_mdmp_status,Mechanical damper tracking,Mechanical damper decaying
+i_orpc_apply,Not Applying Pressure Control,Applying Pressure Control
+ign_iat_retard,0 or advance / delaying,     ramping / retarding
+ign_iat_delayed,0 or advance / retarding,     ramping / delaying
+ign_iat_calc,D calculate IAT,E calculate IAT
+ign_was_in_base, base timing NOT used in last ign calc, base timing used in last
+NULL
+NULL
