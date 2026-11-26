@@ -1,0 +1,84 @@
+name: Transfert archives firmwares MEMS
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  transfer:
+    runs-on: [self-hosted, Windows]
+    timeout-minutes: 30
+    steps:
+      - name: Transfert prive des archives originales
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $headers = @{
+            Authorization = "Bearer $env:GH_TOKEN"
+            Accept = 'application/vnd.github+json'
+            'X-GitHub-Api-Version' = '2022-11-28'
+          }
+          $api = "https://api.github.com/repos/$env:GH_REPO"
+          $repo = Invoke-RestMethod -Uri $api -Headers $headers
+          if ($repo.private -ne $true) { throw 'Depot non prive : transfert annule.' }
+          if ($env:GH_REPO -ne 'mini56/ECU-Mems-Manager-Session') { throw 'Depot inattendu.' }
+          $source = 'C:\firmwares\Firmwares_archives'
+          $temp = $null
+          try {
+            if (Test-Path -LiteralPath ($source + '.zip') -PathType Leaf) {
+              $file = Get-Item -LiteralPath ($source + '.zip')
+            } elseif (Test-Path -LiteralPath $source -PathType Leaf) {
+              $file = Get-Item -LiteralPath $source
+            } elseif (Test-Path -LiteralPath $source -PathType Container) {
+              $temp = Join-Path $env:RUNNER_TEMP ("Firmwares-" + [guid]::NewGuid().ToString())
+              New-Item -ItemType Directory -Path $temp | Out-Null
+              Add-Type -AssemblyName System.IO.Compression.FileSystem
+              $zip = Join-Path $temp 'Firmwares_archives.zip'
+              [System.IO.Compression.ZipFile]::CreateFromDirectory($source, $zip, [System.IO.Compression.CompressionLevel]::Optimal, $true)
+              $file = Get-Item -LiteralPath $zip
+            } else {
+              throw 'Archive ou dossier Firmwares_archives introuvable sur ce runner.'
+            }
+            if ($file.Length -le 0 -or $file.Length -ge 2GB) { throw 'Taille de fichier non admise.' }
+            $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            $tag = 'research-firmwares-20261126'
+            $release = $null
+            try {
+              $release = Invoke-RestMethod -Uri "$api/releases/tags/$tag" -Headers $headers
+            } catch {
+              if ([int]$_.Exception.Response.StatusCode -ne 404) { throw }
+            }
+            if ($null -eq $release) {
+              $body = @{
+                tag_name = $tag
+                target_commitish = $repo.default_branch
+                name = 'Archives firmwares MEMS - recherche privee'
+                body = 'Archives originales reservees a la recherche. Aucun installateur Manager.'
+                draft = $false
+                prerelease = $true
+              } | ConvertTo-Json
+              $release = Invoke-RestMethod -Method Post -Uri "$api/releases" -Headers $headers -ContentType 'application/json' -Body $body
+            }
+            $name = $file.Name
+            if ($file.Extension -eq '') { $name = 'Firmwares_archives.zip' }
+            $existing = @($release.assets | Where-Object { $_.name -eq $name })
+            if ($existing.Count -gt 0) {
+              $asset = $existing[0]
+              if ($asset.size -ne $file.Length -or $asset.digest -ne "sha256:$hash") { throw 'Un fichier de meme nom existe : aucun ecrasement automatique.' }
+            } else {
+              $uploadUrl = ($release.upload_url -replace '\{.*$', '') + '?name=' + [uri]::EscapeDataString($name)
+              $asset = Invoke-RestMethod -Method Post -Uri $uploadUrl -Headers $headers -ContentType 'application/octet-stream' -InFile $file.FullName
+            }
+            if ($asset.state -ne 'uploaded' -or $asset.size -ne $file.Length) { throw 'Transfert incomplet.' }
+            if ($asset.digest -ne "sha256:$hash") {
+              throw 'Empreinte SHA256 distante non confirmee.'
+            }
+            Write-Host "Archive verifiee : $name ($($file.Length) octets), SHA256 $hash"
+            "Archive : $name, taille : $($file.Length) octets, SHA256 : $hash" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          } finally {
+            if ($null -ne $temp -and (Test-Path -LiteralPath $temp)) {
+              Remove-Item -LiteralPath $temp -Recurse -Force
+            }
+          }
