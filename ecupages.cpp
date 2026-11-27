@@ -421,8 +421,8 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     syncLabel->setWordWrap(true);
     addLed(grid,syncLed,signalPanel,7,0);
     addLeftHelpLabel(grid,syncLabel,signalPanel,7,2);
-    // A learning counter is an information value, not a red fault lamp.
-    if(auto *counter=w->findChild<QWidget*>(QStringLiteral("m_JackCount")))counter->hide();
+    // Preserve the original counter indicator and its position. A confirmed
+    // alert condition is required before activating it.
     sv->addLayout(grid,1);
 
     // The lower signal panel must not contain a separator below the RPM row.
