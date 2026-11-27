@@ -19,6 +19,7 @@
 #include <QtMath>
 #include "i18n.h"
 #include "settingspage.h"
+#include <qledindicator/qledindicator.h>
 #include "applicationvisualstyle.h"
 
 namespace {
@@ -874,6 +875,20 @@ static void buildSettingsScaffold(QMainWindow *window)
     QLabel *idleTxt=new QLabel(I18n::text(2015),states);QLabel *loopTxt=new QLabel(I18n::text(2014),states);
     if(idleLed){idleLed->setParent(states);idleLed->setFixedSize(26,26);idleLed->show();sg->addWidget(idleLed,0,0);}sg->addWidget(idleTxt,0,1);
     if(loopLed){loopLed->setParent(states);loopLed->setFixedSize(26,26);loopLed->show();sg->addWidget(loopLed,1,0);}sg->addWidget(loopTxt,1,1);sg->setColumnStretch(2,1);
+    for(int i=0;i<2;++i){
+        auto *led=new QLedIndicator(states);
+        led->setObjectName(i==0?QStringLiteral("settingsEngineRunningLed"):QStringLiteral("settingsLambdaValidLed"));
+        led->setCheckable(true);led->setChecked(false);
+        led->setFixedSize(26,26);
+        led->setAttribute(Qt::WA_TransparentForMouseEvents,true);
+        led->setFocusPolicy(Qt::NoFocus);
+        led->setOnColor1(QColor(102,255,102));led->setOnColor2(QColor(82,204,82));
+        led->setOffColor1(QColor(0,102,0));led->setOffColor2(QColor(0,51,0));
+        auto *label=new QLabel(I18n::text(2972410+i),states);
+        label->setWordWrap(true);label->setToolTip(I18n::text(2972412+i));
+        sg->addWidget(led,2+i,0,Qt::AlignVCenter);
+        sg->addWidget(label,2+i,1);
+    }
     static_cast<QVBoxLayout*>(states->layout())->addLayout(sg);static_cast<QVBoxLayout*>(states->layout())->addStretch(1);
     body->addWidget(states,0,1);
 
