@@ -275,37 +275,49 @@ static void compactStoredPanel(QMainWindow *w,QFrame *top)
         duplicate->hide();
 
     QWidget *stored=w->findChild<QWidget*>(QStringLiteral("layoutWidget_3"));
-    if(stored) {
-        stored->setMinimumSize(0,0);
-        stored->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
-        if(QGridLayout *g=qobject_cast<QGridLayout*>(stored->layout())) {
-            g->setContentsMargins(0,0,0,0);
-            g->setHorizontalSpacing(10);
-            // The legacy .ui had an invisible row with stretch=100,
-            // leaving the fault list cramped at the top. Distribute the
-            // existing eight rows evenly over the available panel height.
-            g->setVerticalSpacing(6);
-            for(int row=0;row<g->rowCount();++row)g->setRowStretch(row,0);
-            for(int row=1;row<=8;++row)g->setRowStretch(row,1);
-        }
+    if(!stored)return;
+    auto *g=qobject_cast<QGridLayout*>(stored->layout());
+    if(!g)return;
+    // Retain the original 24 widgets and all their ECU signal connections.
+    // Every stored fault is a row of ONE grid, not a second compact panel.
+    QWidget *leds[30]={};
+    QLabel *labels[30]={};
+    for(int i=0;i<24;++i){
+        const int row=1+i%8,col=1+3*(i/8);
+        auto *ledItem=g->itemAtPosition(row,col);
+        auto *labelItem=g->itemAtPosition(row,col+1);
+        leds[i]=ledItem?ledItem->widget():nullptr;
+        labels[i]=labelItem?qobject_cast<QLabel*>(labelItem->widget()):nullptr;
+        if(!leds[i]||!labels[i])return;
     }
-    // Keep the existing 24 numbered faults. Additional independent DTC5
-    // circuits receive their own six indicators; no reuse of an unrelated bit.
-    auto *extra=new QWidget(top);
-    extra->setObjectName(QStringLiteral("extraStoredFaults"));
-    auto *g=new QGridLayout(extra);g->setContentsMargins(0,0,0,0);
-    g->setHorizontalSpacing(8);g->setVerticalSpacing(3);
     for(int i=0;i<6;++i){
         const unsigned bit=2u<<i;
-        auto *led=additionalLed(extra,QStringLiteral("extraDtc5Led%1").arg(bit));
-        auto *label=new QLabel(I18n::text(29245+i),extra);
-        label->setObjectName(QStringLiteral("extraDtc5Label%1").arg(bit));
-        label->setWordWrap(true);label->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
-        g->addWidget(led,i%2,(i/2)*2,Qt::AlignVCenter);
-        g->addWidget(label,i%2,(i/2)*2+1);
-        g->setColumnStretch((i/2)*2+1,1);
+        leds[24+i]=additionalLed(stored,QStringLiteral("extraDtc5Led%1").arg(bit));
+        labels[24+i]=new QLabel(QStringLiteral("%1 - ").arg(25+i)+I18n::text(29245+i),stored);
+        labels[24+i]->setObjectName(QStringLiteral("extraDtc5Label%1").arg(bit));
+        labels[24+i]->setFont(labels[0]->font());
     }
-    static_cast<QVBoxLayout*>(top->layout())->addWidget(extra);
+    while(auto *item=g->takeAt(0))delete item;
+    for(int row=0;row<g->rowCount();++row){g->setRowStretch(row,0);g->setRowMinimumHeight(row,0);}
+    for(int col=0;col<g->columnCount();++col){g->setColumnStretch(col,0);g->setColumnMinimumWidth(col,0);}
+    g->setContentsMargins(0,0,0,0);
+    g->setHorizontalSpacing(8);g->setVerticalSpacing(3);
+    for(int i=0;i<30;++i){
+        const int row=i%10,col=2*(i/10);
+        leds[i]->setFixedSize(22,22);
+        leds[i]->setAttribute(Qt::WA_TransparentForMouseEvents,true);
+        labels[i]->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
+        labels[i]->setWordWrap(true);
+        labels[i]->setMinimumWidth(0);
+        labels[i]->setMaximumWidth(QWIDGETSIZE_MAX);
+        labels[i]->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
+        g->addWidget(leds[i],row,col,Qt::AlignCenter);
+        g->addWidget(labels[i],row,col+1);
+        g->setRowStretch(row,1);g->setRowMinimumHeight(row,22);
+        g->setColumnStretch(col+1,1);
+        leds[i]->show();labels[i]->show();
+    }
+
 }
 
 static void addLed(QGridLayout *grid,QWidget *led,QWidget *parent,int row,int col)
@@ -407,8 +419,10 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     auto *syncLabel=new QLabel(I18n::text(29240),signalPanel);
     syncLabel->setObjectName(QStringLiteral("extraDtc3TeethLabel"));
     syncLabel->setWordWrap(true);
-    grid->addWidget(syncLed,7,0,Qt::AlignCenter);
-    grid->addWidget(syncLabel,7,2);
+    addLed(grid,syncLed,signalPanel,7,0);
+    addLeftHelpLabel(grid,syncLabel,signalPanel,7,2);
+    // A learning counter is an information value, not a red fault lamp.
+    if(auto *counter=w->findChild<QWidget*>(QStringLiteral("m_JackCount")))counter->hide();
     sv->addLayout(grid,1);
 
     // The lower signal panel must not contain a separator below the RPM row.
@@ -421,6 +435,7 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
 
     QObject *sys=w->findChild<QObject*>(QStringLiteral("m_engine_error"));
     SystemStatePreview *preview=new SystemStatePreview(qobject_cast<MainWindow*>(w),sys,bottom);
+    preview->setMinimumWidth(190);preview->setMaximumWidth(220);
 
     QHBoxLayout *body=new QHBoxLayout;
     body->setContentsMargins(0,0,0,0);
@@ -438,7 +453,7 @@ static void rebalanceErrorsHeight(QFrame *top,QFrame *bottom)
     if(!root) return;
     const int topIndex=root->indexOf(top);
     const int bottomIndex=root->indexOf(bottom);
-    if(topIndex>=0) root->setStretch(topIndex,6);
+    if(topIndex>=0) root->setStretch(topIndex,7);
     if(bottomIndex>=0) root->setStretch(bottomIndex,5);
 }
 
@@ -803,7 +818,7 @@ unsigned updateAdditionalErrors(QMainWindow *window,bool connected,const Mems16N
         if(auto *led=window->findChild<QLedIndicator*>(QStringLiteral("extraDtc5Led%1").arg(bit)))led->setChecked(available&&(d5.faults&bit));
         if(auto *label=window->findChild<QLabel*>(QStringLiteral("extraDtc5Label%1").arg(bit))){
             const QString name=I18n::text(29245+i);
-            const QString display=!connected||(supported&bit)?name:I18n::text(2972201);
+            const QString display=QStringLiteral("%1 - ").arg(25+i)+(!connected||(supported&bit)?name:I18n::text(2972201));
             if(label->text()!=display)label->setText(display);
             const QString detail=!connected?QString():(supported&bit)?(available?I18n::text(29021):I18n::text(29048)):name;
             if(label->toolTip()!=detail)label->setToolTip(detail);

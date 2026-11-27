@@ -7,5 +7,6 @@
   "2972306": "Estado inativo",
   "2972307": "Estado lógico interno da ECU. A polaridade do contacto físico e o funcionamento real não podem ser deduzidos só deste dado.",
   "2972308": "Nos perfis documentados conta aprendizagens da borboleta, não reinicializações da ECU. Sem interpretação para perfil não identificado.",
-  "2972309": "A correção de injeção pode adaptar-se automaticamente quando as condições de regulação são cumpridas. Nas calibrações estudadas AANMP002 e KBHBG009 o atraso nominal é 22,528 s, seguido de avaliações associadas às transições lambda. Não é um prazo garantido após o arranque nem de convergência."
+  "2972309": "A correção de injeção pode adaptar-se automaticamente quando as condições de regulação são cumpridas. Nas calibrações estudadas AANMP002 e KBHBG009 o atraso nominal é 22,528 s, seguido de avaliações associadas às transições lambda. Não é um prazo garantido após o arranque nem de convergência.",
+  "2972310": "Significado não identificado"
 }

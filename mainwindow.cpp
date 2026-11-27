@@ -2740,6 +2740,9 @@ void MainWindow::setDefaultFaultLabels()
   m_ui->m_JackCountLabel->setText(I18n::text(29033));
   m_ui->m_JackCountLabel->setToolTip(I18n::text(2972308));
   m_ui->m_JackCount->setChecked(false);
+  m_ui->m_RPMSensor->setChecked(false);
+  for(QLabel *label:{m_ui->m_faultCode08Label,m_ui->m_faultCode17Label,m_ui->m_faultCode18Label})
+    label->setText(label->text().left(2)+QStringLiteral(" - ")+I18n::text(2972310));
 }
 void MainWindow::rememberNaLabel(QLabel *label)
 {
