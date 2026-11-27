@@ -4,8 +4,12 @@
 namespace Mems218 {
 enum class GaugeState { Disconnected, Unidentified, Unsupported, AwaitData, EngineRunning, AwaitBench };
 inline bool gaugePathDocumented(const std::string &f) {
-    return f=="AANMP002"||f=="AANMP000"||f=="ABNMF032"||
-           f=="ABNMP005"||f=="ACNMF024"||f=="ACNMF026";
+    // Verified ROM paths: command 00/10, force consumer, physical output and F4.
+    return f=="AANMP000"||f=="AANMP001"||f=="AANMP002"||
+           f=="ABNMF030"||f=="ABNMF032"||f=="ABNMP002"||
+           f=="ABNMP005"||f=="ABNMP006"||f=="ACNMF024"||
+           f=="ACNMF026"||f=="ACNMP001"||f=="ACNMP003"||
+           f=="ACNMP004"||f=="ACNMP005";
 }
 inline GaugeState gaugeState(bool connected,const Mems16Na::SessionEvidence *s) {
     if(!connected)return GaugeState::Disconnected;
@@ -20,7 +24,7 @@ inline GaugeState gaugeState(bool connected,const Mems16Na::SessionEvidence *s) 
     return GaugeState::AwaitBench;
 }
 // Compatible physical output paths, normal diagnostic mode, exact D0/D1 identity.
-// Gauge: six paths documented in the research; tachometer: calibrated speed
+// Gauge: documented physical output paths; tachometer: calibrated speed
 // simulation only (not the different logical-output-only 6B/63 variant).
 enum class InstrumentAction : int { None=0, GaugeMin=1, GaugeMax=2, Tachometer=3 };
 struct InstrumentProfile { const char *name; std::uint32_t identity; };
