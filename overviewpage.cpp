@@ -328,7 +328,7 @@ private:
 class SystemStateCard : public QWidget
 {
 public:
-    explicit SystemStateCard(MainWindow *window,QObject *source,QWidget *parent=nullptr):QWidget(parent),m_window(window),m_source(source)
+    explicit SystemStateCard(MainWindow *window,QObject *source,QWidget *parent=nullptr,bool embedded=false):QWidget(parent),m_window(window),m_source(source),m_embedded(embedded)
     {
         setMinimumSize(64,88);
         setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
@@ -344,11 +344,13 @@ protected:
         const bool darkTheme=qApp && qApp->property("ecuDarkTheme").toBool();
 
         const qreal baseW=188.0;
-        const qreal baseH=226.0;
+        const qreal baseH=m_embedded?200.0:226.0;
         const qreal s=qMin(width()/baseW,height()/baseH);
         p.translate((width()-baseW*s)/2.0,(height()-baseH*s)/2.0);
         p.scale(s,s);
+        if(m_embedded)p.translate(0,-26.0);
 
+        if(!m_embedded){
         const QRectF card(0,0,baseW,baseH);
         p.setPen(QPen(darkTheme?QColor("#34414a"):QColor("#c4cdd5"),1.0));
         p.setBrush(darkTheme?QColor("#0c1217"):QColor("#ffffff"));
@@ -362,6 +364,8 @@ protected:
         p.drawText(QRectF(6,5,176,18),Qt::AlignCenter,I18n::text(7149));
         p.setPen(QPen(darkTheme?QColor("#27333b"):QColor("#cbd5de"),1.0));
         p.drawLine(QPointF(8,25),QPointF(180,25));
+
+        }
 
         const bool fault=m_source?m_source->property("checked").toBool():false;
         const bool disconnected=m_window&&m_window->isEcuDisconnected();
@@ -403,6 +407,7 @@ protected:
 private:
     MainWindow *m_window=nullptr;
     QObject *m_source=nullptr;
+    bool m_embedded=false;
 };
 
 // Overview page owns responsive spacing and its 12 cards. The old
@@ -548,4 +553,16 @@ void buildOverviewPage(QMainWindow *window)
 void fitOverviewPage(QWidget *page)
 {
     fitNativeOverviewLayout(page);
+}
+
+QWidget *createEmbeddedSystemStateIndicator(QMainWindow *window,QWidget *parent)
+{
+    auto *source=window?window->findChild<QObject*>(QStringLiteral("m_engine_error")):nullptr;
+    auto *indicator=new SystemStateCard(qobject_cast<MainWindow*>(window),source,parent,true);
+    indicator->setMinimumSize(64,88);
+    auto *timer=new QTimer(indicator);
+    timer->setInterval(500);
+    QObject::connect(timer,&QTimer::timeout,indicator,[indicator](){indicator->update();});
+    timer->start();
+    return indicator;
 }
