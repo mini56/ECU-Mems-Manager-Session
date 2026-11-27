@@ -19,16 +19,25 @@ inline GaugeState gaugeState(bool connected,const Mems16Na::SessionEvidence *s) 
     // separate, narrower whitelist and independent worker interlock.
     return GaugeState::AwaitBench;
 }
-// Active instrument tests: only the exact firmware whose output path and
-// independent firmware watchdog/restoration have both been traced.
-// All other profiles stay unsupported, even if the same opcode is present.
+// Compatible physical output paths, normal diagnostic mode, exact D0/D1 identity.
+// Gauge: six paths documented in the research; tachometer: calibrated speed
+// simulation only (not the different logical-output-only 6B/63 variant).
 enum class InstrumentAction : int { None=0, GaugeMin=1, GaugeMax=2, Tachometer=3 };
+struct InstrumentProfile { const char *name; std::uint32_t identity; };
 inline bool instrumentSupported(InstrumentAction action,const Mems16Na::SessionEvidence &s) {
     if(action==InstrumentAction::GaugeMin||action==InstrumentAction::GaugeMax)
-        return s.firmwareName()=="AANMP002" && s.identifiedProfile()!=nullptr;
-    if(action==InstrumentAction::Tachometer)
-        return s.firmwareName()=="TFH7G029" && s.identifiedProfile()==nullptr &&
-               s.identity()[0]==0x90 && s.identity()[1]==0x00 && s.identity()[2]==0x29;
+        return s.identifiedProfile()!=nullptr && gaugePathDocumented(s.firmwareName());
+    if(action!=InstrumentAction::Tachometer||s.identifiedProfile()!=nullptr)return false;
+    static const InstrumentProfile tachometerProfiles[]={
+        {"TAHHG019",0x900019u},{"TBH7G019",0x900019u},{"TFH7G028",0x900028u},
+        {"TFH7G029",0x900029u},{"TAH7G018",0x900018u},{"REGI1371",0x901371u},
+        {"TAHHV006",0xAD0006u},{"TFH7G025",0x900025u},{"TFHSG011",0x900011u},
+        {"TFHSV000",0x510000u},{"TFHSV006",0x510006u}
+    };
+    const auto &id=s.identity();
+    const auto identity=(std::uint32_t(id[0])<<16)|(std::uint32_t(id[1])<<8)|id[2];
+    for(const auto &p:tachometerProfiles)
+        if(s.firmwareName()==p.name&&identity==p.identity)return true;
     return false;
 }
 inline bool instrumentSafeSample(InstrumentAction action,const Mems16Na::SessionEvidence &s) {
@@ -37,7 +46,8 @@ inline bool instrumentSafeSample(InstrumentAction action,const Mems16Na::Session
     if(!Mems217::present(a,25)||!Mems217::present(b,1))return false;
     // Use the actual engine speed, not the requested tachometer indication.
     if(Mems16Na::word(a,1)!=0||a.bytes[25]!=0||b.bytes[1]!=1)return false;
-    if(action!=InstrumentAction::Tachometer &&
+    // 80/27 polarity is independently established for AANMP002 only.
+    if(s.firmwareName()=="AANMP002" &&
        (!Mems217::present(a,27)||a.bytes[27]!=0))return false;
     return true;
 }
