@@ -8,5 +8,6 @@
   "2972307": "Internal ECU logic state. Physical switch polarity and actual equipment operation cannot be inferred from this alone.",
   "2972308": "On documented profiles this counts throttle learning events, not ECU resets. No interpretation for an unidentified profile.",
   "2972309": "Injection correction may adapt automatically when regulation conditions are met. On the two studied AANMP002 and KBHBG009 calibrations, the nominal delay is 22.528 s, followed by evaluations linked to lambda switching. It is not a guaranteed delay after startup or a convergence time.",
-  "2972310": "Meaning not identified"
+  "2972310": "Meaning not identified",
+  "2972311": "Analogue input fault (sensor unidentified)"
 }

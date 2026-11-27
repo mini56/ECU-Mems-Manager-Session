@@ -1221,8 +1221,12 @@ void MainWindow::onDataReady()
     rememberNaLabel(m_ui->m_faultCode03Label);
     m_ui->m_faultCode03Label->setText(I18n::text(MemsExtendedDtc::pressurePipeLabelKey(naEvidence.firmwareName().c_str(),false)));
     for(QLabel *label:{m_ui->m_faultCode08Label,m_ui->m_faultCode11Label,m_ui->m_faultCode17Label,m_ui->m_faultCode18Label,m_ui->m_faultCode19Label}){
-      rememberNaLabel(label);label->setText(label->text().left(2)+QStringLiteral(" - ")+I18n::text(2972201));
+      rememberNaLabel(label);label->setText(label->text().left(2)+QStringLiteral(" - ")+I18n::text(knownDtc2?2972201:2972310));
     }
+  }
+  if(!naIdentified&&MemsExtendedDtc::short13(naEvidence.firmwareName().c_str())){
+    rememberNaLabel(m_ui->m_faultCode18Label);
+    m_ui->m_faultCode18Label->setText(QStringLiteral("18 - ")+I18n::text(2972311));
   }
   if(syncProfile){rememberNaLabel(m_ui->m_faultCode21Label);m_ui->m_faultCode21Label->setText(QStringLiteral("21 - ")+I18n::text(29018));}
   if(knownDtc2){
@@ -2741,8 +2745,9 @@ void MainWindow::setDefaultFaultLabels()
   m_ui->m_JackCountLabel->setToolTip(I18n::text(2972308));
   m_ui->m_JackCount->setChecked(false);
   m_ui->m_RPMSensor->setChecked(false);
-  for(QLabel *label:{m_ui->m_faultCode08Label,m_ui->m_faultCode17Label,m_ui->m_faultCode18Label})
-    label->setText(label->text().left(2)+QStringLiteral(" - ")+I18n::text(2972310));
+  m_ui->m_faultCode08Label->setText(QStringLiteral("08 - ")+I18n::text(2972310));
+  m_ui->m_faultCode17Label->setText(QStringLiteral("17 - ")+I18n::text(2972310));
+  m_ui->m_faultCode18Label->setText(QStringLiteral("18 - ")+I18n::text(2972311));
 }
 void MainWindow::rememberNaLabel(QLabel *label)
 {

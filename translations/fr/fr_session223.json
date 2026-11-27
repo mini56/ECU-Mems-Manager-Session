@@ -8,5 +8,6 @@
   "2972307": "État logique interne du calculateur. La polarité du contact physique et le fonctionnement de l’équipement ne sont pas déduits de cette seule information.",
   "2972308": "Sur les profils documentés, ce compteur recense les apprentissages du papillon, et non les réinitialisations de l’ECU. Aucune interprétation sur un profil non identifié.",
   "2972309": "La correction d’injection peut être adaptée automatiquement lorsque les conditions de régulation sont réunies. Sur les deux calibrations AANMP002 et KBHBG009 étudiées, le délai nominal est de 22,528 s, suivi d’évaluations liées aux basculements lambda. Ce n’est pas un délai garanti après démarrage ni une durée de convergence.",
-  "2972310": "Signification non identifiée"
+  "2972310": "Signification non identifiée",
+  "2972311": "Défaut entrée analogique (capteur non identifié)"
 }
