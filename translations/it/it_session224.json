@@ -16,5 +16,14 @@
   "2972415": "Scegliere la posizione a passi del 25%, poi premere Muovi motore.",
   "2972416": "Posizione passo-passo:",
   "2972417": "Muovi motore",
-  "2972418": "Disattiva / ripristina"
+  "2972418": "Disattiva / ripristina",
+  "2972419": "Test disponibile: osservare il quadro.",
+  "2972420": "Test in corso.",
+  "2972421": "Test terminato: ritorno normale confermato.",
+  "2972422": "Test interrotto: ritorno normale confermato.",
+  "2972423": "Test rifiutato: condizioni non soddisfatte.",
+  "2972424": "Ritorno normale non confermato. Spegnere il quadro.",
+  "2972425": "Comando non confermato; ritorno normale confermato.",
+  "2972426": "Altro test o modo diagnostico attivo.",
+  "2972427": "Ripristinare prima gli altri attuatori."
 }
