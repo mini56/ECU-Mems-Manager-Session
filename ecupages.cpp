@@ -512,6 +512,8 @@ static void composeActuators(QMainWindow *window)
 
     QVBoxLayout *root=nullptr;
     beginPage(page,root);
+    root->setContentsMargins(6,5,6,5);
+    root->setSpacing(4);
     QHBoxLayout *body=new QHBoxLayout;
     body->setSpacing(10);
 
@@ -528,7 +530,7 @@ static void composeActuators(QMainWindow *window)
         if(QGridLayout *grid=qobject_cast<QGridLayout*>(list->layout())){
             grid->setContentsMargins(6,4,6,4);
             grid->setHorizontalSpacing(6);
-            grid->setVerticalSpacing(5);
+            grid->setVerticalSpacing(3);
             for(int row=0;row<grid->rowCount();++row)grid->setRowStretch(row,0);
             for(int row=2;row<=10;++row)grid->setRowStretch(row,1);
             for(int row:{12,13,15})grid->setRowStretch(row,1);
@@ -551,7 +553,7 @@ static void composeActuators(QMainWindow *window)
             for(int col=1;col<=3;++col)grid->setColumnStretch(col,1);
 
             for(QPushButton *button:list->findChildren<QPushButton*>()){
-                button->setMinimumHeight(32);
+                button->setMinimumHeight(28);
                 button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
             }
 
@@ -598,7 +600,8 @@ static void composeActuators(QMainWindow *window)
 
     QFrame *right=card(page,QStringLiteral("actuatorIacCard"),I18n::text(7138));
     QVBoxLayout *rv=static_cast<QVBoxLayout*>(right->layout());
-    rv->setSpacing(4);
+    rv->setContentsMargins(8,6,8,6);
+    rv->setSpacing(3);
     if(auto *title=cardTitle(right)){
         title->setObjectName(QStringLiteral("actuatorStepperTitle"));
         title->setFixedHeight(22);title->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
@@ -691,12 +694,21 @@ static void composeActuators(QMainWindow *window)
         };
         addNote(2972405,tachometer?"revCounterTestSafety":"gaugeTestSafety",2,true);
         addNote(2971805,tachometer?"revCounterTestReason":"gaugeTestReason",3,true);
-        addNote(tachometer?2972408:2971811,tachometer?"revCounterTestHelp":"gaugeTestHelp",2,false);
+        // The full observation guidance remains accessible without consuming
+        // two duplicate permanent text blocks. Safety and availability stay visible.
+        panel->setToolTip(I18n::text(tachometer?2972408:2971811));
+        panel->setProperty("helpBubbleNoIcon",true);
         instruments->addWidget(panel,1);
     };
     makeInstrument(false);
     makeInstrument(true);
     rv->addLayout(instruments,1);
+    // Both instruments share the same visible observation instruction.
+    auto *observe=new QLabel(I18n::text(2972414),right);
+    observe->setWordWrap(true);
+    observe->setAlignment(Qt::AlignCenter);
+    observe->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
+    rv->addWidget(observe);
     // Reuse the actual system status, with a shorter horizontal arrangement.
     QObject *systemSource=window->findChild<QObject*>(QStringLiteral("m_engine_error"));
     SystemStatePreview *state=new SystemStatePreview(
