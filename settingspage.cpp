@@ -877,13 +877,13 @@ static void buildSettingsScaffold(QMainWindow *window)
     if(loopLed){loopLed->setParent(states);loopLed->setFixedSize(26,26);loopLed->show();sg->addWidget(loopLed,1,0);}sg->addWidget(loopTxt,1,1);sg->setColumnStretch(2,1);
     for(int i=0;i<2;++i){
         auto *led=new QLedIndicator(states);
-        led->setObjectName(i==0?QStringLiteral("settingsEngineRunningLed"):QStringLiteral("settingsLambdaValidLed"));
+        led->setObjectName(i==0?QStringLiteral("settingsIacMinimumLed"):QStringLiteral("settingsLambdaValidLed"));
         led->setCheckable(true);led->setChecked(false);
         led->setFixedSize(26,26);
         led->setAttribute(Qt::WA_TransparentForMouseEvents,true);
         led->setFocusPolicy(Qt::NoFocus);
-        led->setOnColor1(QColor(102,255,102));led->setOnColor2(QColor(82,204,82));
-        led->setOffColor1(QColor(0,102,0));led->setOffColor2(QColor(0,51,0));
+        led->setOnColor1(i==0?QColor(255,0,0):QColor(102,255,102));led->setOnColor2(i==0?QColor(176,0,2):QColor(82,204,82));
+        led->setOffColor1(i==0?QColor(20,0,0):QColor(0,102,0));led->setOffColor2(i==0?QColor(90,0,2):QColor(0,51,0));
         auto *label=new QLabel(I18n::text(2972410+i),states);
         label->setWordWrap(true);label->setToolTip(I18n::text(2972412+i));
         sg->addWidget(led,2+i,0,Qt::AlignVCenter);
