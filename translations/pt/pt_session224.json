@@ -16,5 +16,14 @@
   "2972415": "Escolha a posição em passos de 25% e prima Mover motor.",
   "2972416": "Posição passo a passo:",
   "2972417": "Mover motor",
-  "2972418": "Desativar / repor"
+  "2972418": "Desativar / repor",
+  "2972419": "Teste disponível: observe o painel.",
+  "2972420": "Teste em curso.",
+  "2972421": "Teste terminado: retorno normal confirmado.",
+  "2972422": "Teste interrompido: retorno normal confirmado.",
+  "2972423": "Teste recusado: condições não cumpridas.",
+  "2972424": "Retorno normal não confirmado. Desligue a ignição.",
+  "2972425": "Comando não confirmado; retorno normal confirmado.",
+  "2972426": "Outro teste ou modo de diagnóstico ativo.",
+  "2972427": "Reponha primeiro os outros atuadores."
 }
