@@ -221,6 +221,7 @@ bool MEMSInterface::openRoscoTransport()
 void MEMSInterface::disconnectFromECU()
 {
   m_disconnectRequested.storeRelease(1);
+  cancelInstrumentTest();
   m_mappedInjectionRequested.storeRelease(0);
 }
 
@@ -231,6 +232,7 @@ void MEMSInterface::disconnectFromECU()
 void MEMSInterface::requestShutdown()
 {
   m_shutdownRequested.storeRelease(1);
+  cancelInstrumentTest();
   m_disconnectRequested.storeRelease(1);
   m_mappedInjectionRequested.storeRelease(0);
 }
@@ -334,6 +336,7 @@ void MEMSInterface::runServiceLoop()
   m_connectedState.storeRelease(connected ? 1 : 0);
 
   m_serviceLoopRunning = true;
+  m_instrumentOtherForced.storeRelease(0);
   while (!m_stopPolling && !m_shutdownThread &&
          m_disconnectRequested.loadAcquire() == 0 &&
          m_shutdownRequested.loadAcquire() == 0 && connected)
@@ -395,6 +398,8 @@ void MEMSInterface::runServiceLoop()
       }
     }
 #endif
+    QElapsedTimer instrumentSampleClock;
+    instrumentSampleClock.start();
     // The K-Line path reads the actual announced frame lengths and accounts
     // for the adapter's optional local echo. Leave legacy ROSCO untouched.
 #ifdef MEMS_NATIVE_KLINE_19
@@ -434,16 +439,24 @@ void MEMSInterface::runServiceLoop()
           }
         }
       }
+      const bool instrumentOk=serviceInstrumentTest(nextData,instrumentSampleClock.elapsed());
       {
         QMutexLocker locker(&m_dataMutex);
         m_data = nextData;
         m_naSnapshot=m_naSession;
+      }
+      if(!instrumentOk){
+        emit readError();
+        break;
       }
       emit readSuccess();
       emit dataReady();
     }
     else
     {
+      // No more normal polling after a lost/invalid reply. The independent
+      // firmware timeout will remove the force if F4 cannot be acknowledged.
+      if(m_instrumentRequest.loadAcquire()!=0)finishInstrumentTest(2);
       if(m_disconnectRequested.loadAcquire()==0 && m_shutdownRequested.loadAcquire()==0)
         emit readError();
       // Une coupure du contact ou une perte série ne doit pas laisser
@@ -451,8 +464,11 @@ void MEMSInterface::runServiceLoop()
       // libère proprement la session ; l'UI pourra retenter sans alerte.
       break;
     }
-    QCoreApplication::processEvents();
+    // Do not dispatch queued adjustment/Mode 4/actuator requests while the
+    // instrument is forced. Stop and disconnection use direct atomic flags.
+    if(!m_instrumentActive)QCoreApplication::processEvents();
   }
+  if(m_instrumentRequest.loadAcquire()!=0)finishInstrumentTest(2);
   m_serviceLoopRunning = false;
 
   if (m_mems2j)
@@ -481,6 +497,78 @@ void MEMSInterface::runServiceLoop()
   {
     QThread::currentThread()->quit();
   }
+}
+
+bool MEMSInterface::requestInstrumentTest(int action)
+{
+    if(action<1||action>3||!instrumentNormalMode()||instrumentOtherForced()||
+       m_disconnectRequested.loadAcquire()!=0||m_shutdownRequested.loadAcquire()!=0||
+       m_instrumentRequest.loadAcquire()!=0)return false;
+    m_instrumentCancel.storeRelease(0);
+    return m_instrumentRequest.testAndSetOrdered(0,action);
+}
+
+bool MEMSInterface::instrumentFamilyMatches(Mems218::InstrumentAction action) const
+{
+    return action==Mems218::InstrumentAction::Tachometer
+        ?ecuFamily()==MemsEcuFamily::Mems19
+        :ecuFamily()==MemsEcuFamily::Rosco13_16;
+}
+
+bool MEMSInterface::finishInstrumentTest(int result)
+{
+    const int action=m_instrumentRequest.loadAcquire();
+    if(!action)return true;
+    bool restored=true;
+    if(m_instrumentActive){
+        uint8_t reply=0xff;
+        // The global cancellation is only used within our exclusive test,
+        // and only in the verified normal protocol context.
+        restored=m_initComplete&&mems_is_connected(&m_memsinfo)&&
+            diagnosticMode()==MemsDiagnosticMode::Normal&&
+            guardedMemsTestActuator(static_cast<actuator_cmd>(Mems218::instrumentRestoreCommand),&reply)&&reply==0;
+        if(!restored)result=4;
+    }
+    m_instrumentActive=false;
+    m_instrumentRequest.storeRelease(0);
+    emit instrumentTestResult(action,result);
+    // No traffic may refresh the ECU watchdog after an unconfirmed restore.
+    if(!restored)m_stopPolling=true;
+    return restored;
+}
+
+bool MEMSInterface::serviceInstrumentTest(const mems_data &sample,qint64 sampleMs)
+{
+    const int request=m_instrumentRequest.loadAcquire();
+    if(!request)return true;
+    const auto action=static_cast<Mems218::InstrumentAction>(request);
+    const bool safe=instrumentNormalMode()&&instrumentFamilyMatches(action)&&
+        !instrumentOtherForced()&&sampleMs<=Mems218::instrumentMaximumSampleMs&&
+        sample.engine_rpm==0&&sample.uk3==0&&sample.ignition_switch==1&&
+        Mems218::instrumentSafeSample(action,m_naSession)&&
+        m_disconnectRequested.loadAcquire()==0&&m_shutdownRequested.loadAcquire()==0&&
+        m_instrumentCancel.loadAcquire()==0;
+    if(m_instrumentActive){
+        if(!safe)return finishInstrumentTest(2);
+        if(m_instrumentTimer.elapsed()>=Mems218::instrumentDurationMs)
+            return finishInstrumentTest(1);
+        return true;
+    }
+    if(!safe)return finishInstrumentTest(3);
+    // Start only after a NEW complete pair read by this worker, never after
+    // a cached GUI measurement. One start command; no automatic repetition.
+    const unsigned command=Mems218::instrumentCommand(action);
+    if(command>255)return finishInstrumentTest(3);
+    uint8_t reply=0xff;
+    m_instrumentActive=true; // even an absent reply may mean the force was applied
+    m_instrumentTimer.start();
+    if(!guardedMemsTestActuator(static_cast<actuator_cmd>(command),&reply)||reply!=0){
+        finishInstrumentTest(5);
+        // A failed start may have desynchronised the byte stream.
+        m_stopPolling=true;
+        return false;
+    }
+    return true;
 }
 
 bool MEMSInterface::actuatorOnOffDelayTest(actuator_cmd onCmd, actuator_cmd offCmd)
