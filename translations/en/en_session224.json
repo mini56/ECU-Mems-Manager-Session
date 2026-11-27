@@ -8,8 +8,8 @@
   "2972407": "Rev counter test not validated for this firmware.",
   "2972408": "Observe the dashboard rev counter; this test does not measure engine speed.",
   "2972409": "TEMPERATURE GAUGE TEST",
-  "2972410": "Engine running",
+  "2972410": "Stepper at minimum",
   "2972411": "Valid oxygen sensor signal",
-  "2972412": "Green: engine speed above zero. Off: engine stopped or speed unavailable.",
+  "2972412": "Red: ECU reports zero steps. Off: position above zero or unavailable. Minimum position alone does not prove a fault.",
   "2972413": "Green: ECU reports a valid oxygen sensor signal on a qualified profile. Off: invalid or unavailable signal. This alone does not prove sensor health."
 }
