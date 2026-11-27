@@ -430,8 +430,10 @@ void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
   if(na&&MemsExtendedDtc::short13(na->firmwareName().c_str())){
     const int i=m_rowUk6;auto *table=i/m_rowsPerTable==0?m_table0:i/m_rowsPerTable==1?m_table1:m_table2;
     auto *label=table->item(i%m_rowsPerTable,0);
-    if(!m_showing13Analogue){m_13AnalogueLabel=label->text();m_13AnalogueTip=label->toolTip();m_showing13Analogue=true;}
+    const bool first=!m_showing13Analogue;
+    if(first){m_13AnalogueLabel=label->text();m_13AnalogueTip=label->toolTip();m_showing13Analogue=true;}
     label->setText(I18n::text(2972312));setTooltip(i,I18n::text(2972313));
+    if(first)sizeSummaryTable(table);
     const auto &b=na->extended7d();
     const bool valid=MemsExtendedDtc::analogue13Available(na->firmwareName().c_str(),b.data(),b.size())&&b[3]==data->uk6;
     setValue(i,valid?QString::number(b[3]):QStringLiteral("--"),QStringLiteral("--"));
@@ -661,6 +663,7 @@ void SummaryTab::clear13Analogue()
   const int i=m_rowUk6;auto *table=i/m_rowsPerTable==0?m_table0:i/m_rowsPerTable==1?m_table1:m_table2;
   table->item(i%m_rowsPerTable,0)->setText(m_13AnalogueLabel);setTooltip(i,m_13AnalogueTip);
   setValue(i,QStringLiteral("--"),QStringLiteral("--"));m_showing13Analogue=false;
+  sizeSummaryTable(table);
 }
 void SummaryTab::clear220Presentation()
 {
