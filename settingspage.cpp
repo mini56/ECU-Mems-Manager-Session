@@ -19,6 +19,7 @@
 #include <QtMath>
 #include "i18n.h"
 #include "settingspage.h"
+#include "overviewpage.h"
 #include <qledindicator/qledindicator.h>
 #include "applicationvisualstyle.h"
 
@@ -738,9 +739,9 @@ static void embedNoteInRpmGauge(QWidget *page,QFrame *metrics,QFrame *adjust)
     note->show();
 }
 
-static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFrame *adjust)
+static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFrame *adjust,QFrame *system)
 {
-    if(!page || !metrics || !states || !adjust) return;
+    if(!page || !metrics || !states || !adjust || !system) return;
 
     QGridLayout *body=nullptr;
     for(QGridLayout *grid:page->findChildren<QGridLayout*>()) {
@@ -751,17 +752,19 @@ static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFr
     }
     if(!body) return;
 
-    // The metrics frame spans both body columns so the gauge group stays
-    // centered while the two lower panels share the full available width.
+    // Symmetric side cards keep the ECU adjustment form centered under the RPM gauge.
     body->removeWidget(metrics);
     body->removeWidget(states);
     body->removeWidget(adjust);
-    body->addWidget(metrics,0,0,1,2);
+    body->addWidget(metrics,0,0,1,3);
     body->addWidget(states,1,0);
     states->show();
     body->addWidget(adjust,1,1);
+    body->addWidget(system,1,2);
+    system->show();
     body->setColumnStretch(0,1);
     body->setColumnStretch(1,4);
+    body->setColumnStretch(2,1);
     // The precision dial owns any spare vertical room; controls keep their
     // natural height rather than expanding into an oversized lower band.
     body->setRowStretch(0,1);
@@ -769,9 +772,11 @@ static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFr
     body->setHorizontalSpacing(8);
     body->setVerticalSpacing(4);
 
-    states->setMinimumWidth(205);
-    states->setMaximumWidth(275);
-    states->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
+    for(QFrame *side:{states,system}){
+        side->setMinimumWidth(165);
+        side->setMaximumWidth(275);
+        side->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
+    }
     adjust->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 }
 
@@ -899,6 +904,11 @@ static void buildSettingsScaffold(QMainWindow *window)
     }
     static_cast<QVBoxLayout*>(states->layout())->addLayout(sg);static_cast<QVBoxLayout*>(states->layout())->addStretch(1);
     body->addWidget(states,0,1);
+    QFrame *system=settingsScaffoldCard(page,QStringLiteral("settingsSystemState"),I18n::text(7149));
+    auto *indicator=createEmbeddedSystemStateIndicator(window,system);
+    indicator->setObjectName(QStringLiteral("settingsSystemStateIndicator"));
+    static_cast<QVBoxLayout*>(system->layout())->addWidget(indicator,1);
+    system->hide();
 
     QFrame *adjust=settingsScaffoldCard(page,QStringLiteral("settingsAdjust"),I18n::text(7135));
     QGridLayout *ag=new QGridLayout;ag->setHorizontalSpacing(8);ag->setVerticalSpacing(7);ag->setColumnStretch(1,1);
@@ -924,7 +934,8 @@ static void applySettingsLayout(QMainWindow *window)
     QFrame *metrics=window->findChild<QFrame*>(QStringLiteral("settingsMetrics"));
     QFrame *states=window->findChild<QFrame*>(QStringLiteral("settingsStates"));
     QFrame *adjust=window->findChild<QFrame*>(QStringLiteral("settingsAdjust"));
-    if(!page || !metrics || !states || !adjust) return;
+    QFrame *system=window->findChild<QFrame*>(QStringLiteral("settingsSystemState"));
+    if(!page || !metrics || !states || !adjust || !system) return;
 
     if(!page->property("settingsDark410Built").toBool()) {
         page->setProperty("settingsDark410Built",true);
@@ -937,7 +948,7 @@ static void applySettingsLayout(QMainWindow *window)
     // Integrate the previously separate late visual pass once, here.
     if(!page->property("settingsLayoutIntegrated").toBool()) {
         compactAdjustForm(page,adjust);
-        arrangeBottomPanels(page,metrics,states,adjust);
+        arrangeBottomPanels(page,metrics,states,adjust,system);
         shortenSettingsSeparator(adjust);
         page->setProperty("settingsLayoutIntegrated",true);
     }
@@ -954,9 +965,11 @@ static void applySettingsLayout(QMainWindow *window)
 
     applySettingsSizing(page,metrics,adjust);
     // Let the same layout size the status panel; never restore a 154px cap.
-    states->setMinimumHeight(adjust->minimumHeight());
-    states->setMaximumHeight(adjust->maximumHeight());
-    states->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+    for(QFrame *side:{states,system}){
+        side->setMinimumHeight(adjust->minimumHeight());
+        side->setMaximumHeight(adjust->maximumHeight());
+        side->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
+    }
     embedNoteInRpmGauge(page,metrics,adjust);
 }
 
@@ -998,6 +1011,8 @@ void fitSettingsPage(QMainWindow *window)
     QFrame *metrics=window->findChild<QFrame*>(QStringLiteral("settingsMetrics"));
     QFrame *adjust=window->findChild<QFrame*>(QStringLiteral("settingsAdjust"));
     applySettingsSizing(page,metrics,adjust);
+    if(adjust)for(const char *name:{"settingsStates","settingsSystemState"})
+        if(auto *side=window->findChild<QFrame*>(QString::fromLatin1(name)))side->setFixedHeight(adjust->minimumHeight());
     // QStackedLayout may defer geometry of hidden pages. Use the current
     // content size to lay out the reference Settings page even when the user
     // has never opened it. No geometry changes to visible Settings controls.
