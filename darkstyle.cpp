@@ -109,7 +109,7 @@ static void stylePages(QMainWindow *w)
             const QString n=f->objectName();
             if(n.startsWith(QStringLiteral("strictHero_"))||n.startsWith(QStringLiteral("uiRebuildHero_"))||n==QStringLiteral("overviewHeading"))
                 f->setStyleSheet(QStringLiteral("QFrame{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #19232b,stop:.68 #11191f,stop:1 #0a1116);border:1px solid #303d47;border-left:3px solid #ff7a00;border-radius:7px;}QLabel{background:transparent;border:0;color:#f0f4f6;}"));
-            else if(n==QStringLiteral("settingsMetrics")||n==QStringLiteral("settingsStates")||n==QStringLiteral("settingsAdjust")||n==QStringLiteral("errorsStored")||n==QStringLiteral("errorsLive")||n==QStringLiteral("actuatorListCard")||n==QStringLiteral("actuatorIacCard"))
+            else if(n==QStringLiteral("settingsMetrics")||n==QStringLiteral("settingsStates")||n==QStringLiteral("settingsSystemState")||n==QStringLiteral("settingsAdjust")||n==QStringLiteral("errorsStored")||n==QStringLiteral("errorsLive")||n==QStringLiteral("actuatorListCard")||n==QStringLiteral("actuatorIacCard"))
                 f->setStyleSheet(card);
         }
         for(QGroupBox *g:page->findChildren<QGroupBox*>()) g->setStyleSheet(QStringLiteral("QGroupBox{background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #141d24,stop:1 #0a1116);color:#e7edf0;border:1px solid #2d3943;border-radius:7px;margin-top:15px;font-weight:700;}QGroupBox::title{subcontrol-origin:margin;left:12px;padding:0 6px;color:#ffa149;}"));
@@ -186,7 +186,14 @@ static void styleControls(QMainWindow *w)
         // black/orange style, which must not be replaced by global styling.
         if(b->objectName()==QStringLiteral("m_clearFaultsButton") ||
            b->objectName()==QStringLiteral("m_clearRecordedAnomalies")) continue;
-        b->setStyleSheet(button);b->setMinimumHeight(qMax(27,b->fontMetrics().height()+12));
+        if(b->property("actuatorCompactButton").toBool()){
+            QString compact=button;
+            compact.replace(QStringLiteral("padding:5px 10px"),QStringLiteral("padding:2px 4px"));
+            b->setStyleSheet(compact);
+            b->setMinimumHeight(qMax(28,b->fontMetrics().height()+6));
+        }else{
+            b->setStyleSheet(button);b->setMinimumHeight(qMax(27,b->fontMetrics().height()+12));
+        }
     }
     const QString edit=QStringLiteral("background:#071016;color:#e2e9ed;border:1px solid #34434e;border-radius:5px;padding:4px 7px;selection-background-color:#754016;");
     for(QLineEdit *e:w->findChildren<QLineEdit*>()) e->setStyleSheet(edit);
@@ -309,7 +316,7 @@ QStatusBar{background:#f5f7fa;color:#263342;border-top:1px solid #d4dee7;}
 QStatusBar QLabel{color:#263342;background:transparent;}
 QGroupBox{background:#f7f9fb;color:#202936;border:1px solid #d9e1e9;border-radius:6px;margin-top:15px;font-weight:700;}
 QGroupBox::title{subcontrol-origin:margin;left:12px;padding:0 6px;color:#a95800;}
-QFrame#settingsMetrics,QFrame#settingsStates,QFrame#settingsAdjust,
+QFrame#settingsMetrics,QFrame#settingsStates,QFrame#settingsSystemState,QFrame#settingsAdjust,
 QFrame#errorsStored,QFrame#errorsLive,QFrame#actuatorListCard,
 QFrame#actuatorIacCard{
     background:#f8fafc;border:1px solid #d8e0e8;border-radius:6px;
@@ -331,6 +338,7 @@ QPushButton,QToolButton{
     background:#f3f6f9;color:#263442;border:1px solid #bfcbd7;
     border-radius:5px;padding:5px 10px;font-weight:650;
 }
+QPushButton[actuatorCompactButton="true"]{padding:2px 4px;}
 QPushButton:hover,QToolButton:hover{background:#e6edf5;border-color:#e88019;}
 QPushButton:disabled,QToolButton:disabled{background:#f3f5f8;color:#9ca8b5;border-color:#d6dce2;}
 QPushButton#m_connectButton{background:#f07800;color:#ffffff;border:1px solid #cd6500;font-weight:800;}
