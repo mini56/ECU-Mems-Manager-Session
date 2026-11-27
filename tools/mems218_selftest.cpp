@@ -33,8 +33,8 @@ int main(){
     assert(instrumentCommand(InstrumentAction::Tachometer)==0x6b);
     assert(instrumentCommand(InstrumentAction::None)>255);
     Mems16Na::SessionEvidence tach;
-    tach.tx({0xd0});tach.rx({0xd0,0x99,1,2,3});tach.finish();
-    tach.tx({0xd1});tach.rx({0xd1,'T','F','H','7','G','0','2','9',0x99,1,2,3});tach.finish();
+    tach.tx({0xd0});tach.rx({0xd0,0x90,0,0x29,3});tach.finish();
+    tach.tx({0xd1});tach.rx({0xd1,'T','F','H','7','G','0','2','9',0x90,0,0x29,3});tach.finish();
     std::vector<std::uint8_t> a19(28,0),b19(33,0);
     a19[0]=28;b19[0]=33;b19[1]=1;
     tach.setExtended80(a19);tach.setExtended7d(b19);
