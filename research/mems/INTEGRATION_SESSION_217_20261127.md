@@ -18,3 +18,5 @@ Les seuils d'observation 300/600 mV et 3 pas température ne constituent pas des
 ## Suivi CI
 - Commit initial 6203853bb7a30714ed883c9c0f7d738754540623, run 45978630149, tentatives 1 et 2 : échec du job tests sans aucune étape listée et journaux inaccessibles (BlobNotFound). Windows ignoré. Cause exacte non accessible. Aucun Setup validé.
 - Revue source supplémentaire : export des diagnostics passifs MEMS 1.9, cadran sans valeur ni aiguille lorsque la correction n'est pas disponible, test synthétique MEMS 1.9 et égalité des clés des six catalogues. Nouvelle validation à exécuter. Aucune validation terrain.
+
+- Commit logiciel final 04303fe1acd6af4c40e0a40bbc3d9bb31828b003, run 45978846416 : échec du job tests sans aucune étape listée, Windows ignoré. CI bloquée avant validation, cause exacte non accessible. Aucun Setup disponible ni validation sur véhicule. Ne pas passer au lot suivant avant recette et reprise du run. Les fonctions intégrées ne sont pas marquées testées ou validées.
