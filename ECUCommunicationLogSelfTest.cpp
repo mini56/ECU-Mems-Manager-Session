@@ -60,8 +60,14 @@ int main(int argc,char **argv)
         EcuCommunicationLog::finish();
         if(QFileInfo::exists(pending))return fail(13,pending);
     }
-    if(directory.entryList(QStringList()<<QStringLiteral("*Communications_ECU.txt"),QDir::Files)!=before)
+    // Qt 5.15.2's QList equality instantiates a removed MSVC stdext iterator.
+    // Compare the same ordered file names individually, not only the count.
+    const QStringList after=directory.entryList(QStringList()<<QStringLiteral("*Communications_ECU.txt"),QDir::Files);
+    if(after.size()!=before.size())
         return fail(14,QStringLiteral("Failed attempts created permanent journals"));
+    for(int i=0;i<before.size();++i)
+        if(after.at(i)!=before.at(i))
+            return fail(14,QStringLiteral("Failed attempts changed permanent journal names"));
     using Outcome=EcuReconnectPolicy::Outcome;
     EcuReconnectPolicy policy;
     if(!policy.startManual() || policy.failed()!=Outcome::ManualFailure || policy.startRetry())

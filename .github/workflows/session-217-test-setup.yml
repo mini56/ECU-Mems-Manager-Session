@@ -6,6 +6,7 @@ on:
     branches: [fix-documentary-additive-session-161-20261118]
     paths:
       - '.github/workflows/session-217-test-setup.yml'
+      - 'ECUCommunicationLogSelfTest.cpp'
 concurrency:
   group: session-217-private-test
   cancel-in-progress: false
