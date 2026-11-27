@@ -1212,7 +1212,10 @@ void MainWindow::onDataReady()
   const auto d3=naEvidence.extendedDtc(3);
   const bool syncProfile=MemsExtendedDtc::sync19(naEvidence.firmwareName().c_str());
   // DTC3 synchronization shares existing row 21: no duplicate warning.
-  if(syncProfile&&(d3.faults&1))fault2|=0x10;
+  if(syncProfile){
+    if(!knownDtc2)fault2&=quint8(~0x10);
+    if(d3.faults&1)fault2|=0x10;
+  }
   const unsigned extraFaults=updateAdditionalErrors(this,true,&naEvidence);
   if(!naIdentified){
     rememberNaLabel(m_ui->m_faultCode03Label);
@@ -1634,6 +1637,9 @@ void MainWindow::onDataReady()
   else if(Mems220::profile19(naEvidence)){
     const auto m=Mems220::decode(naEvidence);
     using namespace Mems16Na;
+    rememberNaLabel(m_ui->m_JackCountLabel);
+    m_ui->m_JackCountLabel->setText(I18n::text(29033)+QStringLiteral(" : ")+Mems220::count(m));
+    m_ui->m_JackCountLabel->setToolTip(I18n::text(29054));
     auto extra=[&](QLabel *raw,QGridLayout *grid)->QLabel*{
       if(m_naExtraValues.contains(raw)){auto *label=m_naExtraValues.value(raw);label->show();return label;}
       const int index=grid->indexOf(raw);if(index<0)return nullptr;
@@ -2001,6 +2007,10 @@ void MainWindow::onReadError()
 {
   if(m_closing || !m_reconnectPolicy.lost())return;
   updateGaugeTestAvailability(this,false,nullptr);
+  updateAdditionalErrors(this,false,nullptr);
+  for(const char *name:{"injectorTestReply","coilTestReply"})if(auto *label=findChild<QLabel*>(QString::fromLatin1(name))){label->clear();label->setToolTip(QString());}
+  restoreNaPages();
+  setDefaultFaultLabels();
   if(m_diagnosticPanel)m_diagnosticPanel->invalidateCoolantTest();
   EcuCommunicationLog::note(QStringLiteral("ERREUR_LECTURE"));
   // Do not arm the timer until disconnected() acknowledges worker closure.

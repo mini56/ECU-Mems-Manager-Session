@@ -839,8 +839,10 @@ unsigned updateAdditionalErrors(QMainWindow *window,bool connected,const Mems16N
         if(auto *led=window->findChild<QLedIndicator*>(QStringLiteral("extraDtc5Led%1").arg(bit)))led->setChecked(available&&(d5.faults&bit));
         if(auto *label=window->findChild<QLabel*>(QStringLiteral("extraDtc5Label%1").arg(bit))){
             const QString name=I18n::text(29245+i);
-            label->setText(!connected||supported&bit?name:I18n::text(2972201));
-            label->setToolTip(!connected?QString():supported&bit?(available?I18n::text(29021):I18n::text(29048)):name);
+            const QString display=!connected||(supported&bit)?name:I18n::text(2972201);
+            if(label->text()!=display)label->setText(display);
+            const QString detail=!connected?QString():(supported&bit)?(available?I18n::text(29021):I18n::text(29048)):name;
+            if(label->toolTip()!=detail)label->setToolTip(detail);
         }
     }
     const bool stateSupported=MemsExtendedDtc::sync19(f);
