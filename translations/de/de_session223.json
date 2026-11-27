@@ -9,5 +9,7 @@
   "2972308": "Bei dokumentierten Profilen zählt dies Drosselklappen-Lernvorgänge, keine Steuergeräte-Resets. Keine Auswertung bei unbekanntem Profil.",
   "2972309": "Die Einspritzkorrektur kann bei erfüllten Regelbedingungen automatisch angepasst werden. Bei den untersuchten Kalibrierungen AANMP002 und KBHBG009 beträgt die nominelle Verzögerung 22,528 s, gefolgt von Auswertungen der Lambdawechsel. Keine garantierte Zeit nach dem Start oder bis zur Konvergenz.",
   "2972310": "Bedeutung nicht identifiziert",
-  "2972311": "Analogeingangsfehler (Sensor nicht identifiziert)"
+  "2972311": "Analogeingangsfehler (Sensor nicht identifiziert)",
+  "2972312": "Gefilterter Analogeingang 0",
+  "2972313": "Bei den drei dokumentierten MEMS-1.3-Profilen ist dieser Eingang dem Analogeingangsfehler 18 zugeordnet. Übertragener Wert 0–159; Sensor und physikalische Einheit unbekannt. Ein Ersatzwert ist möglich."
 }

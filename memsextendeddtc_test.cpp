@@ -34,6 +34,18 @@ int main(){
         b[5]=static_cast<std::uint8_t>(r);require(decode("KBHBG009",2,b,32).faults==(r==255?0:r&0xB4));
     }
     std::uint8_t shortFrame[14]={14};
+    for(const char *f:{"ABEMR002","KBE6R003","MGE7R002"}){
+        for(unsigned value=0;value<256;++value){
+            shortFrame[3]=static_cast<std::uint8_t>(value);
+            require(analogue13Available(f,shortFrame,14)==(value<=159));
+        }
+    }
+    shortFrame[3]=42;
+    require(!analogue13Available("UNKNOWN",shortFrame,14));
+    require(!analogue13Available("KBHBG009",shortFrame,14));
+    require(!analogue13Available("ABEMR002",shortFrame,13));
+    require(!analogue13Available("ABEMR002",nullptr,14));
+    shortFrame[0]=13;require(!analogue13Available("ABEMR002",shortFrame,14));shortFrame[0]=14;
     require(decode("ABEMR002",3,shortFrame,14).status==Status::Missing);
     require(decode("KBHBG009",5,shortFrame,14).status==Status::Missing);
     b[14]=255;require(decode("TBP7F015",3,b,32).status==Status::NotUsed);

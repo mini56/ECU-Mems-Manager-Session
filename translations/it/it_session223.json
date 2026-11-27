@@ -9,5 +9,7 @@
   "2972308": "Nei profili documentati conta gli apprendimenti della farfalla, non i reset ECU. Nessuna interpretazione per profilo non identificato.",
   "2972309": "La correzione iniezione può adattarsi automaticamente quando sono soddisfatte le condizioni di regolazione. Nelle calibrazioni studiate AANMP002 e KBHBG009 il ritardo nominale è 22,528 s, seguito da valutazioni legate alle commutazioni lambda. Non è un tempo garantito dopo l’avviamento né di convergenza.",
   "2972310": "Significato non identificato",
-  "2972311": "Guasto ingresso analogico (sensore non identificato)"
+  "2972311": "Guasto ingresso analogico (sensore non identificato)",
+  "2972312": "Ingresso analogico 0 filtrato",
+  "2972313": "Nei tre profili MEMS 1.3 documentati, questo ingresso è associato al guasto ingresso analogico 18. Valore trasmesso da 0 a 159; sensore e unità fisica non identificati. È possibile un valore sostitutivo."
 }

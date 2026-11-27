@@ -13,6 +13,10 @@ struct Result {
 inline bool eq(const char *a,const char *b) {return a&&std::strcmp(a,b)==0;}
 inline bool turbo(const char *f) {return eq(f,"TCF7X005")||eq(f,"TCF8X005")||eq(f,"TFF8X000")||eq(f,"TFFSX000");}
 inline bool short13(const char *f) {return eq(f,"ABEMR002")||eq(f,"KBE6R003")||eq(f,"MGE7R002");}
+// V1.43 ch14–16: transmitted analogue value, not a physical unit.
+inline bool analogue13Available(const char *f,const std::uint8_t *b,std::size_t n) {
+    return short13(f)&&b&&n==14&&b[0]==14&&b[3]<=159;
+}
 inline bool fan(const char *f) {return eq(f,"REGI1224")||eq(f,"KLH3G015")||eq(f,"KLH3G018")||eq(f,"KLHCG002")||eq(f,"REGI1360")||eq(f,"REGI1365")||eq(f,"REGI1374")||eq(f,"REGI1384")||eq(f,"KLH3G020");}
 inline bool hdc(const char *f) {return eq(f,"REGI1297")||eq(f,"REGI1330")||eq(f,"REGI1341")||eq(f,"KLH4G020")||eq(f,"KLQ4G007");}
 inline bool cruise(const char *f) {return eq(f,"TAHHG013")||eq(f,"TAHHG019")||eq(f,"TAHHV006");}

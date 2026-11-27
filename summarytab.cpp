@@ -309,6 +309,7 @@ void SummaryTab::setValue(int globalRow, const QString &rawText, const QString &
 void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
 {
   if (!data) return;
+  if(!na||!MemsExtendedDtc::short13(na->firmwareName().c_str()))clear13Analogue();
   if(!na||!Mems220::profile19(*na))clear220Presentation();
   if (!na || !na->identifiedProfile())clearNaPresentation();
   if (m_showing2J)
@@ -426,6 +427,15 @@ void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
            QString::number(data->throttle_angle * 0.6, 'f', 1) + " °");
 
   setValue(m_rowUk6, QString::number(data->uk6), QString::number(data->uk6));
+  if(na&&MemsExtendedDtc::short13(na->firmwareName().c_str())){
+    const int i=m_rowUk6;auto *table=i/m_rowsPerTable==0?m_table0:i/m_rowsPerTable==1?m_table1:m_table2;
+    auto *label=table->item(i%m_rowsPerTable,0);
+    if(!m_showing13Analogue){m_13AnalogueLabel=label->text();m_13AnalogueTip=label->toolTip();m_showing13Analogue=true;}
+    label->setText(I18n::text(2972312));setTooltip(i,I18n::text(2972313));
+    const auto &b=na->extended7d();
+    const bool valid=MemsExtendedDtc::analogue13Available(na->firmwareName().c_str(),b.data(),b.size())&&b[3]==data->uk6;
+    setValue(i,valid?QString::number(b[3]):QStringLiteral("--"),QStringLiteral("--"));
+  }
 
   setValue(m_rowAirFuelRatio,
            QString::number(data->air_fuel_ratio),
@@ -526,6 +536,7 @@ void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
 
 void SummaryTab::update2JData(const QVariantMap &values, const QString &family)
 {
+  clear13Analogue();
   clear220Presentation();
   clearNaPresentation();
   // MEMS 2J sends 0x21/0x61 measurements, not ROSCO 0x80/0x7D.
@@ -644,6 +655,13 @@ void SummaryTab::update2JData(const QVariantMap &values, const QString &family)
   if(refreshColumns)for(QTableWidget *table:{m_table0,m_table1,m_table2})sizeSummaryTable(table);
 }
 
+void SummaryTab::clear13Analogue()
+{
+  if(!m_showing13Analogue)return;
+  const int i=m_rowUk6;auto *table=i/m_rowsPerTable==0?m_table0:i/m_rowsPerTable==1?m_table1:m_table2;
+  table->item(i%m_rowsPerTable,0)->setText(m_13AnalogueLabel);setTooltip(i,m_13AnalogueTip);
+  setValue(i,QStringLiteral("--"),QStringLiteral("--"));m_showing13Analogue=false;
+}
 void SummaryTab::clear220Presentation()
 {
   if(!m_showing220)return;
@@ -717,6 +735,7 @@ void SummaryTab::clearNaPresentation()
 
 void SummaryTab::showNaDocumentation()
 {
+  clear13Analogue();
   clear220Presentation();
   if(m_showing2J) {
     for(int i=0;i<m_rowCount;++i) {

@@ -9,5 +9,7 @@
   "2972308": "Sur les profils documentés, ce compteur recense les apprentissages du papillon, et non les réinitialisations de l’ECU. Aucune interprétation sur un profil non identifié.",
   "2972309": "La correction d’injection peut être adaptée automatiquement lorsque les conditions de régulation sont réunies. Sur les deux calibrations AANMP002 et KBHBG009 étudiées, le délai nominal est de 22,528 s, suivi d’évaluations liées aux basculements lambda. Ce n’est pas un délai garanti après démarrage ni une durée de convergence.",
   "2972310": "Signification non identifiée",
-  "2972311": "Défaut entrée analogique (capteur non identifié)"
+  "2972311": "Défaut entrée analogique (capteur non identifié)",
+  "2972312": "Entrée analogique 0 filtrée",
+  "2972313": "Sur les trois profils MEMS 1.3 documentés, cette entrée est associée au défaut d’entrée analogique 18. Valeur transmise de 0 à 159 ; capteur et unité physique non identifiés. Une valeur de secours peut être utilisée."
 }

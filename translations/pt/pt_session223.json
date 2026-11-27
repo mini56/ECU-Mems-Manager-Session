@@ -9,5 +9,7 @@
   "2972308": "Nos perfis documentados conta aprendizagens da borboleta, não reinicializações da ECU. Sem interpretação para perfil não identificado.",
   "2972309": "A correção de injeção pode adaptar-se automaticamente quando as condições de regulação são cumpridas. Nas calibrações estudadas AANMP002 e KBHBG009 o atraso nominal é 22,528 s, seguido de avaliações associadas às transições lambda. Não é um prazo garantido após o arranque nem de convergência.",
   "2972310": "Significado não identificado",
-  "2972311": "Falha entrada analógica (sensor não identificado)"
+  "2972311": "Falha entrada analógica (sensor não identificado)",
+  "2972312": "Entrada analógica 0 filtrada",
+  "2972313": "Nos três perfis MEMS 1.3 documentados, esta entrada está associada à falha de entrada analógica 18. Valor transmitido de 0 a 159; sensor e unidade física não identificados. Pode ser utilizado um valor de substituição."
 }

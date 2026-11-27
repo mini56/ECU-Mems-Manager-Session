@@ -50,6 +50,9 @@ private:
     bool m_showing2J = false;
     bool m_showingNa = false;
     bool m_showing220=false;
+    bool m_showing13Analogue=false;
+    QString m_13AnalogueLabel,m_13AnalogueTip;
+    void clear13Analogue();
     QStringList m_220Labels,m_220Tips;
     void clear220Presentation();
     void apply220Presentation(const Mems16Na::SessionEvidence &s);

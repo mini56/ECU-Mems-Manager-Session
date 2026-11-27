@@ -1227,6 +1227,7 @@ void MainWindow::onDataReady()
   if(!naIdentified&&MemsExtendedDtc::short13(naEvidence.firmwareName().c_str())){
     rememberNaLabel(m_ui->m_faultCode18Label);
     m_ui->m_faultCode18Label->setText(QStringLiteral("18 - ")+I18n::text(2972311));
+    m_ui->m_faultCode18Label->setToolTip(I18n::text(2972313));
   }
   if(syncProfile){rememberNaLabel(m_ui->m_faultCode21Label);m_ui->m_faultCode21Label->setText(QStringLiteral("21 - ")+I18n::text(29018));}
   if(knownDtc2){
@@ -1521,6 +1522,13 @@ void MainWindow::onDataReady()
  m_ui->m_7D_02->setText(QString::number(data->throttle_angle));
  m_ui->r_7D_02->setText(QString::number(Mems219::legacyThrottleDeg(data->throttle_angle),'f',1)+QStringLiteral(" °"));
  m_ui->m_7D_03->setText(QString::number(data->uk6));
+ if(MemsExtendedDtc::short13(naEvidence.firmwareName().c_str())){
+    rememberNaLabel(m_ui->label_0x03);
+    m_ui->label_0x03->setText(I18n::text(2972312));
+    m_ui->label_0x03->setToolTip(I18n::text(2972313));
+    const auto &b=naEvidence.extended7d();
+    m_ui->m_7D_03->setText(MemsExtendedDtc::analogue13Available(naEvidence.firmwareName().c_str(),b.data(),b.size())&&b[3]==data->uk6?QString::number(b[3]):QStringLiteral("--"));
+ }
  m_ui->m_7D_04->setText(QString::number(data->air_fuel_ratio));
  m_ui->r_7D_04->setText(QString::number(data->air_fuel_ratio / 10.0) + " AFR");
  m_ui->m_7D_05->setText(QString::number(data->dtc2));
