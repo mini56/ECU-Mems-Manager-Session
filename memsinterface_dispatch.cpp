@@ -44,18 +44,36 @@ bool MEMSInterface::guardedMemsTestActuator(actuator_cmd cmd, uint8_t *data)
     // La recherche d'une reference dans une base n'est pas un prerequis.
     if (!m_initComplete || !mems_is_connected(&m_memsinfo))
         return false;
+    // An earlier actuator command might have left a forced output active.
+    // Be conservative even on a missing acknowledgement; only an acknowledged
+    // general cancellation clears the marker. Adjustment commands are excluded.
+    switch(quint8(cmd)){
+    case 0x11:case 0x01:case 0x12:case 0x02:case 0x13:case 0x03:
+    case 0x18:case 0x08:case 0x19:case 0x09:case 0x1b:case 0x0b:
+    case 0x1d:case 0x0d:case 0x1e:case 0x0e:case 0x6f:case 0x67:
+    case 0xf7:case 0xef:case 0xf8:case 0xfd:case 0xfe:
+        m_instrumentOtherForced.storeRelease(1);break;
+    default:break;
+    }
+    uint8_t resetReply=0xff;
+    uint8_t *reply=(quint8(cmd)==0xf4&&!data)?&resetReply:data;
+    bool ok;
 #ifdef MEMS_NATIVE_KLINE_19
     if (ecuFamily() == MemsEcuFamily::Mems19)
-        return ::mems_command_kline19(&m_memsinfo, quint8(cmd),
-                                       m_kline19LocalEcho, data);
+        ok=::mems_command_kline19(&m_memsinfo,quint8(cmd),m_kline19LocalEcho,reply);
+    else
 #endif
-    return ::mems_test_actuator(&m_memsinfo, cmd, data);
+        ok=::mems_test_actuator(&m_memsinfo,cmd,reply);
+    if(quint8(cmd)==0xf4&&ok&&reply&&*reply==0&&diagnosticMode()==MemsDiagnosticMode::Normal)
+        m_instrumentOtherForced.storeRelease(0);
+    return ok;
 }
 
 bool MEMSInterface::guardedMemsMoveIac(uint8_t desiredPos)
 {
     if (!m_initComplete || !mems_is_connected(&m_memsinfo))
         return false;
+    m_instrumentOtherForced.storeRelease(1);
 #ifdef MEMS_NATIVE_KLINE_19
     if (ecuFamily() == MemsEcuFamily::Mems19)
         return ::mems_move_iac_kline19(&m_memsinfo, desiredPos,
