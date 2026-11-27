@@ -36,6 +36,7 @@
 #include <QPushButton>
 #include <QToolButton>
 #include <QLabel>
+#include <QLCDNumber>
 #include <QLineEdit>
 #include <QCheckBox>
 #include <QComboBox>
@@ -205,7 +206,7 @@ bool verifyApprovedVisualRules(MainWindow &window)
     if(state && gauge && move){
         QWidget *right=state->parentWidget();
         ok=check(state->minimumWidth()>=200 && state->minimumHeight()>=96 &&
-                 state->maximumHeight()<=126 && state->maximumWidth()>=350 &&
+                 state->maximumHeight()<=126 && state->maximumWidth()==QWIDGETSIZE_MAX &&
                  gauge->parentWidget()==right && move->parentWidget()==right &&
                  right->layout() && right->layout()->indexOf(gauge)>=0 &&
                  right->layout()->indexOf(gauge)<right->layout()->indexOf(state),
@@ -221,6 +222,13 @@ bool verifyApprovedVisualRules(MainWindow &window)
                  "Disconnected gauge commands must be locked with an explanation") && ok;
     }
 
+    auto *unit=window.findChild<QLabel*>(QStringLiteral("session217InjectionUnit"));
+    ok=check(unit&&unit->text()==QStringLiteral("µs")&&unit->toolTip().isEmpty(),
+             "Injection unit visible at rest; no second help bubble")&&ok;
+    for(const char *name:{"e_FuelTrim_lcd","e_IdleDecay_lcd","e_IdleSpeed_lcd","e_IgnitionAdvance_lcd"}){
+        auto *lcd=window.findChild<QLCDNumber*>(QString::fromLatin1(name));
+        ok=check(lcd&&lcd->value()==0.0,"All four ECU adjustment displays start at zero")&&ok;
+    }
     // Verify the real actuator stepper slider, not a decorative or duplicate
     // element. Preserve the original movement range and ECU signal wiring.
     QSlider *stepperSlider=window.findChild<QSlider*>(
@@ -1061,6 +1069,15 @@ bool verifyUi(MainWindow &window)
                              actuatorPage->rect().contains(g)&&actuatorPage->rect().contains(st)&&
                              gauge->rect().contains(msg)&&state->height()>=96&&state->height()<=126,
                              "Actuator sections must be visible, ordered and non-overlapping") && ok;
+                    auto *dial=gauge->findChild<QWidget*>(QStringLiteral("actuatorTemperatureDial"));
+                    auto *btn=gauge->findChild<QPushButton*>(QStringLiteral("gaugeTestMinimum"));
+                    auto *title=actuatorPage->findChild<QLabel*>(QStringLiteral("actuatorStepperTitle"));
+                    auto *heater=actuatorPage->findChild<QLabel*>(QStringLiteral("m_O2Heater"));
+                    ok=check(dial&&btn&&title&&dial->width()>=132&&dial->height()>=88&&
+                             btn->height()==26&&state->width()>=gauge->width()-2&&
+                             title->height()==22&&title->y()<30,
+                             "Readable dial, compact buttons, full-width system card and top-aligned stepper title")&&ok;
+                    ok=check(heater&&heater->wordWrap(),"Heater label permits wrapping instead of clipping")&&ok;
                     if(auto *scroll=qobject_cast<QScrollArea*>(tabs->widget(actuatorIndex)))
                         ok=check(scroll->verticalScrollBar()->maximum()==0,
                                  "Actuator page must not require vertical scrolling") && ok;
@@ -1223,6 +1240,21 @@ bool verifyUi(MainWindow &window)
                      navigation->item(originalTab),
                  "Theme changes must not disturb 16 pages, sidebar geometry or selection") && ok;
 
+        // Capture the real installed widgets, rather than treating geometry checks
+        // as human visual approval. Restore the original size and selected page.
+        const QSize priorSize=window.size();
+        QDir().mkpath(QStringLiteral("session221-visual"));
+        for(const QSize captureSize:{QSize(1200,768),QSize(1366,768),QSize(1920,1080)}){
+            window.resize(captureSize);
+            for(int page:{0,2,3}){
+                tabs->setCurrentIndex(page);QCoreApplication::processEvents();QCoreApplication::processEvents();
+                const QString name=QStringLiteral("session221-visual/%1-%2-%3.png")
+                    .arg(dark?QStringLiteral("dark"):QStringLiteral("light"))
+                    .arg(captureSize.width()).arg(page);
+                ok=check(window.grab().save(name,"PNG"),"Save installed UI visual evidence")&&ok;
+            }
+        }
+        window.resize(priorSize);tabs->setCurrentIndex(originalTab);QCoreApplication::processEvents();
         // Test each actual page after its native layout is visible.
         for(int page=0;page<tabs->count();++page){
             tabs->setCurrentIndex(page);

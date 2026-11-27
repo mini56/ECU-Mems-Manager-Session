@@ -1121,6 +1121,7 @@ void MainWindow::setAdjustmentsEnabled(bool enabled)
 void MainWindow::onDataReady()
 {
   if(m_closing || !m_reconnectPolicy.connected())return;
+  setProperty("session221DisplayConnected",true);
   if (m_mems->ecuFamily()==MemsEcuFamily::Mems2J ||
       m_mems->ecuFamily()==MemsEcuFamily::Mems3)
   {
@@ -1828,6 +1829,7 @@ void MainWindow::refreshConnectionHeader()
     statusPort->setText(QStringLiteral("%1 : %2").arg(I18n::text(7114), port));
 
   if(!m_reconnectPolicy.connected()){
+    setProperty("session221DisplayConnected",false);
     for(QObject *g:{static_cast<QObject*>(m_ui->m_short_term_correction),static_cast<QObject*>(m_ui->m_waterTempGauge),static_cast<QObject*>(m_ui->m_airTempGauge)})g->setProperty("session220Unavailable",true);
   }
   const bool disconnected = isEcuDisconnected();
@@ -1909,11 +1911,12 @@ void MainWindow::onDisconnect()
   m_ui->e_short_term_fuel_trim->setProperty("session217LambdaUnavailable",true);
   m_ui->emi_shorttermftrim->setText(I18n::text(2971701));
   m_ui->emi_idledecay->setText(I18n::text(2022));
-  if(auto *unit=findChild<QLabel*>(QStringLiteral("session217InjectionUnit")))unit->setText(QStringLiteral("--"));
-  m_ui->e_FuelTrim_lcd->display(QStringLiteral("--"));
-  m_ui->e_IdleDecay_lcd->display(QStringLiteral("--"));
-  m_ui->e_IdleSpeed_lcd->display(QStringLiteral("--"));
-  m_ui->e_IgnitionAdvance_lcd->display(QStringLiteral("--"));
+  setProperty("session221DisplayConnected",false);
+  if(auto *unit=findChild<QLabel*>(QStringLiteral("session217InjectionUnit")))unit->setText(QStringLiteral("µs"));
+  m_ui->e_FuelTrim_lcd->display(0);
+  m_ui->e_IdleDecay_lcd->display(0);
+  m_ui->e_IdleSpeed_lcd->display(0);
+  m_ui->e_IgnitionAdvance_lcd->display(0);
   m_ui->e_lambda->setValue(0);
   m_ui->m_revCounter_exhaust->setValue(0);
   m_ui->e_idle_error->setValue(0);

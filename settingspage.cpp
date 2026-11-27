@@ -80,12 +80,19 @@ protected:
         p.translate((width()-bw*scale)/2.0,(dialHeight-bh*scale)/2.0);
         p.scale(scale,scale);
 
-        const QString gaugeTitle=(m_kind==FuelTrim?I18n::text(2971703):m_title).toUpper();
-        QFont titleFont=GaugeHeading::styledFont(p.font(),m_titleSize);
-        while(QFontMetrics(titleFont).horizontalAdvance(gaugeTitle)>bw-8 && titleFont.pointSizeF()>5)titleFont.setPointSizeF(titleFont.pointSizeF()-0.25);
-        p.setFont(titleFont);
+        // A single shared screen-space font for all five headings, including
+        // the larger central RPM dial. No isolated font reduction.
+        p.save();p.resetTransform();
+        qreal titleWidth=width()-12;
+        if(parentWidget())for(auto *g:parentWidget()->findChildren<QWidget*>())
+            if(g->objectName().startsWith(QStringLiteral("darkTuneGauge"))&&g->width()>0)
+                titleWidth=qMin(titleWidth,qreal(g->width()-12));
+        const QStringList titles{I18n::text(7139),I18n::text(1011),I18n::text(2972101),I18n::text(7141),I18n::text(7142)};
+        const qreal headingSize=GaugeHeading::sharedPointSize(font(),titles,titleWidth,m_titleSize);
+        p.setFont(GaugeHeading::styledFont(font(),headingSize));
         p.setPen(darkTheme?kText:QColor("#101820"));
-        p.drawText(QRectF(4,0,bw-8,20),Qt::AlignCenter,gaugeTitle);
+        p.drawText(QRectF(4,(dialHeight-bh*scale)/2,width()-8,20*scale),Qt::AlignCenter,m_title.toUpper());
+        p.restore();
 
         const QPointF c(bw/2.0,large?151.0:87.0);
         const qreal r=large?126.0:68.0;
@@ -109,7 +116,9 @@ protected:
         p.setBrush(Qt::NoBrush);
         p.drawEllipse(c,r-12.0,r-12.0);
 
-        double value=m_source?m_source->property("value").toDouble():0.0;
+        const bool offline=!window()->property("session221DisplayConnected").toBool();
+        const bool unavailable=!offline&&m_kind==FuelTrim&&(!m_source||m_source->property("session217LambdaUnavailable").toBool());
+        double value=offline||unavailable?0.0:(m_source?m_source->property("value").toDouble():0.0);
         double minv=m_source?m_source->property("minimum").toDouble():0.0;
         double maxv=m_source?m_source->property("maximum").toDouble():100.0;
         if(!qIsFinite(minv)||!qIsFinite(maxv)||qFuzzyCompare(minv,maxv)) {
@@ -189,7 +198,6 @@ protected:
             p.drawText(QRectF(pos.x()-(large?28:18),pos.y()-(large?9:7),large?56:36,large?18:14),Qt::AlignCenter,text);
         }
 
-        const bool unavailable=m_kind==FuelTrim && (!m_source||!m_source->property("session217LambdaUnavailable").isValid()||m_source->property("session217LambdaUnavailable").toBool());
         const double normalized=qBound(0.0,(value-minv)/(maxv-minv),1.0);
         const qreal needleDeg=startDeg+sweepDeg*normalized;
         const qreal angle=qDegreesToRadians(needleDeg);
@@ -203,7 +211,7 @@ protected:
         needle.closeSubpath();
         p.setPen(Qt::NoPen);
         p.setBrush(kOrange);
-        if(!unavailable)p.drawPath(needle);
+        p.drawPath(needle);
         p.setPen(QPen(QColor("#707980"),large?1.3:1.0));
         p.setBrush(QColor("#273038"));
         p.drawEllipse(c,large?10.0:6.0,large?10.0:6.0);
@@ -216,7 +224,7 @@ protected:
         valueFont.setPointSizeF(large?23.0:14.5);
         p.setFont(valueFont);
         p.setPen(darkTheme?QColor("#ffffff"):QColor("#101820"));
-        const QString valueText=unavailable?QStringLiteral("--"):(qAbs(maxv-minv)<=50.0)?QString::number(value,'f',1):QString::number(value,'f',0);
+        const QString valueText=offline?QStringLiteral("0"):unavailable?QStringLiteral("--"):(qAbs(maxv-minv)<=50.0)?QString::number(value,'f',1):QString::number(value,'f',0);
         p.drawText(QRectF(c.x()-(large?62:40),c.y()+(large?58:26),large?124:80,large?32:22),Qt::AlignCenter,valueText);
 
         QFont unitFont=p.font();
@@ -331,11 +339,11 @@ static void rebuildGaugeArea(QWidget *page,QFrame *metrics)
     QObject *lambdaSrc=page->findChild<QObject*>(QStringLiteral("e_lambda"));
 
     const qreal titleSize=GaugeHeading::sharedPointSize(page->font(),
-        QStringList{I18n::text(7139),I18n::text(1011),I18n::text(7140),
-                    I18n::text(7141),I18n::text(7142)},164.0);
+        QStringList{I18n::text(7139),I18n::text(1011),I18n::text(2972101),
+                    I18n::text(7141),I18n::text(7142)},164.0,10.0);
     SettingsGauge *idle=new SettingsGauge(idleSrc,I18n::text(7139),QStringLiteral("tr/min"),SettingsGauge::IdleError,titleSize,metrics);
     SettingsGauge *rpm=new SettingsGauge(rpmSrc,I18n::text(1011),QStringLiteral("tr/min"),SettingsGauge::EngineRpm,titleSize,metrics);
-    SettingsGauge *trim=new SettingsGauge(trimSrc,I18n::text(7140),QStringLiteral("%"),SettingsGauge::FuelTrim,titleSize,metrics);
+    SettingsGauge *trim=new SettingsGauge(trimSrc,I18n::text(2972101),QStringLiteral("%"),SettingsGauge::FuelTrim,titleSize,metrics);
     SettingsGauge *ign=new SettingsGauge(ignSrc,I18n::text(7141),QString::fromUtf8("°"),SettingsGauge::IgnitionAdvance,titleSize,metrics);
     SettingsGauge *lambda=new SettingsGauge(lambdaSrc,I18n::text(7142),QStringLiteral("mV"),SettingsGauge::Lambda,titleSize,metrics);
 
@@ -442,7 +450,7 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
         QPushButton *plus;
     };
     Row rows[]={
-        {fuelLabel,fuelMinus,fuelLcd,"--",fuelPlus},
+        {fuelLabel,fuelMinus,fuelLcd,"µs",fuelPlus},
         {hotLabel,hotMinus,hotLcd,nullptr,hotPlus},
         {rpmLabel,rpmMinus,rpmLcd,"tr/min",rpmPlus},
         {ignLabel,ignMinus,ignLcd,"°",ignPlus}
@@ -466,14 +474,14 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
         if(rows[row].lcd) {
             rows[row].lcd->setParent(form);
             styleLcd(rows[row].lcd);
-            rows[row].lcd->display(QStringLiteral("--"));
+            rows[row].lcd->display(0);
             if(rows[row].lcd==ignLcd) installPositiveLcdSign(ignLcd);
             grid->addWidget(rows[row].lcd,row,2);
         }
         QLabel *unitLabel=new QLabel(rows[row].unit?QString::fromUtf8(rows[row].unit):I18n::text(29065),form);
         if(row==0){
             unitLabel->setObjectName(QStringLiteral("session217InjectionUnit"));
-            unitLabel->setToolTip(I18n::text(2971901));
+            unitLabel->setProperty("helpBubbleNoIcon",true);
             if(rows[row].label){rows[row].label->setText(I18n::text(2971701));rows[row].label->setToolTip(I18n::text(2021)+QStringLiteral("\n")+I18n::text(2971901));}
         }
         QFont unitFont=unitLabel->font();

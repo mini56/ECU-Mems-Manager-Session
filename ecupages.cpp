@@ -16,6 +16,7 @@
 #include <QFontMetrics>
 #include <QPainterPath>
 #include <QPainter>
+#include <QtMath>
 #include <QPushButton>
 #include <QTabWidget>
 #include <QTimer>
@@ -206,8 +207,8 @@ protected:
         const QColor state=disconnected?QColor("#ff9828"):(fault?QColor("#ff4b3b"):QColor("#6bdd45"));
 
         const bool compact=objectName()==QStringLiteral("actuatorSystemState");
-        const QPointF c(compact?40.0:width()/2.0,compact?height()*0.62:height()*0.48);
-        const qreal rr=compact?qMin(22.0,height()*0.23):qMin(width()*0.19,height()*0.16);
+        const QPointF c(compact?width()*0.22:width()/2.0,compact?height()*0.64:height()*0.48);
+        const qreal rr=compact?qMin(27.0,height()*0.26):qMin(width()*0.19,height()*0.16);
         QPainterPath shield;
         shield.moveTo(c.x(),c.y()-rr);
         shield.lineTo(c.x()+rr*.75,c.y()-rr*.65);
@@ -229,18 +230,18 @@ protected:
 
         QFont stateFont=p.font();
         stateFont.setBold(true);
-        stateFont.setPointSizeF(7.8);
+        stateFont.setPointSizeF(compact?10.0:7.8);
         p.setFont(stateFont);
         p.setPen(state);
-        p.drawText(compact?QRectF(72,30,qMax(0,width()-80),25):QRectF(8,height()*0.67,qMax(0,width()-16),24),
+        p.drawText(compact?QRectF(width()*0.39,30,width()*0.59-8,25):QRectF(8,height()*0.67,qMax(0,width()-16),24),
                    Qt::AlignCenter,disconnected?I18n::disconnectedStatus():(fault?I18n::text(7144):I18n::text(7143)));
 
         QFont sub=p.font();
         sub.setBold(false);
-        sub.setPointSizeF(6.2);
+        sub.setPointSizeF(compact?9.0:6.2);
         p.setFont(sub);
         p.setPen(darkTheme?QColor("#8d99a3"):QColor("#485767"));
-        p.drawText(compact?QRectF(72,55,qMax(0,width()-80),32):QRectF(8,qMax(30,height()-38),qMax(0,width()-16),30),
+        p.drawText(compact?QRectF(width()*0.39,55,width()*0.59-8,32):QRectF(8,qMax(30,height()-38),qMax(0,width()-16),30),
                    Qt::AlignCenter|Qt::TextWordWrap,I18n::text(7145));
     }
 
@@ -429,19 +430,47 @@ static void composeErrors(QMainWindow *window)
     if(live){prepWidget(live);live->setParent(bottom);static_cast<QVBoxLayout*>(bottom->layout())->addWidget(live,1);}root->addWidget(bottom,2);
 }
 
-// A static gauge symbol, without an artificial needle or a reported position.
+// Native-style schematic instrument. Needle at its rest position, never a physical readback.
 class GaugeTestSymbol : public QWidget {
 public:
-    explicit GaugeTestSymbol(QWidget *parent):QWidget(parent){setFixedSize(68,50);}
+    explicit GaugeTestSymbol(QWidget *parent):QWidget(parent){
+        setObjectName(QStringLiteral("actuatorTemperatureDial"));
+        setMinimumSize(132,88);setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    }
 protected:
     void paintEvent(QPaintEvent*) override {
         QPainter p(this);p.setRenderHint(QPainter::Antialiasing,true);
-        const QRectF r(9,4,50,50);
-        p.setPen(QPen(QColor("#73818c"),4));p.drawArc(r,30*16,120*16);
-        p.setPen(QPen(QColor("#478ed0"),4));p.drawArc(r,125*16,25*16);
-        p.setPen(QPen(QColor("#d95748"),4));p.drawArc(r,30*16,25*16);
-        p.setPen(QPen(QColor("#ff9828"),1.8));p.drawLine(34,18,34,32);p.drawEllipse(QPointF(34,35),3,3);
-        p.drawLine(21,43,47,43);
+        p.setRenderHint(QPainter::TextAntialiasing,true);
+        const bool dark=qApp&&qApp->property("ecuDarkTheme").toBool();
+        const qreal scale=qMin(width()/176.0,height()/116.0);
+        p.translate((width()-176*scale)/2,(height()-116*scale)/2);
+        p.scale(scale,scale);
+        const QPointF center(88,88);
+        const QRectF bezel(13,13,150,150),face(20,20,136,136);
+        p.setPen(QPen(dark?QColor("#65737d"):QColor("#89939c"),2));
+        p.setBrush(dark?QColor("#11191e"):QColor("#e4e9ed"));
+        p.drawPie(bezel,0,180*16);
+        p.setPen(QPen(dark?QColor("#34414a"):QColor("#bac4cd"),1.4));
+        p.setBrush(dark?QColor("#05090c"):Qt::white);
+        p.drawPie(face,0,180*16);
+        const QRectF arc(27,27,122,122);
+        p.setPen(QPen(dark?QColor("#64717b"):QColor("#84919c"),2));
+        p.drawArc(arc,0,180*16);
+        p.setPen(QPen(QColor("#478ed0"),4));p.drawArc(arc,150*16,30*16);
+        p.setPen(QPen(QColor("#d95748"),4));p.drawArc(arc,0,30*16);
+        for(int i=0;i<=12;++i){
+            const qreal a=3.141592653589793*(1-i/12.0);
+            const QPointF d(qCos(a),-qSin(a));
+            p.setPen(QPen(dark?QColor("#e4eaee"):QColor("#25313b"),i%3==0?1.8:0.8));
+            p.drawLine(center+d*56,center+d*(i%3==0?47:51));
+        }
+        const QPointF d(-0.97,-0.24),n(-d.y(),d.x());
+        QPainterPath needle;needle.moveTo(center+d*51);needle.lineTo(center+n*3);
+        needle.lineTo(center-d*8);needle.lineTo(center-n*3);needle.closeSubpath();
+        p.setPen(Qt::NoPen);p.setBrush(QColor("#ff7417"));p.drawPath(needle);
+        p.setPen(QPen(QColor("#707980"),1));p.setBrush(QColor("#293239"));p.drawEllipse(center,6,6);
+        p.setPen(QPen(QColor("#ff9828"),1.6));p.drawLine(88,98,88,108);p.drawEllipse(QPointF(88,110),3,3);
+        p.drawLine(78,114,98,114);
     }
 };
 
@@ -502,7 +531,7 @@ static void composeActuators(QMainWindow *window)
                     QFontMetrics(label->font()).horizontalAdvance(label->text()));
             }
             grid->setColumnStretch(0,0);
-            grid->setColumnMinimumWidth(0,longestLabel+18);
+            grid->setColumnMinimumWidth(0,qMin(longestLabel+32,240));
             for(int col=1;col<=3;++col)grid->setColumnStretch(col,1);
 
             for(QPushButton *button:list->findChildren<QPushButton*>()){
@@ -520,10 +549,10 @@ static void composeActuators(QMainWindow *window)
                     o2On->setToolTip(QString());
                     o2Label->setToolTip(tip);
                 }
-                o2Label->setMaximumWidth(
-                    QFontMetrics(o2Label->font()).horizontalAdvance(o2Label->text())+36);
-                o2Label->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
-                grid->setAlignment(o2Label,Qt::AlignLeft|Qt::AlignVCenter);
+                o2Label->setWordWrap(true);
+                o2Label->setMaximumWidth(QWIDGETSIZE_MAX);
+                o2Label->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+                grid->setAlignment(o2Label,Qt::Alignment());
             }
         }
 
@@ -540,13 +569,17 @@ static void composeActuators(QMainWindow *window)
     QFrame *right=card(page,QStringLiteral("actuatorIacCard"),I18n::text(7138));
     QVBoxLayout *rv=static_cast<QVBoxLayout*>(right->layout());
     rv->setSpacing(6);
+    if(auto *title=cardTitle(right)){
+        title->setObjectName(QStringLiteral("actuatorStepperTitle"));
+        title->setFixedHeight(22);title->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+    }
     // Three vertically ordered sections, preserving the left actuator grid.
     if(info){
         info->setParent(right);
         info->setWordWrap(true);
         info->setMinimumHeight(30);
         info->setMaximumHeight(60);
-        info->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+        info->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Maximum);
         info->show();
         rv->addWidget(info);
     }
@@ -581,40 +614,47 @@ static void composeActuators(QMainWindow *window)
 
     QFrame *gauge=card(right,QStringLiteral("actuatorGaugeTestCard"),I18n::text(2971801));
     auto *gv=static_cast<QVBoxLayout*>(gauge->layout());
-    gv->setContentsMargins(8,6,8,6);gv->setSpacing(4);
+    gv->setContentsMargins(10,6,10,6);gv->setSpacing(4);
+    if(auto *title=cardTitle(gauge)){title->setFixedHeight(20);title->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);}
     QHBoxLayout *gaugeControls=new QHBoxLayout;
-    gaugeControls->setSpacing(4);
-    gaugeControls->addWidget(new GaugeTestSymbol(gauge));
+    gaugeControls->setSpacing(12);
+    gaugeControls->addWidget(new GaugeTestSymbol(gauge),1);
     QVBoxLayout *actions=new QVBoxLayout;actions->setSpacing(4);
-    QHBoxLayout *extremes=new QHBoxLayout;extremes->setSpacing(4);
+    actions->addStretch(1);
     for(int key:{2971802,2971803,2971804}){
         QPushButton *button=new QPushButton(I18n::text(key),gauge);
         button->setObjectName(key==2971802?QStringLiteral("gaugeTestMinimum"):
             key==2971803?QStringLiteral("gaugeTestMaximum"):QStringLiteral("gaugeTestStop"));
-        button->setMinimumHeight(26);button->setEnabled(false);
+        button->setFixedHeight(26);
+        button->setFixedWidth(qMax(98,QFontMetrics(button->font()).horizontalAdvance(button->text())+20));
+        button->setProperty("helpBubbleNoIcon",true);
+        button->setEnabled(false);
         // Deliberately no ECU signal: physical restoration not qualified.
-        if(key==2971804)actions->addWidget(button);else extremes->addWidget(button,1);
+        actions->addWidget(button,0,Qt::AlignHCenter);
     }
-    actions->insertLayout(0,extremes);gaugeControls->addLayout(actions,1);
-    gv->addLayout(gaugeControls);
+    actions->addStretch(1);
+    gaugeControls->addLayout(actions);
+    gv->addLayout(gaugeControls,1);
     QLabel *reason=new QLabel(I18n::text(2971805),gauge);
     reason->setObjectName(QStringLiteral("gaugeTestReason"));reason->setWordWrap(true);
     reason->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
-    reason->setMinimumHeight(30);reason->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
+    reason->setMinimumHeight(24);reason->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
+    reason->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Maximum);
     reason->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
-    gv->addWidget(reason);rv->addWidget(gauge);
+    gv->addWidget(reason);
     QLabel *help=new QLabel(I18n::text(2971811),gauge);
     help->setWordWrap(true);help->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
-    help->setMinimumHeight(28);gv->addWidget(help);
+    help->setMinimumHeight(24);help->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Maximum);gv->addWidget(help);
+    rv->addWidget(gauge,1);
     // Reuse the actual system status, with a shorter horizontal arrangement.
     QObject *systemSource=window->findChild<QObject*>(QStringLiteral("m_engine_error"));
     SystemStatePreview *state=new SystemStatePreview(
         qobject_cast<MainWindow*>(window),systemSource,right);
     state->setObjectName(QStringLiteral("actuatorSystemState"));
     state->setMinimumSize(200,96);
-    state->setMaximumSize(350,126);
-    state->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-    rv->addWidget(state,1,Qt::AlignHCenter);
+    state->setMaximumSize(QWIDGETSIZE_MAX,110);
+    state->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+    rv->addWidget(state);
 
     body->addWidget(right,2);
     root->addLayout(body,1);
