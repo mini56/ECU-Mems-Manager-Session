@@ -47,7 +47,7 @@ namespace Mems16Na {
 // optional K-line adapter echo; never reads a padded DLL tail as ECU data.
 inline bool consumeExtendedPair(SessionEvidence &s,const std::string &trace,bool localEcho,
                                 unsigned rpm,unsigned dtc2,unsigned dtc3,unsigned dtc4,unsigned dtc5) {
-    s.setExtended7d({});
+    s.setExtended7d({}); s.setExtended80({});
     if(s.firmwareName().empty()||trace.empty()||trace.size()>8192||trace.back()!='\n')return false;
     std::istringstream in(trace);std::string line;
     std::vector<std::uint8_t> rx[2];unsigned phase=0;
@@ -75,6 +75,6 @@ inline bool consumeExtendedPair(SessionEvidence &s,const std::string &trace,bool
     const std::pair<unsigned,unsigned> checks[]={{14,dtc3},{17,dtc4},{22,dtc5}};
     for(const auto &v:checks)
         if(v.first<rx[1].size()&&rx[1][v.first]!=v.second)return false;
-    s.setExtended7d(rx[1]);return true;
+    s.setExtended80(rx[0]); s.setExtended7d(rx[1]);return true;
 }
 }

@@ -34,6 +34,7 @@
 #include "analogwidgets/widgetwithbackground.h"
 #include "analysistab.h"
 #include "ecucommunicationlog.h"
+#include "mems217_passive.h"
 #include "summarytab.h"
 #include <qapplication.h>
 #include <QLCDNumber>
@@ -1429,9 +1430,25 @@ void MainWindow::onDataReady()
  m_ui->m_uk30_2->setText(QString::number(data->uk1C)); */
 
  // m_ui->e_lambdavoltage_lcd->display(data->lambda_voltage * 4) ;
- m_ui->e_FuelTrim_lcd->display(data->long_term_fuel_trim - 128) ;
- m_ui->e_IdleDecay_lcd->display(data->idle_hot - 35) ;
- m_ui->e_IdleSpeed_lcd->display((data->idle_speed_offset - 128) * 25) ;
+ const bool injectionProfile=Mems217::injectionProfile(naEvidence);
+ const auto frame7d=Mems217::frame7d(naEvidence);
+ const auto frame80=Mems217::frame80(naEvidence);
+ m_ui->emi_shorttermftrim->setText(I18n::text(injectionProfile?2971701:2020));
+ if(auto *unit=findChild<QLabel*>(QStringLiteral("session217InjectionUnit")))
+     unit->setText(injectionProfile?QStringLiteral("µs"):QStringLiteral("%"));
+ m_ui->e_short_term_fuel_trim->setProperty("session217LambdaCorrection",
+     injectionProfile && (!naIdentified || !naEvidence.identifiedProfile()->alternateTransmission));
+ if(injectionProfile) {
+     m_ui->e_FuelTrim_lcd->display(Mems217::present(frame7d,11)?QString::number(Mems217::injectionUs(frame7d.bytes[11])):QStringLiteral("--"));
+     m_ui->emi_idledecay->setText(I18n::text(2971704));
+     m_ui->e_IdleDecay_lcd->display(Mems217::present(frame80,16)?QString::number(frame80.bytes[16]):QStringLiteral("--"));
+     m_ui->e_IdleSpeed_lcd->display(Mems217::present(frame7d,19)?QString::number(Mems217::idleRpm(frame7d.bytes[19])):QStringLiteral("--"));
+ } else {
+     m_ui->emi_idledecay->setText(I18n::text(2022));
+     m_ui->e_FuelTrim_lcd->display(data->long_term_fuel_trim - 128);
+     m_ui->e_IdleDecay_lcd->display(data->idle_hot - 35);
+     m_ui->e_IdleSpeed_lcd->display((data->idle_speed_offset - 128) * 25);
+ }
  m_ui->e_IgnitionAdvance_lcd->display(QString::number(ignitionAdjustmentDeg, 'f', 1));
 //  m_ui->m_fuel_trim->setText(QString::number(data->short_term_fuel_trim, 'f', 1));
  // m_ui->shorttimefueltrim_lcd->display(data->short_term_fuel_trim);
@@ -1825,6 +1842,13 @@ void MainWindow::onDisconnect()
   m_ui->m_ignition_advance->setValue(0);
   m_ui->e_ignition_advance->setValue(0);
   m_ui->e_short_term_fuel_trim->setValue(0);
+  m_ui->e_short_term_fuel_trim->setProperty("session217LambdaCorrection",false);
+  m_ui->emi_shorttermftrim->setText(I18n::text(2020));
+  m_ui->emi_idledecay->setText(I18n::text(2022));
+  if(auto *unit=findChild<QLabel*>(QStringLiteral("session217InjectionUnit")))unit->setText(QStringLiteral("%"));
+  m_ui->e_FuelTrim_lcd->display(QStringLiteral("--"));
+  m_ui->e_IdleDecay_lcd->display(QStringLiteral("--"));
+  m_ui->e_IdleSpeed_lcd->display(QStringLiteral("--"));
   m_ui->e_lambda->setValue(0);
   m_ui->m_revCounter_exhaust->setValue(0);
   m_ui->e_idle_error->setValue(0);

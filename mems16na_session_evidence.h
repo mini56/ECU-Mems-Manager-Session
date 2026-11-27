@@ -12,8 +12,8 @@ namespace Mems16Na {
 class SessionEvidence {
 public:
     void reset() {
-        identity_.fill(0); haveIdentity_=false; profile_=nullptr; firmware_.clear(); extended7d_.clear();
-        have80_=false; havePair_=false; extended7d_.clear(); command_=-1; reply_.clear(); overflow_=false;
+        identity_.fill(0); haveIdentity_=false; profile_=nullptr; firmware_.clear(); extended7d_.clear(); extended80_.clear();
+        have80_=false; havePair_=false; extended7d_.clear(); extended80_.clear(); command_=-1; reply_.clear(); overflow_=false;
     }
     // Only feed records from the current connection, with the original TX/RX direction.
     // A new TX closes the previous transaction. No serial command is generated.
@@ -22,7 +22,7 @@ public:
         command_=bytes.size()==1 ? int(bytes[0]) : -1;
         reply_.clear(); overflow_=false;
         if(command_!=0x7D) have80_=false;
-        if(command_==0xD0 || command_==0xD1) {havePair_=false; firmware_.clear(); extended7d_.clear();}
+        if(command_==0xD0 || command_==0xD1) {havePair_=false; firmware_.clear(); extended7d_.clear(); extended80_.clear();}
         if(command_==0xD0) { haveIdentity_=false; profile_=nullptr; }
         if(command_==0xD1) profile_=nullptr;
     }
@@ -86,12 +86,14 @@ public:
     }
     // Invalidate the last sample without losing the verified firmware identity.
     void discardPair() {
-        have80_=false; havePair_=false; extended7d_.clear(); command_=-1; reply_.clear(); overflow_=false;
+        have80_=false; havePair_=false; extended7d_.clear(); extended80_.clear(); command_=-1; reply_.clear(); overflow_=false;
     }
     const std::array<std::uint8_t,4>& identity() const { return identity_; }
     const Profile* identifiedProfile() const { return profile_; }
     const std::string& firmwareName() const {return firmware_;}
     void setExtended7d(const std::vector<std::uint8_t>& b) {extended7d_=b;}
+    void setExtended80(const std::vector<std::uint8_t>& b) {extended80_=b;}
+    const std::vector<std::uint8_t>& extended80() const {return extended80_;}
     const std::vector<std::uint8_t>& extended7d() const {return extended7d_;}
     MemsExtendedDtc::Result extendedDtc(int group) const {
         return MemsExtendedDtc::decode(firmware_.c_str(),group,extended7d_.data(),extended7d_.size());
@@ -106,7 +108,7 @@ private:
     bool haveIdentity_=false;
     const Profile* profile_=nullptr;
     std::string firmware_;
-    std::vector<std::uint8_t> extended7d_;
+    std::vector<std::uint8_t> extended7d_,extended80_;
     std::array<std::uint8_t,28> a_{};
     std::array<std::uint8_t,32> b_{};
     bool have80_=false,havePair_=false;

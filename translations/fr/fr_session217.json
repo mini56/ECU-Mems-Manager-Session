@@ -1,0 +1,20 @@
+{
+  "2019": "Réglage de régime par incréments de 25 tr/min sur les profils vérifiés ; 0 correspond à la consigne de calibration.",
+  "2021": "Permet d’ajuster le temps d’injection par incréments de 8 µs sur les profils vérifiés. Sur les moteurs régulés par sonde lambda, le calculateur peut adapter automatiquement cette correction lorsque les conditions d’apprentissage sont réunies. Sur AANMP002 et KBHBG009, une temporisation nominale d’environ 23 secondes précède la collecte de 10 basculements lambda par évaluation. La durée totale dépend des conditions et de la réaction de la sonde. Les autres profils conservent leur affichage historique.",
+  "2023": "Position mémorisée du ralenti chaud : valeur absolue en pas sur les profils vérifiés, écart à 35 pas sur les autres. Le calculateur peut réapprendre cette position.",
+  "2971701": "Correction d’injection",
+  "2971703": "Correction instantanée lambda",
+  "2971704": "Position ralenti chaud (absolue)",
+  "2971705": "Aucun défaut reconnu ne prouve le bon fonctionnement du TPS ; contrôler sa progression.",
+  "2971710": "Réaction lambda (passif)",
+  "2971711": "Réaction température moteur (passif)",
+  "2971712": "Réaction observée",
+  "2971713": "Données fraîches et moteur tournant nécessaires.",
+  "2971714": "Anomalie de régulation signalée par ECU ; sonde, faisceau et mélange à contrôler.",
+  "2971715": "Boucle fermée inactive : test non concluant.",
+  "2971716": "Alternances riche/pauvre observées ; ne prouve pas à elle seule la santé de la sonde.",
+  "2971717": "Observer les alternances en boucle fermée ; absence de réaction non concluante.",
+  "2971718": "Défaut circuit température mémorisé ; une valeur de secours est possible.",
+  "2971719": "Variation de température observée ; comparer à un thermomètre indépendant si nécessaire.",
+  "2971720": "Observer un réchauffement naturel ; température stable non concluante."
+}

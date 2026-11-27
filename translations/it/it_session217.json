@@ -1,0 +1,20 @@
+{
+  "2019": "Passi di 25 giri/min nei profili verificati; 0 è il riferimento di calibrazione.",
+  "2021": "Regola il tempo di iniezione in passi di 8 µs nei profili verificati. L’ECU può adattare automaticamente la correzione lambda. AANMP002 e KBHBG009: circa 23 s e 10 commutazioni lambda per valutazione; durata totale dipendente da condizioni e sonda. Altri profili mantengono la visualizzazione storica.",
+  "2023": "Posizione memorizzata minimo caldo: passi assoluti nei profili verificati, scostamento da 35 negli altri. ECU può riapprendere.",
+  "2971701": "Correzione iniezione",
+  "2971703": "Correzione lambda istantanea",
+  "2971704": "Posizione minimo caldo (assoluta)",
+  "2971705": "L’assenza di guasti non prova il funzionamento TPS; verificarne la progressione.",
+  "2971710": "Risposta lambda (passiva)",
+  "2971711": "Risposta refrigerante (passiva)",
+  "2971712": "Risposta osservata",
+  "2971713": "Dati recenti e motore in funzione necessari.",
+  "2971714": "Anomalia regolazione ECU; verificare sonda, cablaggio e miscela.",
+  "2971715": "Anello chiuso inattivo: non conclusivo.",
+  "2971716": "Alternanze ricco/magro osservate; non provano la salute della sonda.",
+  "2971717": "Osservare alternanze in anello chiuso; assenza di risposta non conclusiva.",
+  "2971718": "Guasto circuito refrigerante memorizzato; possibile valore sostitutivo.",
+  "2971719": "Variazione temperatura osservata; confrontare con termometro indipendente se necessario.",
+  "2971720": "Osservare riscaldamento naturale; temperatura stabile non conclusiva."
+}

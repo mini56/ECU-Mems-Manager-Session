@@ -7,6 +7,7 @@
 #include <QVariantMap>
 #include "rosco.h"
 #include "mems16na_session_evidence.h"
+#include "mems217_passive.h"
 
 class QLabel;
 class QPushButton;
@@ -48,6 +49,8 @@ private:
     Snapshot m_reference;
     Snapshot m_naReference;
     Mems16Na::SessionEvidence m_naEvidence;
+    Mems217::Observation m_passive;
+    void addPassiveChecks();
     void rebuildNa(const mems_data &d);
     void restoreNaChecksStyle();
     QString m_naOriginalChecksStyle;

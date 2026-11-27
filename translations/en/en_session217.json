@@ -1,0 +1,20 @@
+{
+  "2019": "Idle speed adjustment in 25 rpm increments on verified profiles; zero is the calibration target.",
+  "2021": "Adjusts injection duration in 8 µs increments on verified profiles. Lambda-controlled engines may adapt this correction automatically when learning conditions are met. On AANMP002 and KBHBG009, a nominal delay of about 23 seconds precedes 10 lambda transitions per evaluation. Total duration depends on conditions and sensor response. Other profiles retain their historical display.",
+  "2023": "Stored hot idle position: absolute steps on verified profiles, offset from 35 steps on others. ECU may relearn it.",
+  "2971701": "Injection correction",
+  "2971703": "Instantaneous lambda correction",
+  "2971704": "Hot idle position (absolute)",
+  "2971705": "No recognized fault proves TPS operation; check its progression.",
+  "2971710": "Lambda response (passive)",
+  "2971711": "Coolant response (passive)",
+  "2971712": "Response observed",
+  "2971713": "Fresh data and running engine required.",
+  "2971714": "ECU reports regulation anomaly; check sensor, wiring and mixture.",
+  "2971715": "Closed loop inactive: inconclusive.",
+  "2971716": "Rich/lean alternations observed; not proof of sensor health.",
+  "2971717": "Observe closed-loop alternations; no response is inconclusive.",
+  "2971718": "Stored coolant circuit fault; a substitute value may be used.",
+  "2971719": "Temperature variation observed; compare with independent thermometer if needed.",
+  "2971720": "Observe natural warm-up; stable temperature is inconclusive."
+}

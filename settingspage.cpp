@@ -80,8 +80,9 @@ protected:
         p.translate((width()-bw*scale)/2.0,(dialHeight-bh*scale)/2.0);
         p.scale(scale,scale);
 
-        const QString gaugeTitle=m_title.toUpper();
-        const QFont titleFont=GaugeHeading::styledFont(p.font(),m_titleSize);
+        const QString gaugeTitle=(m_kind==FuelTrim && m_source && m_source->property("session217LambdaCorrection").toBool()?I18n::text(2971703):m_title).toUpper();
+        QFont titleFont=GaugeHeading::styledFont(p.font(),m_titleSize);
+        while(QFontMetrics(titleFont).horizontalAdvance(gaugeTitle)>bw-8 && titleFont.pointSizeF()>5)titleFont.setPointSizeF(titleFont.pointSizeF()-0.25);
         p.setFont(titleFont);
         p.setPen(darkTheme?kText:QColor("#101820"));
         p.drawText(QRectF(4,0,bw-8,20),Qt::AlignCenter,gaugeTitle);
@@ -442,7 +443,7 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
     Row rows[]={
         {fuelLabel,fuelMinus,fuelLcd,"%",fuelPlus},
         {hotLabel,hotMinus,hotLcd,"pas",hotPlus},
-        {rpmLabel,rpmMinus,rpmLcd,"pas",rpmPlus},
+        {rpmLabel,rpmMinus,rpmLcd,"tr/min",rpmPlus},
         {ignLabel,ignMinus,ignLcd,"°",ignPlus}
     };
 
@@ -468,11 +469,12 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
             grid->addWidget(rows[row].lcd,row,2);
         }
         QLabel *unitLabel=new QLabel(QString::fromUtf8(rows[row].unit),form);
+        if(row==0)unitLabel->setObjectName(QStringLiteral("session217InjectionUnit"));
         QFont unitFont=unitLabel->font();
         unitFont.setBold(true);
         unitFont.setPointSizeF(8.4);
         unitLabel->setFont(unitFont);
-        unitLabel->setFixedWidth(38);
+        unitLabel->setFixedWidth(45);
         unitLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
         unitLabel->setStyleSheet(QStringLiteral("color:#d8dfe3;background:transparent;border:0;"));
         grid->addWidget(unitLabel,row,3);

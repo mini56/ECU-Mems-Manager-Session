@@ -105,8 +105,11 @@ void DiagnosticPanel::updateData(const mems_data *data,const Mems16Na::SessionEv
     const auto *profile=na?na->identifiedProfile():nullptr;
     if(m_naEvidence.identifiedProfile()!=profile||
        (profile&&m_naEvidence.identity()!=na->identity()))m_naReference=Snapshot();
+    if(!na || m_naEvidence.firmwareName()!=na->firmwareName() || m_naEvidence.identity()!=na->identity())
+        m_passive.reset();
     if(na)m_naEvidence=*na;
     else m_naEvidence.reset();
+    m_passive.sample(m_naEvidence);
     m_showing2J=false;
     m_last = *data;
     m_haveData = true;
@@ -116,6 +119,7 @@ void DiagnosticPanel::updateData(const mems_data *data,const Mems16Na::SessionEv
 void DiagnosticPanel::endNaSession()
 {
     restoreNaChecksStyle();
+    m_passive.reset();
     if(!m_naEvidence.identifiedProfile()&&m_naEvidence.firmwareName().empty())return;
     m_naEvidence.reset();
     m_naReference=Snapshot();
@@ -199,13 +203,13 @@ void DiagnosticPanel::rebuild(const mems_data &d)
                           : I18n::text(6834) /* EN: Decoded value out of range: check MAP measurement. */);
     if (!mapPlausible) ++issues;
 
-    const bool tpsPlausible = d.throttle_pot <= 255;
+    const bool tpsFault = (d.dtc1 & 0x80) != 0 || (!knownDtc2 && (fault2 & 0x01) != 0);
     addCheck(I18n::text(6835) /* EN: TPS */, QStringLiteral("%1 / 255").arg(d.throttle_pot),
-             stateFor(tpsPlausible),
-             (d.dtc1 & 0x80) || (fault2 & 0x01)
+             tpsFault ? I18n::text(6802) : I18n::text(6849),
+             tpsFault
                  ? I18n::text(6836) /* EN: A TPS/TPS-supply fault is reported: check supply, ground and sensor progression. */
-                 : I18n::text(6837) /* EN: No known active TPS fault in the monitored bits. */);
-    if ((d.dtc1 & 0x80) || (fault2 & 0x01)) ++issues;
+                 : I18n::text(2971705));
+    if(tpsFault) ++issues;
 
     const bool lambdaFault = (fault2 & 0x04) || (fault2 & 0x08);
     addCheck(I18n::text(6838) /* EN: lambda */,
@@ -292,6 +296,7 @@ void DiagnosticPanel::rebuild(const mems_data &d)
                  I18n::text(6870) /* EN: Reference captured on %1. This comparison helps identify drift; it is not a manufacturer specification. */.arg(m_reference.timestamp));
     }
 
+    addPassiveChecks();
     const int total = issues * 2 + warnings;
     const QString level = issues == 0 ? (warnings == 0 ? I18n::text(6871) /* EN: NORMAL */ : I18n::text(6872) /* EN: SURVEILLER */)
                                       : I18n::text(6873) /* EN: ANOMALY TO INVESTIGATE */;
@@ -571,10 +576,33 @@ void DiagnosticPanel::rebuildNa(const mems_data &d)
             .arg(int(d.map_kpa)-int(m_naReference.data.map_kpa))
             .arg(int(d.throttle_pot)-int(m_naReference.data.throttle_pot)),info,I18n::text(6870).arg(m_naReference.timestamp));
     }
+    addPassiveChecks();
     const QString level=issues?I18n::text(6873):warnings?I18n::text(6872):I18n::text(6871);
     m_score->setText(I18n::text(6874).arg(level).arg(issues).arg(warnings));
     m_status->setText(I18n::text(6875).arg(QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss"))).arg(2*issues+warnings));
     m_report->setPlainText(buildNaReport());
+}
+
+void DiagnosticPanel::addPassiveChecks()
+{
+    if(!Mems217::passiveProfile(m_naEvidence.firmwareName()))return;
+    const auto &o=m_passive;
+    const QString unavailable=I18n::text(6849);
+    auto add=[&](int title,const QString &value,int result,int advice){
+        addCheck(I18n::text(title),value,result?I18n::text(result):unavailable,I18n::text(advice));
+        const int row=m_checks->rowCount()-1;
+        for(int col=0;col<4;++col) {
+            auto *item=m_checks->item(row,col);
+            item->setData(Qt::ForegroundRole,QVariant());
+            item->setToolTip(I18n::text(advice));
+        }
+    };
+    add(2971710,o.valid?QStringLiteral("%1 mV | %2").arg(o.mv).arg(o.crossings):QStringLiteral("--"),
+        !o.valid?0:o.lambdaFault?6802:o.lambdaObserved?2971712:0,
+        !o.valid?2971713:o.lambdaFault?2971714:!o.closedLoop?2971715:o.lambdaObserved?2971716:2971717);
+    add(2971711,o.valid?QStringLiteral("%1 °C (%2–%3)").arg(int(o.coolantRaw)-55).arg(int(o.low)-55).arg(int(o.high)-55):QStringLiteral("--"),
+        !o.valid?0:o.coolantFault?6802:o.coolantObserved?2971712:0,
+        !o.valid?2971713:o.coolantFault?2971718:o.coolantObserved?2971719:2971720);
 }
 
 QString DiagnosticPanel::buildNaReport() const

@@ -1,0 +1,20 @@
+{
+  "2019": "Bei geprüften Profilen 25 U/min je Schritt; 0 entspricht dem Sollwert.",
+  "2021": "Bei geprüften Profilen: Einspritzzeit in 8 µs-Schritten. Die Lambdaregelung kann den Wert automatisch anpassen. AANMP002 und KBHBG009: etwa 23 s Wartezeit, 10 Lambdawechsel je Auswertung; Gesamtdauer abhängig von Bedingungen und Sonde. Andere Profile behalten die bisherige Anzeige.",
+  "2023": "Gespeicherte warme Leerlaufposition: absolute Schritte bei geprüften Profilen, sonst Abweichung von 35. ECU kann neu lernen.",
+  "2971701": "Einspritzkorrektur",
+  "2971703": "Momentane Lambdakorrektur",
+  "2971704": "Warme Leerlaufposition (absolut)",
+  "2971705": "Kein erkannter Fehler beweist die TPS-Funktion; Verlauf prüfen.",
+  "2971710": "Lambdareaktion (passiv)",
+  "2971711": "Kühlmittelreaktion (passiv)",
+  "2971712": "Reaktion beobachtet",
+  "2971713": "Aktuelle Daten und laufender Motor erforderlich.",
+  "2971714": "Regelungsfehler gemeldet; Sonde, Kabel und Gemisch prüfen.",
+  "2971715": "Regelkreis offen: nicht eindeutig.",
+  "2971716": "Fett/Mager-Wechsel beobachtet; kein Beweis für eine intakte Sonde.",
+  "2971717": "Wechsel im Regelkreis beobachten; fehlende Reaktion nicht eindeutig.",
+  "2971718": "Kühlmittelkreisfehler gespeichert; Ersatzwert möglich.",
+  "2971719": "Temperaturänderung beobachtet; bei Bedarf unabhängig messen.",
+  "2971720": "Natürliche Erwärmung beobachten; stabile Temperatur nicht eindeutig."
+}
