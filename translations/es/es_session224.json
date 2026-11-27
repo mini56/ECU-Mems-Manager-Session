@@ -25,5 +25,12 @@
   "2972424": "Retorno normal sin confirmar. Quite el contacto.",
   "2972425": "Orden no confirmada; retorno normal confirmado.",
   "2972426": "Otra prueba o modo de diagnóstico activo.",
-  "2972427": "Restablezca primero los otros actuadores."
+  "2972427": "Restablezca primero los otros actuadores.",
+  "2972428": "ECU desconectada.",
+  "2972429": "Compatibilidad sin confirmar.",
+  "2972430": "Esperando datos de ECU.",
+  "2972431": "Motor parado, contacto dado.",
+  "2972432": "Prueba disponible.",
+  "2972433": "Otra prueba o modo activo.",
+  "2972434": "Restablezca los actuadores."
 }
