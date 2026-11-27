@@ -1,0 +1,19 @@
+# V1.41 — Retours du test injecteur, comparaison 1.3 / 1.6 NA / 1.9
+27/11/2026. Analyse statique ; aucun envoi ECU. Chapitre 195 (1.9) déjà connu, chapitre 210 : Manager 215 ignore l'octet retourné. Apport nouveau : deux familles de retours au sein même du 1.6.
+## 1.3
+ABEMR002 : EF/F7, ROM 617F–61D9. Régime non nul -> 0. Régime nul : appel service 0133 via 433C. Table ROM 42F6 contient 33 01 1E 76 ; cible 761E, puis 7650 appelle 7504. Cette routine pilote matériel et possède plusieurs états internes. F7 exige statut interne 0 et sous-statut 2 pour renvoyer 1 ; sinon voie d'exception. EF, si statut interne nul, renvoie 1/2/3 suivant sous-statut 0/1/autre. KBE6R003 6252–62AC et MGE7R002 62E5–633F : mêmes règles de transformation (ASM contrôlés au lot V140). Aucun verdict physique universel.
+## 1.6 NA
+AANMP002 EF/F7 -> 3CCA : contrôle régime 005E. Non nul -> 3980 (efface 1C) ->34A2. Nul -> 3CD7 appelle 39FA ; 39FA teste WSR1 bit6, refuse en 3A1A (statut 2), sinon programme l'impulsion et renvoie statut 0 en 3A16. 3CDA appelle 3A2C qui impose sous-statut 2 ; 3CDD copie cet octet, 3CE0 saute à 3D02 qui l'incrémente : retour 3 dans les deux cas si la routine termine. 34A8 transmet 1C. AANMP000 : 3AFE, 382E, 3860, 3B36, 335B–3361, même comportement. Ni débit ni exécution électrique garantie par 3.
+Six autres HEX : EF et F7 pointent sur la même routine. Tableau (adresses hex, SHA du blob).
+KAE6P000;3AAE;3817;3849;3AE6;constant 3;068356b57d90ea9826ad8cb715ef3e705da89483
+ABNMF032;3EB6;3BCE;3C00;3EEE;constant 3;ee2d92bae71e3360e324d89c868ceb626946292d
+KGM6P005;3E02;3B32;3B64;3E3A;constant 3;be5a1d073de0f2f87f0e7dc57a4683098f51947b
+TAP7F017;3EC7;3BF9;3C2B;3EFF;feedback 1/2;bf58fea9a36568e9f8ece0b3243a7d4bd94c8e19
+TBP7F016;3EC7;3BF9;3C2B;3EFF;feedback 1/2;cf504c6846e7fa91be082f0d2086bea1b74c82d3
+KBP8F066;3BA3;38AB;38DD;3BDB;feedback 1/2;534231350b0a9321b7b90e7827e435a330d54
+Les trois helpers constants contiennent B1 02 1B F0. Les trois helpers à retour variable testent IOPORT2 bit2, calculent une différence temporelle et comparent 01F4, renvoient sous-statut 0/1 ; le handler ajoute 1. TAP/TBP ASM 3C2B–3C3E, KBP ASM 38DD–38F0. Le premier statut n'est toujours pas exploité par le handler ; ne pas assimiler 1/2 à OK/HS. XF1 TAP et KBP nomme inj_trip_log ; AANMP002 ne contient pas cette définition. Le lien physique exact entre bit port et verdict doit être démontré avant libellé de panne. 5 profils à retour fixe et 3 variables sur 8 inspectés ; pas une matrice exhaustive.
+## 1.9
+REGI1369 532C–53A5 : EF/F7 commun, DA/DB sélectionnent groupes distincts. 5339 contrôle régime, 5359–5365 attend WSR1/08 ou /10, 5368–5375 lit IOPORT2/04 et appelle routines de protection, 5379–538B renvoie 1 si bits WSR1 inactifs ; branche 539F–53A5 retourne 2. Complète chapitre 195 sans nouvelle commande. 
+## Manager
+Réviser la fiche de V140 : interprétation selon profil exact et commande ; pour AANMP002 afficher 'Réponse reçue — activation électrique non confirmée' pour 3, jamais OK ; 0 : demande refusée si moteur tournant, sinon ne pas attribuer de cause sans contexte. Pour autres profils conserver le retour brut et ne pas généraliser. Le retour de F7/EF ne mesure jamais le débit physique. Tests de non-régression simulés avant intégration. Aucun changement Manager/DLL. Pas de nouvelle commande indépendante. 
+Sources ASM : ABEMR002 25cf14744fc9cce209081904abe98f6d04d6f25f ; AANMP000 72f0d5cae10ec75a031326aa24d3c3b64db12ee4 ; AANMP002 6f37e665e3fe3fae5c2dbbfa274fbbf884318e2b ; TAP7F017 d1c2fc09b45d2a24130c59ef57089a05032cb2b8 ; TBP7F016 fdecdd49e9addae3e5daf791acd1b7c084f356b3 ; KBP8F066 aefe7ede57dc2876ac8e0b223cd4c33101e4223c ; REGI1369 584cb4ae934c354d7c88652d56dc9f8f778876b5. XF1 TAP 5fd01f425a386afef489637fc4152590e91832d0, KBP 625f29d199ac4790bed43ad4814532eed6eeb261, AANMP002 9a7e4fa85f3e6bbd30efe37ecb6256010aaeea70.
