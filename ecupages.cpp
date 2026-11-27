@@ -518,6 +518,8 @@ static void composeActuators(QMainWindow *window)
     body->setSpacing(8);
 
     QFrame *left=card(page,QStringLiteral("actuatorListCard"),I18n::text(4001).toUpper());
+    left->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Expanding);
+    left->setMinimumWidth(410);
     static_cast<QVBoxLayout*>(left->layout())->setContentsMargins(8,6,8,6);
     static_cast<QVBoxLayout*>(left->layout())->setSpacing(4);
     if(list){
@@ -527,7 +529,7 @@ static void composeActuators(QMainWindow *window)
         // and button sizes intact.  On narrower windows it can still shrink.
         list->setMinimumWidth(0);
         list->setMaximumWidth(650);
-        list->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+        list->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Expanding);
 
         if(QGridLayout *grid=qobject_cast<QGridLayout*>(list->layout())){
             grid->setContentsMargins(6,4,6,4);
@@ -551,12 +553,14 @@ static void composeActuators(QMainWindow *window)
             }
             grid->setColumnStretch(0,2);
             grid->setColumnMinimumWidth(0,150);
+            for(int row:{0,11,14})grid->setRowMinimumHeight(row,0);
             for(int col=1;col<=3;++col){grid->setColumnStretch(col,1);grid->setColumnMinimumWidth(col,65);}
 
             for(QPushButton *button:list->findChildren<QPushButton*>()){
                 button->setMinimumSize(0,28);
                 button->setProperty("actuatorCompactButton",true);
-                button->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+                button->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
+                button->setMinimumWidth(0);
             }
 
             // Transfer the lambda warning to the label's RIGHT help bubble.
@@ -592,11 +596,14 @@ static void composeActuators(QMainWindow *window)
         centered->setSpacing(0);
         if(auto *reset=list->findChild<QPushButton*>(QStringLiteral("m_AllActuatorsOffButton")))reset->setText(I18n::text(2972418));
         centered->addWidget(list,1);
+        for(const char *name:{"m_empty1","m_empty2"})if(auto *empty=list->findChild<QLabel*>(QString::fromLatin1(name)))empty->hide();
         static_cast<QVBoxLayout*>(left->layout())->addLayout(centered,1);
     }
     body->addWidget(left,5);
 
     QFrame *right=card(page,QStringLiteral("actuatorIacCard"),I18n::text(7138));
+    right->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Expanding);
+    right->setMinimumWidth(460);
     QVBoxLayout *rv=static_cast<QVBoxLayout*>(right->layout());
     rv->setContentsMargins(8,6,8,6);
     rv->setSpacing(3);
@@ -625,8 +632,12 @@ static void composeActuators(QMainWindow *window)
         if(auto *caption=pos->findChild<QLabel*>(QStringLiteral("m_idleBypassLabel_2"))){
             caption->setText(I18n::text(2972416));
             caption->setMinimumWidth(0);
-            caption->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
+            caption->setWordWrap(true);
+            caption->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
+            caption->setMinimumWidth(140);
         }
+        if(pos->layout())pos->layout()->setContentsMargins(0,0,0,0);
+        pos->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
         rv->addWidget(pos);
     }
     if(slider){
@@ -645,7 +656,7 @@ static void composeActuators(QMainWindow *window)
         button->setParent(right);
         button->setMinimumSize(0,30);
         button->setProperty("actuatorCompactButton",true);
-        button->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+        button->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
         if(button==move)button->setText(I18n::text(2972417));
         else button->setFixedWidth(36);
         button->show();
@@ -673,7 +684,7 @@ static void composeActuators(QMainWindow *window)
             button->setObjectName(QString::fromLatin1(name));
             button->setProperty("actuatorCompactButton",true);
             button->setFixedHeight(28);button->setMinimumWidth(0);
-            button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+            button->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
             button->setProperty("helpBubbleNoIcon",true);
             button->setEnabled(false);
             v->addWidget(button);
@@ -693,7 +704,11 @@ static void composeActuators(QMainWindow *window)
             label->setWordWrap(true);
             label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
             label->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
-            label->setFixedHeight(lines*QFontMetrics(label->font()).lineSpacing()+2);
+            // A fixed line count computed before the final font pass clipped the instructions.
+            // Let the text calculate its height for the actual column width.
+            label->setMinimumHeight(lines==2?40:45);
+            label->setMaximumHeight(QWIDGETSIZE_MAX);
+            label->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Minimum);
             if(orange){
                 const bool dark=qApp&&qApp->property("ecuDarkTheme").toBool();
                 label->setStyleSheet(dark?QStringLiteral("color:#ff9828;background:transparent;border:0;"):
@@ -724,7 +739,7 @@ static void composeActuators(QMainWindow *window)
         qobject_cast<MainWindow*>(window),systemSource,right);
     state->setObjectName(QStringLiteral("actuatorSystemState"));
     state->setMinimumSize(200,76);
-    state->setMaximumSize(QWIDGETSIZE_MAX,90);
+    state->setMaximumSize(QWIDGETSIZE_MAX,76);
     state->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
     rv->addWidget(state);
 
