@@ -238,7 +238,7 @@ protected:
         stateFont.setPointSizeF(compact?10.0:7.8);
         p.setFont(stateFont);
         p.setPen(state);
-        p.drawText(compact?QRectF(width()*0.39,30,width()*0.59-8,25):QRectF(8,height()*0.67,qMax(0,width()-16),24),
+        p.drawText(compact?QRectF(width()*0.39,27,width()*0.59-8,19):QRectF(8,height()*0.67,qMax(0,width()-16),24),
                    Qt::AlignCenter,disconnected?I18n::disconnectedStatus():(fault?I18n::text(7144):I18n::text(7143)));
 
         QFont sub=p.font();
@@ -246,7 +246,7 @@ protected:
         sub.setPointSizeF(compact?9.0:6.2);
         p.setFont(sub);
         p.setPen(darkTheme?QColor("#8d99a3"):QColor("#485767"));
-        p.drawText(compact?QRectF(width()*0.39,55,width()*0.59-8,32):QRectF(8,qMax(30,height()-38),qMax(0,width()-16),30),
+        p.drawText(compact?QRectF(width()*0.39,46,width()*0.59-8,qMax(0,height()-48)):QRectF(8,qMax(30,height()-38),qMax(0,width()-16),30),
                    Qt::AlignCenter|Qt::TextWordWrap,I18n::text(7145));
     }
 
@@ -607,8 +607,8 @@ static void composeActuators(QMainWindow *window)
     right->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Expanding);
     right->setMinimumWidth(490);
     QVBoxLayout *rv=static_cast<QVBoxLayout*>(right->layout());
-    rv->setContentsMargins(8,6,8,6);
-    rv->setSpacing(3);
+    rv->setContentsMargins(8,4,8,4);
+    rv->setSpacing(2);
     if(auto *title=cardTitle(right)){
         title->setObjectName(QStringLiteral("actuatorStepperTitle"));
         title->setFixedHeight(22);title->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
@@ -619,14 +619,14 @@ static void composeActuators(QMainWindow *window)
     iacSection->setObjectName(QStringLiteral("actuatorStepperControls"));
     iacSection->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
     auto *iacLayout=new QVBoxLayout(iacSection);
-    iacLayout->setContentsMargins(0,0,0,0);iacLayout->setSpacing(3);
+    iacLayout->setContentsMargins(0,0,0,0);iacLayout->setSpacing(2);
     if(info){
         info->setParent(right);
         info->setWordWrap(true);
         info->setTextFormat(Qt::PlainText);
         info->setText(I18n::text(2972415));
         info->setMinimumSize(0,0);
-        QSizePolicy infoPolicy(QSizePolicy::Ignored,QSizePolicy::Minimum);
+        QSizePolicy infoPolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
         infoPolicy.setHeightForWidth(true);
         info->setSizePolicy(infoPolicy);
         info->show();
@@ -682,7 +682,7 @@ static void composeActuators(QMainWindow *window)
         QFrame *panel=card(right,tachometer?QStringLiteral("actuatorRevCounterTestCard"):
             QStringLiteral("actuatorGaugeTestCard"),I18n::text(tachometer?2972404:2972409));
         auto *v=static_cast<QVBoxLayout*>(panel->layout());
-        v->setContentsMargins(6,5,6,5);v->setSpacing(3);
+        v->setContentsMargins(6,3,6,3);v->setSpacing(2);
         panel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
         if(auto *title=cardTitle(panel)){
             title->setWordWrap(true);
@@ -691,7 +691,10 @@ static void composeActuators(QMainWindow *window)
         }
         QWidget *dial=tachometer?createActuatorRevCounterGauge(panel):createActuatorTemperatureGauge(panel);
         v->addWidget(dial,1);
-        auto addButton=[&](int key,const char *name){
+        auto *starts=new QHBoxLayout;
+        starts->setContentsMargins(0,0,0,0);
+        starts->setSpacing(4);
+        auto addButton=[&](int key,const char *name,QLayout *destination){
             auto *button=new QPushButton(I18n::text(key),panel);
             button->setObjectName(QString::fromLatin1(name));
             button->setProperty("actuatorCompactButton",true);
@@ -713,24 +716,23 @@ static void composeActuators(QMainWindow *window)
                     updateGaugeTestAvailability(window,worker->isConnected(),&snapshot);
                 });
             }
-            v->addWidget(button);
+            destination->addWidget(button);
         };
         if(tachometer){
-            addButton(2972406,"revCounterTestStart");
-            v->addSpacing(31);
-            addButton(2971804,"revCounterTestStop");
+            addButton(2972406,"revCounterTestStart",starts);
         }else{
-            addButton(2971802,"gaugeTestMinimum");
-            addButton(2971803,"gaugeTestMaximum");
-            addButton(2971804,"gaugeTestStop");
+            addButton(2971802,"gaugeTestMinimum",starts);
+            addButton(2971803,"gaugeTestMaximum",starts);
         }
+        v->addLayout(starts);
+        addButton(2971804,tachometer?"revCounterTestStop":"gaugeTestStop",v);
         auto addNote=[&](int key,const char *name,bool orange){
             auto *label=new QLabel(I18n::text(key),panel);
             label->setObjectName(QString::fromLatin1(name));
             label->setWordWrap(true);
             label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
             // Size wrapped text from its width and font, not a fixed box.
-            QSizePolicy notePolicy(QSizePolicy::Ignored,QSizePolicy::Minimum);
+            QSizePolicy notePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
             notePolicy.setHeightForWidth(true);
             label->setSizePolicy(notePolicy);
             label->setMinimumHeight(label->fontMetrics().lineSpacing());
@@ -757,7 +759,7 @@ static void composeActuators(QMainWindow *window)
     observe->setObjectName(QStringLiteral("instrumentTestResult"));
     observe->setWordWrap(true);
     observe->setAlignment(Qt::AlignCenter);
-    QSizePolicy observePolicy(QSizePolicy::Ignored,QSizePolicy::Minimum);
+    QSizePolicy observePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
     observePolicy.setHeightForWidth(true);
     observe->setSizePolicy(observePolicy);
     rv->addWidget(observe);
