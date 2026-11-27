@@ -601,11 +601,11 @@ static void composeActuators(QMainWindow *window)
         for(const char *name:{"m_empty1","m_empty2"})if(auto *empty=list->findChild<QLabel*>(QString::fromLatin1(name)))empty->hide();
         static_cast<QVBoxLayout*>(left->layout())->addLayout(centered,1);
     }
-    body->addWidget(left,5);
+    body->addWidget(left,4);
 
     QFrame *right=card(page,QStringLiteral("actuatorIacCard"),I18n::text(7138));
     right->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Expanding);
-    right->setMinimumWidth(460);
+    right->setMinimumWidth(490);
     QVBoxLayout *rv=static_cast<QVBoxLayout*>(right->layout());
     rv->setContentsMargins(8,6,8,6);
     rv->setSpacing(3);
@@ -625,9 +625,10 @@ static void composeActuators(QMainWindow *window)
         info->setWordWrap(true);
         info->setTextFormat(Qt::PlainText);
         info->setText(I18n::text(2972415));
-        info->setMinimumSize(0,30);
-        info->setMaximumHeight(56);
-        info->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
+        info->setMinimumSize(0,0);
+        QSizePolicy infoPolicy(QSizePolicy::Ignored,QSizePolicy::Minimum);
+        infoPolicy.setHeightForWidth(true);
+        info->setSizePolicy(infoPolicy);
         info->show();
         iacLayout->addWidget(info);
     }
@@ -723,16 +724,16 @@ static void composeActuators(QMainWindow *window)
             addButton(2971803,"gaugeTestMaximum");
             addButton(2971804,"gaugeTestStop");
         }
-        auto addNote=[&](int key,const char *name,int lines,bool orange){
+        auto addNote=[&](int key,const char *name,bool orange){
             auto *label=new QLabel(I18n::text(key),panel);
             label->setObjectName(QString::fromLatin1(name));
             label->setWordWrap(true);
             label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
-            // Identical rows in both cards keep all buttons aligned. The
-            // permanent safety instruction has room for three wrapped lines;
-            // the compact availability label has room for two.
-            label->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
-            label->setFixedHeight(lines==2?48:36);
+            // Size wrapped text from its width and font, not a fixed box.
+            QSizePolicy notePolicy(QSizePolicy::Ignored,QSizePolicy::Minimum);
+            notePolicy.setHeightForWidth(true);
+            label->setSizePolicy(notePolicy);
+            label->setMinimumHeight(label->fontMetrics().lineSpacing());
             if(orange){
                 const bool dark=qApp&&qApp->property("ecuDarkTheme").toBool();
                 label->setStyleSheet(dark?QStringLiteral("color:#ff9828;background:transparent;border:0;"):
@@ -740,8 +741,8 @@ static void composeActuators(QMainWindow *window)
             }
             v->addWidget(label);
         };
-        addNote(2972405,tachometer?"revCounterTestSafety":"gaugeTestSafety",2,true);
-        addNote(2972428,tachometer?"revCounterTestReason":"gaugeTestReason",3,true);
+        addNote(2972405,tachometer?"revCounterTestSafety":"gaugeTestSafety",true);
+        addNote(2972428,tachometer?"revCounterTestReason":"gaugeTestReason",true);
         // The full observation guidance remains accessible without consuming
         // two duplicate permanent text blocks. Safety and availability stay visible.
         panel->setToolTip(I18n::text(tachometer?2972408:2971811));
@@ -788,7 +789,7 @@ static void composeActuators(QMainWindow *window)
     state->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
     rv->addWidget(state);
 
-    body->addWidget(right,6);
+    body->addWidget(right,7);
     root->addLayout(body,1);
     page->setMinimumSize(0,0);
     page->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
