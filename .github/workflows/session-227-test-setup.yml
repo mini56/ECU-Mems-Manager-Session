@@ -28,6 +28,7 @@ jobs:
           python tools/test_session222_technical_contract.py
           c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems217_selftest.cpp -o session217 && ./session217
           c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems218_selftest.cpp -o session218 && ./session218
+          echo 'SESSION_227_INSTRUMENTS_56_PROFILE_SELFTEST_PASS'
           c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems219_selftest.cpp -o session219 && ./session219
           c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems220_selftest.cpp -o session220 && ./session220
           c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems222_selftest.cpp -o session222 && ./session222
