@@ -1,5 +1,6 @@
 #include <QApplication>
 #include "applicationvisualstyle.h"
+#include "settingspage.h"
 #include <QCoreApplication>
 #include <QEvent>
 #include <QFrame>
@@ -467,49 +468,6 @@ static void composeErrors(QMainWindow *window)
     if(live){prepWidget(live);live->setParent(bottom);static_cast<QVBoxLayout*>(bottom->layout())->addWidget(live,1);}root->addWidget(bottom,2);
 }
 
-// Native-style schematic instrument. Needle at its rest position, never a physical readback.
-class GaugeTestSymbol : public QWidget {
-public:
-    explicit GaugeTestSymbol(QWidget *parent):QWidget(parent){
-        setObjectName(QStringLiteral("actuatorTemperatureDial"));
-        setMinimumSize(150,145);setMaximumSize(220,207);
-        setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
-    }
-protected:
-    void paintEvent(QPaintEvent*) override {
-        QPainter p(this);p.setRenderHint(QPainter::Antialiasing,true);
-        p.setRenderHint(QPainter::TextAntialiasing,true);
-        const bool dark=qApp&&qApp->property("ecuDarkTheme").toBool();
-        const qreal scale=qMin(width()/176.0,height()/166.0);
-        p.translate((width()-176*scale)/2,(height()-166*scale)/2);
-        p.scale(scale,scale);
-        const QPointF center(88,83);
-        const qreal r=68.0;
-        p.setPen(QPen(dark?QColor("#6c7479"):QColor("#87939d"),1.35));
-        p.setBrush(dark?QColor("#11191e"):QColor("#e4e9ed"));
-        p.drawEllipse(center,r,r);
-        p.setPen(QPen(dark?QColor("#11191e"):QColor("#d5dce2"),5));
-        p.setBrush(dark?QColor("#05090c"):QColor("#ffffff"));
-        p.drawEllipse(center,r-6,r-6);
-        p.setPen(QPen(dark?QColor("#3b474f"):QColor("#acb8c2"),1));
-        p.setBrush(Qt::NoBrush);p.drawEllipse(center,r-12,r-12);
-        const QRectF arc(center.x()-57,center.y()-57,114,114);
-        p.setPen(QPen(QColor("#478ed0"),4));p.drawArc(arc,195*16,30*16);
-        p.setPen(QPen(QColor("#d95748"),4));p.drawArc(arc,-45*16,30*16);
-        for(int i=0;i<=12;++i){
-            const qreal a=qDegreesToRadians(135.0+270.0*i/12.0);
-            const QPointF dir(qCos(a),qSin(a));
-            p.setPen(QPen(dark?QColor("#eef2f4"):QColor("#101820"),i%3==0?1.8:0.8));
-            p.drawLine(center+dir*59,center+dir*(i%3==0?50:54));
-        }
-        const QPointF d(-0.70710678,0.70710678),n(-d.y(),d.x());
-        QPainterPath needle;needle.moveTo(center+d*54);needle.lineTo(center+n*2.8);
-        needle.lineTo(center-d*8);needle.lineTo(center-n*2.8);needle.closeSubpath();
-        p.setPen(Qt::NoPen);p.setBrush(QColor("#ff8a00"));p.drawPath(needle);
-        p.setPen(QPen(QColor("#707980"),1));p.setBrush(QColor("#293239"));p.drawEllipse(center,6,6);
-    }
-};
-
 static void composeActuators(QMainWindow *window)
 {
     QWidget *page=pageFor(window,QStringLiteral("actuators"));
@@ -585,9 +543,16 @@ static void composeActuators(QMainWindow *window)
                     o2On->setToolTip(QString());
                     o2Label->setToolTip(tip);
                 }
-                o2Label->setWordWrap(true);
-                o2Label->setMaximumWidth(QFontMetrics(o2Label->font()).horizontalAdvance(o2Label->text())+32);
-                o2Label->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
+                // Reserve the help column in addition to the entire text,
+                // not inside its width. Keep the original label on one line.
+                o2Label->setWordWrap(false);
+                const QMargins margins=o2Label->contentsMargins();
+                o2Label->setContentsMargins(0,margins.top(),30,margins.bottom());
+                const int completeWidth=QFontMetrics(o2Label->font()).horizontalAdvance(o2Label->text())+30+8;
+                o2Label->setMinimumWidth(completeWidth);
+                o2Label->setMaximumWidth(completeWidth);
+                o2Label->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);
+                grid->setColumnMinimumWidth(0,qMax(grid->columnMinimumWidth(0),completeWidth));
                 grid->setAlignment(o2Label,Qt::AlignLeft|Qt::AlignVCenter);
             }
             // Show the actual received result next to each existing test button.
@@ -659,8 +624,8 @@ static void composeActuators(QMainWindow *window)
     auto *gv=static_cast<QVBoxLayout*>(gauge->layout());
     gv->setContentsMargins(10,6,10,6);gv->setSpacing(4);
     if(auto *title=cardTitle(gauge)){title->setFixedHeight(20);title->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);}
-    gv->addStretch(1);
-    gv->addWidget(new GaugeTestSymbol(gauge),0,Qt::AlignHCenter);
+    // Expand into the actual dial area, using the Settings gauge renderer.
+    gv->addWidget(createActuatorTemperatureGauge(gauge),1);
     QHBoxLayout *actions=new QHBoxLayout;actions->setSpacing(6);
     for(int key:{2971802,2971803,2971804}){
         QPushButton *button=new QPushButton(I18n::text(key),gauge);
@@ -675,7 +640,6 @@ static void composeActuators(QMainWindow *window)
         actions->addWidget(button,1);
     }
     gv->addLayout(actions);
-    gv->addStretch(1);
     QLabel *reason=new QLabel(I18n::text(2971805),gauge);
     reason->setObjectName(QStringLiteral("gaugeTestReason"));reason->setWordWrap(true);
     reason->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);

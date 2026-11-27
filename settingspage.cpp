@@ -7,6 +7,7 @@
 #include <QLCDNumber>
 #include <QLineEdit>
 #include <QMainWindow>
+#include <QTabWidget>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPushButton>
@@ -46,7 +47,7 @@ static void clearLayout(QLayout *layout)
 class SettingsGauge : public QWidget
 {
 public:
-    enum Kind { IdleError, EngineRpm, FuelTrim, IgnitionAdvance, Lambda };
+    enum Kind { IdleError, EngineRpm, FuelTrim, IgnitionAdvance, Lambda, TemperatureTest };
 
     SettingsGauge(QObject *source,const QString &title,const QString &unit,Kind kind,
                   qreal titleSize,QWidget *parent=nullptr)
@@ -76,12 +77,23 @@ protected:
         const qreal bh=large?300.0:166.0;
         // Keep the RPM caption in its own bottom strip below the dial.
         const qreal dialHeight=qMax<qreal>(1,height()-(large?30:0));
-        const qreal scale=qMin(width()/bw,dialHeight/bh);
+        qreal scale=qMin(width()/bw,dialHeight/bh);
+        const bool schematic=m_kind==TemperatureTest;
+        if(schematic){
+            // The test dial uses the SAME rendered diameter as the small
+            // Settings instrument at this window size. Only shrink if the
+            // available Actuators area genuinely cannot contain that diameter.
+            if(auto *reference=window()->findChild<QWidget*>(QStringLiteral("darkTuneGaugeLambda"))){
+                if(reference->width()>0&&reference->height()>0)
+                    scale=qMin(scale,qMin(reference->width()/bw,reference->height()/bh));
+            }
+        }
         p.translate((width()-bw*scale)/2.0,(dialHeight-bh*scale)/2.0);
         p.scale(scale,scale);
 
         // A single shared screen-space font for all five headings, including
         // the larger central RPM dial. No isolated font reduction.
+        if(!schematic){
         p.save();p.resetTransform();
         qreal titleWidth=width()-12;
         if(parentWidget())for(auto *g:parentWidget()->findChildren<QWidget*>())
@@ -93,6 +105,7 @@ protected:
         p.setPen(darkTheme?kText:QColor("#101820"));
         p.drawText(QRectF(4,(dialHeight-bh*scale)/2,width()-8,20*scale),Qt::AlignCenter,m_title.toUpper());
         p.restore();
+        }
 
         const QPointF c(bw/2.0,large?151.0:87.0);
         const qreal r=large?126.0:68.0;
@@ -159,7 +172,10 @@ protected:
         p.setPen(QPen(darkTheme?QColor("#3a454d"):QColor("#9aa7b2"),large?2.8:1.8,Qt::SolidLine,Qt::RoundCap));
         p.drawPath(baseArc);
 
-        if(m_kind==EngineRpm) {
+        if(schematic){
+            drawRange(minv,minv+(maxv-minv)/9.0,QColor("#478ed0"),4.5);
+            drawRange(maxv-(maxv-minv)/9.0,maxv,QColor("#d95748"),4.5);
+        } else if(m_kind==EngineRpm) {
             const double redStart=(maxv>=1900.0)?1750.0:(minv+(maxv-minv)*.875);
             drawRange(redStart,maxv,kRed,7.0);
         } else if(m_kind==IdleError) {
@@ -189,7 +205,7 @@ protected:
         p.setFont(scaleFont);
         p.setPen(darkTheme?QColor("#eef2f4"):QColor("#101820"));
         const qreal labelR=r-(large?38.0:25.0);
-        for(int i=0;i<=majorCount;i++) {
+        for(int i=0;!schematic&&i<=majorCount;i++) {
             const double fv=minv+(maxv-minv)*i/qreal(majorCount);
             const QPointF pos=pointFor(i/qreal(majorCount),labelR);
             QString text;
@@ -219,6 +235,9 @@ protected:
         p.setBrush(QColor("#11171b"));
         p.drawEllipse(c,large?6.0:3.5,large?6.0:3.5);
 
+        // The actuator illustration is not a measured gauge; do not invent
+        // a temperature or scale. Shared bezel, ticks and resting needle only.
+        if(schematic)return;
         QFont valueFont=p.font();
         valueFont.setBold(true);
         valueFont.setPointSizeF(large?23.0:14.5);
@@ -922,6 +941,16 @@ void buildSettingsPage(QMainWindow *window)
     applySettingsLayout(window);
 }
 
+QWidget *createActuatorTemperatureGauge(QWidget *parent)
+{
+    auto *gauge=new SettingsGauge(nullptr,QString(),QString(),SettingsGauge::TemperatureTest,10.0,parent);
+    gauge->setObjectName(QStringLiteral("actuatorTemperatureDial"));
+    gauge->setMinimumSize(150,145);
+    gauge->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+    gauge->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    return gauge;
+}
+
 void fitSettingsPage(QMainWindow *window)
 {
     if (!window)
@@ -930,4 +959,17 @@ void fitSettingsPage(QMainWindow *window)
     QFrame *metrics=window->findChild<QFrame*>(QStringLiteral("settingsMetrics"));
     QFrame *adjust=window->findChild<QFrame*>(QStringLiteral("settingsAdjust"));
     applySettingsSizing(page,metrics,adjust);
+    // QStackedLayout may defer geometry of hidden pages. Use the current
+    // content size to lay out the reference Settings page even when the user
+    // has never opened it. No geometry changes to visible Settings controls.
+    if(page&&metrics&&!page->isVisible()){
+        if(auto *actuator=window->findChild<QWidget*>(QStringLiteral("actuators"))){
+            if(actuator->isVisible()&&actuator->width()>0&&actuator->height()>0){
+                page->resize(actuator->size());
+                if(page->layout())page->layout()->activate();
+                if(metrics->layout())metrics->layout()->activate();
+            }
+        }
+    }
+    if(auto *dial=window->findChild<QWidget*>(QStringLiteral("actuatorTemperatureDial")))dial->update();
 }
