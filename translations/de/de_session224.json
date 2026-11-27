@@ -16,5 +16,14 @@
   "2972415": "Position in 25%-Schritten wählen, dann Stellmotor bewegen.",
   "2972416": "Stellmotorposition:",
   "2972417": "Stellmotor bewegen",
-  "2972418": "Deaktivieren / Reset"
+  "2972418": "Deaktivieren / Reset",
+  "2972419": "Test verfügbar – Instrument beobachten.",
+  "2972420": "Test läuft.",
+  "2972421": "Test beendet: Normalbetrieb quittiert.",
+  "2972422": "Test abgebrochen: Normalbetrieb quittiert.",
+  "2972423": "Test abgelehnt: Bedingungen nicht erfüllt.",
+  "2972424": "Normalbetrieb unbestätigt. Zündung ausschalten.",
+  "2972425": "Befehl nicht quittiert; Normalbetrieb quittiert.",
+  "2972426": "Anderer Test oder Diagnosemodus aktiv.",
+  "2972427": "Zuerst andere Aktoren zurücksetzen."
 }
