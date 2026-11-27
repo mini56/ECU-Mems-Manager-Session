@@ -19,6 +19,39 @@ inline GaugeState gaugeState(bool connected,const Mems16Na::SessionEvidence *s) 
     // exists until bench restoration and the actual vehicle wiring are checked.
     return GaugeState::AwaitBench;
 }
+// Active instrument tests: only the exact firmware whose output path and
+// independent firmware watchdog/restoration have both been traced.
+// All other profiles stay unsupported, even if the same opcode is present.
+enum class InstrumentAction : int { None=0, GaugeMin=1, GaugeMax=2, Tachometer=3 };
+inline bool instrumentSupported(InstrumentAction action,const Mems16Na::SessionEvidence &s) {
+    if(action==InstrumentAction::GaugeMin||action==InstrumentAction::GaugeMax)
+        return s.firmwareName()=="AANMP002" && s.identifiedProfile()!=nullptr;
+    if(action==InstrumentAction::Tachometer)
+        return s.firmwareName()=="TFH7G029" && s.identifiedProfile()==nullptr;
+    return false;
+}
+inline bool instrumentSafeSample(InstrumentAction action,const Mems16Na::SessionEvidence &s) {
+    if(!instrumentSupported(action,s))return false;
+    const auto a=Mems217::frame80(s),b=Mems217::frame7d(s);
+    if(!Mems217::present(a,25)||!Mems217::present(b,1))return false;
+    // Use the actual engine speed, not the requested tachometer indication.
+    if(Mems16Na::word(a,1)!=0||a.bytes[25]!=0||b.bytes[1]!=1)return false;
+    if(action!=InstrumentAction::Tachometer &&
+       (!Mems217::present(a,27)||a.bytes[27]!=0))return false;
+    return true;
+}
+inline unsigned instrumentCommand(InstrumentAction action) {
+    switch(action){
+        case InstrumentAction::GaugeMin:return 0x00u;
+        case InstrumentAction::GaugeMax:return 0x10u;
+        case InstrumentAction::Tachometer:return 0x6Bu;
+        default:return 0x100u;
+    }
+}
+constexpr unsigned instrumentDurationMs=1500;
+constexpr unsigned instrumentMaximumSampleMs=400;
+constexpr unsigned instrumentRestoreCommand=0xF4u;
+
 enum class CoolantAvailability { Disconnected, Unsupported, AwaitData, EngineStopped, Ready };
 struct CoolantSample {
     CoolantAvailability availability=CoolantAvailability::AwaitData;
