@@ -6,4 +6,5 @@ class QWidget;
 void buildSettingsPage(QMainWindow *window);
 void fitSettingsPage(QMainWindow *window);
 QWidget *createActuatorTemperatureGauge(QWidget *parent);
+QWidget *createActuatorRevCounterGauge(QWidget *parent);
 #endif
