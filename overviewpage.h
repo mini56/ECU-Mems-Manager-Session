@@ -5,4 +5,6 @@ class QWidget;
 // Native live overview: owns its cards, sampling, and responsive layout.
 void buildOverviewPage(QMainWindow *window);
 void fitOverviewPage(QWidget *page);
+// Same live indicator, embedded in another page's existing card.
+QWidget *createEmbeddedSystemStateIndicator(QMainWindow *window,QWidget *parent);
 #endif
