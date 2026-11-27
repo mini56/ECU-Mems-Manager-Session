@@ -12,5 +12,9 @@
   "2972411": "Gültiges Lambdasondensignal",
   "2972412": "Rot: Steuergerät meldet null Schritte. Aus: Position über null oder nicht verfügbar. Die Mindestposition allein beweist keinen Fehler.",
   "2972413": "Grün: Steuergerät meldet gültiges Lambdasondensignal bei qualifiziertem Profil. Aus: ungültig oder nicht verfügbar. Kein alleiniger Nachweis der Sondenfunktion.",
-  "2972414": "Instrumente im Fahrzeug beobachten; keine Positionsmessung."
+  "2972414": "Instrumente im Fahrzeug beobachten; keine Positionsmessung.",
+  "2972415": "Position in 25%-Schritten wählen, dann Stellmotor bewegen.",
+  "2972416": "Stellmotorposition:",
+  "2972417": "Stellmotor bewegen",
+  "2972418": "Deaktivieren / Reset"
 }
