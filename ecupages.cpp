@@ -263,8 +263,8 @@ static QLedIndicator *additionalLed(QWidget *parent,const QString &name,bool sta
     led->setFixedSize(kErrorLedSize,kErrorLedSize);
     led->setOnColor1(state?QColor("#6bdd45"):QColor(255,0,0));
     led->setOnColor2(state?QColor("#348a22"):QColor(176,0,2));
-    led->setOffColor1(state?QColor("#202429"):QColor(20,0,0));
-    led->setOffColor2(state?QColor("#41474d"):QColor(90,0,2));
+    led->setOffColor1(QColor(20,0,0));
+    led->setOffColor2(QColor(90,0,2));
     return led;
 }
 static void compactStoredPanel(QMainWindow *w,QFrame *top)
@@ -833,7 +833,14 @@ unsigned updateAdditionalErrors(QMainWindow *window,bool connected,const Mems16N
     }
     const bool stateSupported=MemsExtendedDtc::sync19(f);
     const bool stateAvailable=connected&&stateSupported&&d3.status==MemsExtendedDtc::Status::Decoded;
-    if(auto *led=window->findChild<QLedIndicator*>(QStringLiteral("extraDtc3TeethLed")))led->setChecked(stateAvailable&&(d3.states&4));
+    if(auto *led=window->findChild<QLedIndicator*>(QStringLiteral("extraDtc3TeethLed"))){
+        const bool detected=stateAvailable&&(d3.states&4);
+        led->setOnColor1(detected?QColor("#6bdd45"):QColor(255,0,0));
+        led->setOnColor2(detected?QColor("#348a22"):QColor(176,0,2));
+        // Off (dark red) means no valid state; illuminated red means no recent teeth.
+        led->setChecked(stateAvailable);
+        led->update();
+    }
     if(auto *label=window->findChild<QLabel*>(QStringLiteral("extraDtc3TeethLabel"))){
         label->setText(!connected||stateSupported?I18n::text(29240):I18n::text(2972201));
         label->setToolTip(connected&&stateSupported&&!stateAvailable?I18n::text(29048):QString());
