@@ -387,6 +387,16 @@ QString DiagnosticPanel::buildReport() const
         .arg(d.throttle_pot).arg(d.iac_position).arg(d.idle_error);
     text += I18n::text(6886) /* EN: raw coolant=%1 | raw intake air=%2 | lambda=%3 | closed loop=%4  */
         .arg(d.coolant_temp).arg(d.intake_air_temp).arg(d.lambda_voltage).arg(d.closed_loop ? I18n::text(6887) /* EN: oui */ : I18n::text(6888) /* EN: non */);
+    // Include the same passive results in the generic (MEMS 1.9) report.
+    if(Mems217::passiveProfile(m_naEvidence.firmwareName())){
+        for(int row=0;row<m_checks->rowCount();++row){
+            const QString title=m_checks->item(row,0)->text();
+            if(title!=I18n::text(2971710)&&title!=I18n::text(2971711))continue;
+            QStringList fields;
+            for(int col=0;col<4;++col)fields<<m_checks->item(row,col)->text();
+            text+=QStringLiteral("\n")+fields.join(QStringLiteral(" | "))+QStringLiteral("\n");
+        }
+    }
     if (m_reference.valid)
         text += I18n::text(6889) /* EN: Reference: %1  */.arg(m_reference.timestamp);
     text += I18n::text(6890) /* EN:  The statuses and guidance in this report are consistency checks and do not replace manufacturer specifications.  */;

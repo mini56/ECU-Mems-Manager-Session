@@ -189,6 +189,7 @@ protected:
             p.drawText(QRectF(pos.x()-(large?28:18),pos.y()-(large?9:7),large?56:36,large?18:14),Qt::AlignCenter,text);
         }
 
+        const bool unavailable=m_kind==FuelTrim && m_source && m_source->property("session217LambdaUnavailable").toBool();
         const double normalized=qBound(0.0,(value-minv)/(maxv-minv),1.0);
         const qreal needleDeg=startDeg+sweepDeg*normalized;
         const qreal angle=qDegreesToRadians(needleDeg);
@@ -202,7 +203,7 @@ protected:
         needle.closeSubpath();
         p.setPen(Qt::NoPen);
         p.setBrush(kOrange);
-        p.drawPath(needle);
+        if(!unavailable)p.drawPath(needle);
         p.setPen(QPen(QColor("#707980"),large?1.3:1.0));
         p.setBrush(QColor("#273038"));
         p.drawEllipse(c,large?10.0:6.0,large?10.0:6.0);
@@ -215,7 +216,7 @@ protected:
         valueFont.setPointSizeF(large?23.0:14.5);
         p.setFont(valueFont);
         p.setPen(darkTheme?QColor("#ffffff"):QColor("#101820"));
-        const QString valueText=(qAbs(maxv-minv)<=50.0)?QString::number(value,'f',1):QString::number(value,'f',0);
+        const QString valueText=unavailable?QStringLiteral("--"):(qAbs(maxv-minv)<=50.0)?QString::number(value,'f',1):QString::number(value,'f',0);
         p.drawText(QRectF(c.x()-(large?62:40),c.y()+(large?58:26),large?124:80,large?32:22),Qt::AlignCenter,valueText);
 
         QFont unitFont=p.font();

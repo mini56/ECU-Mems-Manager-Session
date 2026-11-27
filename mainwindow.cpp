@@ -1438,6 +1438,9 @@ void MainWindow::onDataReady()
      unit->setText(injectionProfile?QStringLiteral("µs"):QStringLiteral("%"));
  m_ui->e_short_term_fuel_trim->setProperty("session217LambdaCorrection",
      injectionProfile && (!naIdentified || !naEvidence.identifiedProfile()->alternateTransmission));
+ m_ui->e_short_term_fuel_trim->setProperty("session217LambdaUnavailable",
+     injectionProfile && (!Mems217::present(frame7d,12) ||
+         (naIdentified && naEvidence.identifiedProfile()->alternateTransmission)));
  if(injectionProfile) {
      m_ui->e_FuelTrim_lcd->display(Mems217::present(frame7d,11)?QString::number(Mems217::injectionUs(frame7d.bytes[11])):QStringLiteral("--"));
      m_ui->emi_idledecay->setText(I18n::text(2971704));
@@ -1843,6 +1846,7 @@ void MainWindow::onDisconnect()
   m_ui->e_ignition_advance->setValue(0);
   m_ui->e_short_term_fuel_trim->setValue(0);
   m_ui->e_short_term_fuel_trim->setProperty("session217LambdaCorrection",false);
+  m_ui->e_short_term_fuel_trim->setProperty("session217LambdaUnavailable",true);
   m_ui->emi_shorttermftrim->setText(I18n::text(2020));
   m_ui->emi_idledecay->setText(I18n::text(2022));
   if(auto *unit=findChild<QLabel*>(QStringLiteral("session217InjectionUnit")))unit->setText(QStringLiteral("%"));

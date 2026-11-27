@@ -22,6 +22,17 @@ int main(){
     sample(83,800,1,0,0);assert(!o.lambdaObserved&&o.crossings==0);
     sample(83,800,0,1,1);assert(o.lambdaFault&&o.coolantFault&&!o.coolantObserved);
     s.discardPair();o.sample(s);assert(!o.valid&&!o.lambdaObserved);
+    // Distinct MEMS 1.9 firmware; raw data must be a current complete pair.
+    Mems16Na::SessionEvidence n;
+    n.tx({0xd0});n.rx({0xd0,0x99,0,9,1});n.finish();
+    n.tx({0xd1});n.rx({0xd1,'K','B','H','B','G','0','0','9',0x99,0,9,1});n.finish();
+    assert(!n.identifiedProfile()&&injectionProfile(n)&&passiveProfile(n.firmwareName()));
+    std::vector<std::uint8_t> a19(28,0),b19(32,0);
+    a19[0]=28;a19[1]=3;a19[2]=132;a19[3]=100;
+    b19[0]=32;b19[6]=160;b19[9]=1;b19[10]=1;b19[11]=129;
+    n.setExtended80(a19);n.setExtended7d(b19);o.sample(n);
+    assert(o.valid&&o.mv==800&&present(frame7d(n),11)&&injectionUs(frame7d(n).bytes[11])==8);
+    n.discardPair();o.sample(n);assert(!o.valid&&!present(frame7d(n),11));
     EcuReconnectPolicy p;using O=EcuReconnectPolicy::Outcome;
     assert(p.startManual()&&p.established());assert(p.cancel());assert(p.closed()==O::None&&p.startManual());
     assert(p.established()&&p.lost()&&p.closed()==O::Retry);

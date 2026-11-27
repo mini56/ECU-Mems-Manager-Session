@@ -14,3 +14,7 @@ Base 488dc8cd7dc6a8ec6e25bf8905597fb36e644006. Autorisation utilisateur 27/11/20
 | V130 progression adaptation | Non intégrée, accès compteurs à confirmer | lecture seulement |
 | ACT-106 et autres actions | À auditer / intégrer sans doublon | lots suivants |
 Les seuils d'observation 300/600 mV et 3 pas température ne constituent pas des seuils constructeur ni un verdict de santé. Un résultat non concluant n'est pas une panne. Pas de changement de DLL, commande ni branche de recherche. CI et validation réelle restent distinctes.
+
+## Suivi CI
+- Commit initial 6203853bb7a30714ed883c9c0f7d738754540623, run 45978630149, tentatives 1 et 2 : échec du job tests sans aucune étape listée et journaux inaccessibles (BlobNotFound). Windows ignoré. Cause exacte non accessible. Aucun Setup validé.
+- Revue source supplémentaire : export des diagnostics passifs MEMS 1.9, cadran sans valeur ni aiguille lorsque la correction n'est pas disponible, test synthétique MEMS 1.9 et égalité des clés des six catalogues. Nouvelle validation à exécuter. Aucune validation terrain.

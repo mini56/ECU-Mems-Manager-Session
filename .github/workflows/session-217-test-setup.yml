@@ -28,6 +28,7 @@ jobs:
           python tools/test_mems16na_ui_contract.py
           python tools/test_session215_ui_contract.py
           c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems217_selftest.cpp -o session217 && ./session217
+          python -c "import json; from pathlib import Path; langs=('fr','en','de','es','it','pt'); keys=set(json.loads(Path('translations/fr/fr_session217.json').read_text(encoding='utf-8'))); assert len(keys)==18 and all(set(json.loads(Path(f'translations/{l}/{l}_session217.json').read_text(encoding='utf-8')))==keys for l in langs)"
           python -c "import json; from pathlib import Path; langs=('fr','en','de','es','it','pt'); assert all(set(json.loads(Path(f'translations/{l}/{l}_restart.json').read_text(encoding='utf-8')))=={'29100','29101','29102'} for l in langs)"
           python -c "from pathlib import Path; s=Path('aboutbox.cpp').read_text(encoding='utf-8'); p=[s.index(n) for n in ('Andrew Revill','Leopold Gunther','Colin Bourassa','haro78','James Portman')]; assert p==sorted(p), 'Incorrect acknowledgements order'; print('SESSION_217_ACKNOWLEDGEMENTS_ORDER_PASS')"
           python tools/test_save81_source.py
