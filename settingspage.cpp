@@ -80,7 +80,7 @@ protected:
         p.translate((width()-bw*scale)/2.0,(dialHeight-bh*scale)/2.0);
         p.scale(scale,scale);
 
-        const QString gaugeTitle=(m_kind==FuelTrim && m_source && m_source->property("session217LambdaCorrection").toBool()?I18n::text(2971703):m_title).toUpper();
+        const QString gaugeTitle=(m_kind==FuelTrim?I18n::text(2971703):m_title).toUpper();
         QFont titleFont=GaugeHeading::styledFont(p.font(),m_titleSize);
         while(QFontMetrics(titleFont).horizontalAdvance(gaugeTitle)>bw-8 && titleFont.pointSizeF()>5)titleFont.setPointSizeF(titleFont.pointSizeF()-0.25);
         p.setFont(titleFont);
@@ -189,7 +189,7 @@ protected:
             p.drawText(QRectF(pos.x()-(large?28:18),pos.y()-(large?9:7),large?56:36,large?18:14),Qt::AlignCenter,text);
         }
 
-        const bool unavailable=m_kind==FuelTrim && m_source && m_source->property("session217LambdaUnavailable").toBool();
+        const bool unavailable=m_kind==FuelTrim && (!m_source||!m_source->property("session217LambdaUnavailable").isValid()||m_source->property("session217LambdaUnavailable").toBool());
         const double normalized=qBound(0.0,(value-minv)/(maxv-minv),1.0);
         const qreal needleDeg=startDeg+sweepDeg*normalized;
         const qreal angle=qDegreesToRadians(needleDeg);
@@ -442,8 +442,8 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
         QPushButton *plus;
     };
     Row rows[]={
-        {fuelLabel,fuelMinus,fuelLcd,"%",fuelPlus},
-        {hotLabel,hotMinus,hotLcd,"pas",hotPlus},
+        {fuelLabel,fuelMinus,fuelLcd,"--",fuelPlus},
+        {hotLabel,hotMinus,hotLcd,nullptr,hotPlus},
         {rpmLabel,rpmMinus,rpmLcd,"tr/min",rpmPlus},
         {ignLabel,ignMinus,ignLcd,"°",ignPlus}
     };
@@ -466,11 +466,16 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
         if(rows[row].lcd) {
             rows[row].lcd->setParent(form);
             styleLcd(rows[row].lcd);
+            rows[row].lcd->display(QStringLiteral("--"));
             if(rows[row].lcd==ignLcd) installPositiveLcdSign(ignLcd);
             grid->addWidget(rows[row].lcd,row,2);
         }
-        QLabel *unitLabel=new QLabel(QString::fromUtf8(rows[row].unit),form);
-        if(row==0)unitLabel->setObjectName(QStringLiteral("session217InjectionUnit"));
+        QLabel *unitLabel=new QLabel(rows[row].unit?QString::fromUtf8(rows[row].unit):I18n::text(29065),form);
+        if(row==0){
+            unitLabel->setObjectName(QStringLiteral("session217InjectionUnit"));
+            unitLabel->setToolTip(I18n::text(2971901));
+            if(rows[row].label){rows[row].label->setText(I18n::text(2971701));rows[row].label->setToolTip(I18n::text(2021)+QStringLiteral("\n")+I18n::text(2971901));}
+        }
         QFont unitFont=unitLabel->font();
         unitFont.setBold(true);
         unitFont.setPointSizeF(8.4);

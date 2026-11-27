@@ -1,0 +1,12 @@
+{
+  "2971901": "Unità µs solo se la conversione è confermata per questa ECU; altrimenti valore non disponibile.",
+  "2971902": "Correzione iniezione (grezzo)",
+  "2971903": "Temperatura liquido motore (°C)",
+  "2971904": "Min: %1 | Max: %2",
+  "2971905": "Tensione potenziometro farfalla (V)",
+  "2971906": "Posizione motore passo-passo (passi)",
+  "2971907": "Angolo farfalla (grezzo)",
+  "2971908": "Correzione lambda istantanea (grezzo)",
+  "2971909": "Regolazione anticipo (grezzo)",
+  "2971910": "Regolazione minimo (grezzo)"
+}

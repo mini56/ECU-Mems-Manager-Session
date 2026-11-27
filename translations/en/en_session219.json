@@ -1,0 +1,12 @@
+{
+  "2971901": "Unit µs only when the conversion is confirmed for this ECU; otherwise value unavailable.",
+  "2971902": "Injection correction (raw)",
+  "2971903": "Engine coolant temperature (°C)",
+  "2971904": "Min: %1 | Max: %2",
+  "2971905": "Throttle potentiometer voltage (V)",
+  "2971906": "Idle stepper position (steps)",
+  "2971907": "Throttle angle (raw)",
+  "2971908": "Instantaneous lambda correction (raw)",
+  "2971909": "Ignition adjustment (raw)",
+  "2971910": "Idle speed adjustment (raw)"
+}

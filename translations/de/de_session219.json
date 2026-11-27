@@ -1,0 +1,12 @@
+{
+  "2971901": "Einheit µs nur bei bestätigter Umrechnung für dieses Steuergerät; sonst Wert nicht verfügbar.",
+  "2971902": "Einspritzkorrektur (Rohwert)",
+  "2971903": "Kühlmitteltemperatur (°C)",
+  "2971904": "Min: %1 | Max: %2",
+  "2971905": "Drosselklappenpotentiometerspannung (V)",
+  "2971906": "Leerlaufstellerposition (Schritte)",
+  "2971907": "Drosselklappenwinkel (Rohwert)",
+  "2971908": "Momentane Lambdakorrektur (Rohwert)",
+  "2971909": "Zündverstellung (Rohwert)",
+  "2971910": "Leerlaufdrehzahlkorrektur (Rohwert)"
+}

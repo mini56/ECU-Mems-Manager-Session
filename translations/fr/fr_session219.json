@@ -1,0 +1,12 @@
+{
+  "2971901": "Unité µs uniquement si la conversion est confirmée pour le calculateur ; sinon valeur indisponible.",
+  "2971902": "Correction d’injection (brut)",
+  "2971903": "Température moteur (°C)",
+  "2971904": "Mini : %1 | Maxi : %2",
+  "2971905": "Tension potentiomètre papillon (V)",
+  "2971906": "Position moteur pas-à-pas (pas)",
+  "2971907": "Angle papillon (brut)",
+  "2971908": "Correction instantanée lambda (brut)",
+  "2971909": "Réglage avance (brut)",
+  "2971910": "Réglage régime ralenti (brut)"
+}

@@ -35,6 +35,7 @@
 #include "analysistab.h"
 #include "ecucommunicationlog.h"
 #include "mems217_passive.h"
+#include "mems219_units.h"
 #include "ecupages.h"
 #include "summarytab.h"
 #include <qapplication.h>
@@ -490,7 +491,7 @@ MainWindow::~MainWindow()
 void MainWindow::buildSpeedAndTempUnitTables()
 {
   m_tempUnitSuffix = new QHash <TemperatureUnits, QString>;
-  m_tempUnitSuffix->insert(Fahrenheit, " F");
+  m_tempUnitSuffix->insert(Fahrenheit, QStringLiteral("°F"));
   m_tempUnitSuffix->insert(Celsius, "°C");
 
   m_tempRange = new QHash <TemperatureUnits, QPair <int, int> >;
@@ -859,6 +860,7 @@ void MainWindow::setupWidgets()
   m_ui->m_waterTempGauge->setMaximum(tempMax);
   m_ui->m_waterTempGauge->setMinimum(tempMin);
   m_ui->m_waterTempGauge->setSuffix(m_tempUnitSuffix->value(tempUnits));
+  m_ui->m_waterTempGauge->setProperty("session219Unit",m_tempUnitSuffix->value(tempUnits));
   m_ui->m_waterTempGauge->setNominal(m_tempLimits->value(tempUnits).first);
   m_ui->m_waterTempGauge->setCritical(m_tempLimits->value(tempUnits).second);
 
@@ -866,6 +868,7 @@ void MainWindow::setupWidgets()
   m_ui->m_airTempGauge->setMaximum(airtempMax);
   m_ui->m_airTempGauge->setMinimum(airtempMin);
   m_ui->m_airTempGauge->setSuffix(m_tempUnitSuffix->value(tempUnits));
+  m_ui->m_airTempGauge->setProperty("session219Unit",m_tempUnitSuffix->value(tempUnits));
   m_ui->m_airTempGauge->setNominal(m_airtempLimits->value(tempUnits).first);
   m_ui->m_airTempGauge->setCritical(m_airtempLimits->value(tempUnits).second);
 
@@ -1018,10 +1021,10 @@ int MainWindow::convertTemperature(int tempF)
   switch (m_options->getTemperatureUnits())
   {
   case Celsius:
-    temp = (temp - 55);
+    temp = Mems219::temperatureC(tempF);
     break;
   case Fahrenheit:
-	temp = ((temp -55) * 1.8 + 32);
+	temp = Mems219::celsiusToFahrenheit(Mems219::temperatureC(tempF));
     break;
   }
 
@@ -1438,22 +1441,21 @@ void MainWindow::onDataReady()
  const bool injectionProfile=Mems217::injectionProfile(naEvidence);
  const auto frame7d=Mems217::frame7d(naEvidence);
  const auto frame80=Mems217::frame80(naEvidence);
- m_ui->emi_shorttermftrim->setText(I18n::text(injectionProfile?2971701:2020));
+ m_ui->emi_shorttermftrim->setText(I18n::text(2971701));
  if(auto *unit=findChild<QLabel*>(QStringLiteral("session217InjectionUnit")))
-     unit->setText(injectionProfile?QStringLiteral("µs"):QStringLiteral("%"));
+     unit->setText(injectionProfile?QStringLiteral("µs"):QStringLiteral("--"));
  m_ui->e_short_term_fuel_trim->setProperty("session217LambdaCorrection",
      injectionProfile && (!naIdentified || !naEvidence.identifiedProfile()->alternateTransmission));
- m_ui->e_short_term_fuel_trim->setProperty("session217LambdaUnavailable",
-     injectionProfile && (!Mems217::present(frame7d,12) ||
-         (naIdentified && naEvidence.identifiedProfile()->alternateTransmission)));
+ m_ui->e_short_term_fuel_trim->setProperty("session217LambdaUnavailable",!Mems219::lambdaQualified(naEvidence));
  if(injectionProfile) {
      m_ui->e_FuelTrim_lcd->display(Mems217::present(frame7d,11)?QString::number(Mems217::injectionUs(frame7d.bytes[11])):QStringLiteral("--"));
      m_ui->emi_idledecay->setText(I18n::text(2971704));
      m_ui->e_IdleDecay_lcd->display(Mems217::present(frame80,16)?QString::number(frame80.bytes[16]):QStringLiteral("--"));
-     m_ui->e_IdleSpeed_lcd->display(Mems217::present(frame7d,19)?QString::number(Mems217::idleRpm(frame7d.bytes[19])):QStringLiteral("--"));
+     const bool signedIdleOk=!naIdentified||Mems16Na::qualifiedIdleSigned(naEvidence.measurements()).availability==Mems16Na::Availability::Available;
+     m_ui->e_IdleSpeed_lcd->display(signedIdleOk&&Mems217::present(frame7d,19)?QString::number(Mems217::idleRpm(frame7d.bytes[19])):QStringLiteral("--"));
  } else {
      m_ui->emi_idledecay->setText(I18n::text(2022));
-     m_ui->e_FuelTrim_lcd->display(data->long_term_fuel_trim - 128);
+     m_ui->e_FuelTrim_lcd->display(QStringLiteral("--"));
      m_ui->e_IdleDecay_lcd->display(data->idle_hot - 35);
      m_ui->e_IdleSpeed_lcd->display((data->idle_speed_offset - 128) * 25);
  }
@@ -1461,7 +1463,8 @@ void MainWindow::onDataReady()
 //  m_ui->m_fuel_trim->setText(QString::number(data->short_term_fuel_trim, 'f', 1));
  // m_ui->shorttimefueltrim_lcd->display(data->short_term_fuel_trim);
 
- m_ui->m_long_trim->setText(QString::number(data->long_term_fuel_trim-128) );
+ m_ui->m_long_trim_label->setText(I18n::text(2971701));
+ m_ui->m_long_trim->setText(Mems219::injectionAvailable(naEvidence)?QString::number(Mems217::injectionUs(frame7d.bytes[11]))+QStringLiteral(" µs"):QStringLiteral("--"));
  m_ui->m_lambda_voltage->setValue(data->lambda_voltage * 5);
  // m_ui->m_idlehot_2->setText(QString::number(data->idle_hot));
 
@@ -1471,7 +1474,7 @@ void MainWindow::onDataReady()
     else
     {m_ui->r_7D_01->setText(I18n::text(7020) /* EN: Off */);}
  m_ui->m_7D_02->setText(QString::number(data->throttle_angle));
- m_ui->r_7D_02->setText(QString::number(data->throttle_angle * 6 / 10) + "°");
+ m_ui->r_7D_02->setText(QString::number(Mems219::legacyThrottleDeg(data->throttle_angle),'f',1)+QStringLiteral(" °"));
  m_ui->m_7D_03->setText(QString::number(data->uk6));
  m_ui->m_7D_04->setText(QString::number(data->air_fuel_ratio));
  m_ui->r_7D_04->setText(QString::number(data->air_fuel_ratio / 10.0) + " AFR");
@@ -1496,9 +1499,9 @@ void MainWindow::onDataReady()
     else
     {m_ui->r_7D_0A->setText(I18n::text(7026) /* EN: Open loop */);} 
  m_ui->m_7D_0B->setText(QString::number(data->long_term_fuel_trim));
- m_ui->r_7D_0B->setText(QString::number(data->long_term_fuel_trim - 128));
+ m_ui->r_7D_0B->setText(Mems219::injectionAvailable(naEvidence)?QString::number(Mems217::injectionUs(frame7d.bytes[11]))+QStringLiteral(" µs"):I18n::text(29002));
  m_ui->m_7D_0C->setText(QString::number(data->short_term_fuel_trim));
- m_ui->r_7D_0C->setText(QString::number(data->short_term_fuel_trim - 100) + "%");
+ m_ui->r_7D_0C->setText(Mems219::lambdaQualified(naEvidence)?QString::number(int(frame7d.bytes[12])-100)+QStringLiteral(" %"):I18n::text(29002));
  m_ui->m_7D_0D->setText(QString::number(data->carbon_canister_dutycycle));
  m_ui->r_7D_0D->setText(QString::number(data->carbon_canister_dutycycle) + "%");
  m_ui->m_7D_0E->setText(MemsExtendedDtc::raw(&naEvidence,3,data->dtc3));
@@ -1510,7 +1513,7 @@ void MainWindow::onDataReady()
  m_ui->m_7D_11->setText(MemsExtendedDtc::raw(&naEvidence,4,data->dtc4));
  m_ui->r_7D_11->setText(MemsExtendedDtc::text(&naEvidence,4)); 
  m_ui->m_7D_12->setText(QString::number(data->ignition_advance2));
- m_ui->r_7D_12->setText(QString::number(data->ignition_advance2 - 48));
+ m_ui->r_7D_12->setText(QString::number(Mems219::ignitionAdjustmentDeg(data->ignition_advance2),'f',1)+QStringLiteral(" °"));
  m_ui->m_7D_13->setText(QString::number(data->idle_speed_offset));
  m_ui->r_7D_13->setText(QString::number((data->idle_speed_offset - 128) * 25) + " RPM");
  // m_ui->m_7D_14->setText(QString::number(data->idle_error2));
@@ -1534,13 +1537,13 @@ void MainWindow::onDataReady()
  m_ui->m_80_01->setText(QString::number(data->engine_rpm));
  m_ui->r_80_01->setText(QString::number(data->engine_rpm) + " RPM");
  m_ui->m_80_03->setText(QString::number(data->coolant_temp));
- m_ui->r_80_03->setText(QString::number(data->coolant_temp - 55) + "°C");
+ m_ui->r_80_03->setText(Mems219::temperatureAvailable(data->coolant_temp)?QString::number(Mems219::temperatureC(data->coolant_temp))+QStringLiteral(" °C"):I18n::text(29002));
  m_ui->m_80_04->setText(QString::number(data->ambient_temp));
- m_ui->r_80_04->setText(QString::number(data->ambient_temp - 55) + "°C");
+ m_ui->r_80_04->setText(Mems219::temperatureAvailable(data->ambient_temp)?QString::number(Mems219::temperatureC(data->ambient_temp))+QStringLiteral(" °C"):I18n::text(29002));
  m_ui->m_80_05->setText(QString::number(data->intake_air_temp));
- m_ui->r_80_05->setText(QString::number(data->intake_air_temp - 55) + "°C");
+ m_ui->r_80_05->setText(Mems219::temperatureAvailable(data->intake_air_temp)?QString::number(Mems219::temperatureC(data->intake_air_temp))+QStringLiteral(" °C"):I18n::text(29002));
  m_ui->m_80_06->setText(QString::number(data->fuel_temp));
- m_ui->r_80_06->setText(QString::number(data->fuel_temp - 55) + "°C");
+ m_ui->r_80_06->setText(Mems219::temperatureAvailable(data->fuel_temp)?QString::number(Mems219::temperatureC(data->fuel_temp))+QStringLiteral(" °C"):I18n::text(29002));
  m_ui->m_80_07->setText(QString::number(data->map_kpa));
  m_ui->r_80_07->setText(QString::number(data->map_kpa) + " kPa");
  m_ui->m_80_08->setText(QString::number(data->battery_voltage));
@@ -1574,10 +1577,10 @@ void MainWindow::onDataReady()
     {m_ui->r_80_0E->setText(I18n::text(7045) /* EN: no fault */);}  
  m_ui->m_80_0F->setText(QString::number(data->idle_set_point));
  m_ui->m_80_10->setText(QString::number(data->idle_hot));
- m_ui->r_80_10->setText(QString::number(data->idle_hot - 35));
+ m_ui->r_80_10->setText(injectionProfile&&Mems217::present(frame80,16)?QString::number(frame80.bytes[16])+QStringLiteral(" ")+I18n::text(29065):QString::number(data->idle_hot - 35)+QStringLiteral(" ")+I18n::text(29065));
  m_ui->m_80_11->setText(QString::number(data->uk2));
  m_ui->m_80_12->setText(QString::number(data->iac_position));
- m_ui->r_80_12->setText(QString::number(round(data->iac_position / 1.8)) + "%");
+ m_ui->r_80_12->setText(QString::number(data->iac_position)+QStringLiteral(" ")+I18n::text(29065));
  m_ui->m_80_13->setText(QString::number(data->idle_error));
  m_ui->r_80_13->setText(QString::number(data->idle_error) + " RPM");
  m_ui->m_80_15->setText(QString::number(data->ignition_advance_offset));
@@ -1635,6 +1638,7 @@ void MainWindow::onEditOptionsClicked()
     int airtempCritical = m_airtempLimits->value(tempUnits).second;
 
     m_ui->m_airTempGauge->setSuffix(tempUnitStr);
+    m_ui->m_airTempGauge->setProperty("session219Unit",tempUnitStr);
     m_ui->m_airTempGauge->setValue(airtempMin);
     m_ui->m_airTempGauge->setMaximum(airtempMax);
     m_ui->m_airTempGauge->setMinimum(airtempMin);
@@ -1643,6 +1647,7 @@ void MainWindow::onEditOptionsClicked()
     m_ui->m_airTempGauge->repaint();
 
     m_ui->m_waterTempGauge->setSuffix(tempUnitStr);
+    m_ui->m_waterTempGauge->setProperty("session219Unit",tempUnitStr);
     m_ui->m_waterTempGauge->setValue(tempMin);
     m_ui->m_waterTempGauge->setMaximum(tempMax);
     m_ui->m_waterTempGauge->setMinimum(tempMin);
@@ -1853,12 +1858,13 @@ void MainWindow::onDisconnect()
   m_ui->e_short_term_fuel_trim->setValue(0);
   m_ui->e_short_term_fuel_trim->setProperty("session217LambdaCorrection",false);
   m_ui->e_short_term_fuel_trim->setProperty("session217LambdaUnavailable",true);
-  m_ui->emi_shorttermftrim->setText(I18n::text(2020));
+  m_ui->emi_shorttermftrim->setText(I18n::text(2971701));
   m_ui->emi_idledecay->setText(I18n::text(2022));
-  if(auto *unit=findChild<QLabel*>(QStringLiteral("session217InjectionUnit")))unit->setText(QStringLiteral("%"));
+  if(auto *unit=findChild<QLabel*>(QStringLiteral("session217InjectionUnit")))unit->setText(QStringLiteral("--"));
   m_ui->e_FuelTrim_lcd->display(QStringLiteral("--"));
   m_ui->e_IdleDecay_lcd->display(QStringLiteral("--"));
   m_ui->e_IdleSpeed_lcd->display(QStringLiteral("--"));
+  m_ui->e_IgnitionAdvance_lcd->display(QStringLiteral("--"));
   m_ui->e_lambda->setValue(0);
   m_ui->m_revCounter_exhaust->setValue(0);
   m_ui->e_idle_error->setValue(0);
@@ -2740,7 +2746,7 @@ void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na,bool documentat
   m_ui->m_long_trim_label->setText(I18n::text(29073));
   m_ui->m_long_trim_label->setToolTip(I18n::text(29029)+QStringLiteral("\n")+numeric(m.injectionTime,0,QStringLiteral(" µs")));
   m_ui->m_long_trim->setText(m.injectionTime.availability==Availability::Available?
-      QString::number(m.injectionTime.calculated,'f',0):QStringLiteral("--"));
+      QString::number(m.injectionTime.calculated,'f',0)+QStringLiteral(" µs"):QStringLiteral("--"));
   rememberNaLabel(m_ui->m_JackCountLabel);
   m_ui->m_JackCountLabel->setText(I18n::text(29033));
   m_ui->m_JackCountLabel->setToolTip(numeric(m.learnCount,0)+QStringLiteral("\n")+I18n::text(29054));

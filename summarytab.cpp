@@ -9,6 +9,7 @@
 #include <QSize>
 #include "i18n.h"
 #include "mems16na_presentation.h"
+#include "mems219_units.h"
 #include "memsextendeddtc_presentation.h"
 #include "tooltipbubblemanager.h"
 #define tr I18n::text
@@ -129,7 +130,7 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
   m_rowLambdaDutycycle       = addRow(I18n::text(6633) /* EN: Lambda duty cycle (%) */);
   m_rowLambdaStatus          = addRow(I18n::text(6634) /* EN: Lambda status */);
   m_rowClosedLoop            = addRow(I18n::text(6635) /* EN: Closed loop */);
-  m_rowLongTermFuelTrim      = addRow(I18n::text(6636) /* EN: Long-term fuel trim (%) */);
+  m_rowLongTermFuelTrim      = addRow(I18n::text(2971701));
   m_rowShortTermFuelTrim     = addRow(I18n::text(6637) /* EN: Short-term fuel trim (%) */);
   m_rowCarbonCanisterDutycycle = addRow(I18n::text(6638) /* EN: Canister purge duty cycle (%) */);
   m_rowDtc3                  = addRow(I18n::text(6639) /* EN: DTC 3 */);
@@ -341,16 +342,16 @@ void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
 
   setValue(m_rowCoolantTemp,
            QString::number(data->coolant_temp),
-           QString::number(data->coolant_temp - 55) + " °C");
+           Mems219::temperatureAvailable(data->coolant_temp)?QString::number(Mems219::temperatureC(data->coolant_temp))+QStringLiteral(" °C"):I18n::text(29002));
   setValue(m_rowAmbientTemp,
            QString::number(data->ambient_temp),
-           QString::number(data->ambient_temp - 55) + " °C");
+           Mems219::temperatureAvailable(data->ambient_temp)?QString::number(Mems219::temperatureC(data->ambient_temp))+QStringLiteral(" °C"):I18n::text(29002));
   setValue(m_rowIntakeAirTemp,
            QString::number(data->intake_air_temp),
-           QString::number(data->intake_air_temp - 55) + " °C");
+           Mems219::temperatureAvailable(data->intake_air_temp)?QString::number(Mems219::temperatureC(data->intake_air_temp))+QStringLiteral(" °C"):I18n::text(29002));
   setValue(m_rowFuelTemp,
            QString::number(data->fuel_temp),
-           QString::number(data->fuel_temp - 55) + " °C");
+           Mems219::temperatureAvailable(data->fuel_temp)?QString::number(Mems219::temperatureC(data->fuel_temp))+QStringLiteral(" °C"):I18n::text(29002));
 
   setValue(m_rowMapKpa,
            QString::number(data->map_kpa),
@@ -385,13 +386,13 @@ void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
 
   setValue(m_rowIdleHot,
            QString::number(data->idle_hot),
-           QString::number(data->idle_hot - 35));
+           na&&Mems217::injectionProfile(*na)&&Mems217::present(Mems217::frame80(*na),16)?QString::number(Mems217::frame80(*na).bytes[16])+QStringLiteral(" ")+I18n::text(29065):QString::number(data->idle_hot - 35)+QStringLiteral(" ")+I18n::text(29065));
 
   setValue(m_rowUk2, QString::number(data->uk2), QString::number(data->uk2));
 
   setValue(m_rowIacPosition,
            QString::number(data->iac_position),
-           QString::number(qRound(data->iac_position / 1.8)) + " %");
+           QString::number(data->iac_position)+QStringLiteral(" ")+I18n::text(29065));
 
   setValue(m_rowIdleError,
            QString::number(data->idle_error),
@@ -452,13 +453,13 @@ void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
            QString::number(data->closed_loop),
            data->closed_loop ? I18n::text(6673) /* EN: Closed loop */ : I18n::text(6674) /* EN: Open loop */);
 
-  setValue(m_rowLongTermFuelTrim,
-           QString::number(data->long_term_fuel_trim),
-           QString::number(data->long_term_fuel_trim - 128));
+  const bool knownInjection=na&&Mems219::injectionAvailable(*na);
+  const auto correctionFrame=na?Mems217::frame7d(*na):Mems16Na::Frame{nullptr,0};
+  setValue(m_rowLongTermFuelTrim,QString::number(data->long_term_fuel_trim),knownInjection?QString::number(Mems217::injectionUs(correctionFrame.bytes[11]))+QStringLiteral(" µs"):I18n::text(29002));
 
   setValue(m_rowShortTermFuelTrim,
            QString::number(data->short_term_fuel_trim),
-           QString::number(data->short_term_fuel_trim - 100) + " %");
+           na&&Mems219::lambdaQualified(*na)?QString::number(int(correctionFrame.bytes[12])-100)+QStringLiteral(" %"):I18n::text(29002));
 
   setValue(m_rowCarbonCanisterDutycycle,
            QString::number(data->carbon_canister_dutycycle),
@@ -476,7 +477,7 @@ void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
 
   setValue(m_rowIgnitionAdvance2,
            QString::number(data->ignition_advance2),
-           QString::number(data->ignition_advance2 - 48) + " °");
+           QString::number(Mems219::ignitionAdjustmentDeg(data->ignition_advance2),'f',1)+QStringLiteral(" °"));
 
   setValue(m_rowIdleSpeedOffset,
            QString::number(data->idle_speed_offset),

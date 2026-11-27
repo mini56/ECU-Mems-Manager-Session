@@ -22,6 +22,7 @@
 #include "mainwindow.h"
 #include "overviewpage.h"
 #include "applicationvisualstyle.h"
+#include "mems219_units.h"
 
 namespace {
 
@@ -42,6 +43,8 @@ public:
     void sample()
     {
         if(!m_source) return;
+        const QString unit=displayUnit();
+        if(unit!=m_historyUnit){m_history.clear();m_historyUnit=unit;}
         const QVariant v=m_source->property("value");
         if(!v.isValid()) return;
 
@@ -94,6 +97,8 @@ protected:
         const bool batteryGauge=(sourceName==QStringLiteral("m_battery"));
         const bool airGauge=(sourceName==QStringLiteral("m_airTempGauge"));
         const bool advanceGauge=(sourceName==QStringLiteral("m_ignition_advance"));
+        const bool fahrenheit=displayUnit()==QStringLiteral("°F");
+        auto temp=[&](double c){return fahrenheit?Mems219::celsiusToFahrenheit(c):c;};
 
         // Opening centred at the bottom, matching the readable MemsFCR-style
         // placement: scale around the upper 270 degrees, value in the lower gap.
@@ -157,10 +162,10 @@ protected:
             drawArcRange(13.5,14.5,QColor("#63d64b"),3.8);
             drawArcRange(14.5,maxv,QColor("#ff3d32"),4.2);
         } else if(coolantGauge) {
-            drawArcRange(85.0,95.0,QColor("#63d64b"),3.8);
-            drawArcRange(95.0,maxv,QColor("#ff3d32"),4.2);
+            drawArcRange(temp(85.0),temp(95.0),QColor("#63d64b"),3.8);
+            drawArcRange(temp(95.0),maxv,QColor("#ff3d32"),4.2);
         } else if(airGauge) {
-            drawArcRange(50.0,80.0,QColor("#ff3d32"),4.2);
+            drawArcRange(temp(50.0),temp(80.0),QColor("#ff3d32"),4.2);
         } else if(advanceGauge) {
             drawArcRange(5.0,15.0,QColor("#63d64b"),3.8);
             drawArcRange(15.0,maxv,QColor("#ff3d32"),4.2);
@@ -257,7 +262,7 @@ protected:
         unitFont.setPointSizeF(7.7);
         p.setFont(unitFont);
         p.setPen(darkTheme?QColor("#d0d8dc"):QColor("#101820"));
-        p.drawText(QRectF(48,148,92,14),Qt::AlignCenter,m_unit);
+        p.drawText(QRectF(48,148,92,14),Qt::AlignCenter,displayUnit());
 
         // Compact two-minute trace, leaving maximum height for the dial.
         const QRectF tr(8,192,172,25);
@@ -273,7 +278,7 @@ protected:
             p.drawLine(x,tr.top()+3,x,tr.bottom()-3);
         }
 
-        if(m_history.size()>1) {
+        if(displayUnit()==m_historyUnit&&m_history.size()>1) {
             double hmin=m_history.first().second;
             double hmax=hmin;
             for(const auto &pt:m_history) {
@@ -310,7 +315,8 @@ protected:
 private:
     QObject *m_source=nullptr;
     QString m_title;
-    QString m_unit;
+    QString m_unit,m_historyUnit;
+    QString displayUnit() const {const QString u=m_source?m_source->property("session219Unit").toString():QString();return u.isEmpty()?m_unit:u;}
     qreal m_titleSize=8.0;
     QElapsedTimer m_clock;
     QVector<QPair<qint64,double>> m_history;

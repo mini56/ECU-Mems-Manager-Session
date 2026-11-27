@@ -1,0 +1,12 @@
+{
+  "2971901": "Unidade µs apenas se a conversão estiver confirmada para esta ECU; caso contrário, valor indisponível.",
+  "2971902": "Correção de injeção (bruto)",
+  "2971903": "Temperatura do líquido de refrigeração (°C)",
+  "2971904": "Mín: %1 | Máx: %2",
+  "2971905": "Tensão do potenciómetro da borboleta (V)",
+  "2971906": "Posição do motor passo a passo (passos)",
+  "2971907": "Ângulo da borboleta (bruto)",
+  "2971908": "Correção lambda instantânea (bruto)",
+  "2971909": "Ajuste do avanço (bruto)",
+  "2971910": "Ajuste da marcha lenta (bruto)"
+}

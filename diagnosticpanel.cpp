@@ -22,6 +22,7 @@
 #include <QVBoxLayout>
 #include "i18n.h"
 #include "mems16na_presentation.h"
+#include "mems219_units.h"
 #include "memsextendeddtc_presentation.h"
 #define tr I18n::text
 
@@ -46,12 +47,18 @@ protected:
         QPainter p(this);p.setRenderHint(QPainter::Antialiasing);
         const bool dark=qApp&&qApp->property("ecuDarkTheme").toBool();
         p.setPen(dark?QColor("#44505a"):QColor("#c1cbd3"));
-        const QRectF r=QRectF(rect()).adjusted(4,4,-4,-4);p.drawRect(r);
+        const QRectF r=QRectF(rect()).adjusted(35,4,-4,-15);p.drawRect(r);
         if(points.isEmpty())return;
         qreal lo=points.first().y(),hi=lo;
         for(const auto &v:points){lo=qMin(lo,v.y());hi=qMax(hi,v.y());}
         if(hi-lo<4){const qreal mid=(hi+lo)*0.5;lo=mid-2;hi=mid+2;}
         const qreal span=qMax(qreal(1000),points.last().x());
+        QFont axis=p.font();axis.setPointSizeF(7);p.setFont(axis);
+        p.setPen(dark?QColor("#d4dbe0"):QColor("#344250"));
+        p.drawText(QRectF(0,0,34,14),Qt::AlignRight,QString::number(hi,'f',0)+QStringLiteral(" °C"));
+        p.drawText(QRectF(0,r.bottom()-12,34,14),Qt::AlignRight,QString::number(lo,'f',0)+QStringLiteral(" °C"));
+        p.drawText(QRectF(r.left(),r.bottom()+1,40,14),Qt::AlignLeft,QStringLiteral("0 s"));
+        p.drawText(QRectF(r.right()-45,r.bottom()+1,45,14),Qt::AlignRight,QString::number(span/1000.0,'f',0)+QStringLiteral(" s"));
         QPainterPath path;
         for(int i=0;i<points.size();++i){
             const QPointF pt(r.left()+r.width()*points[i].x()/span,
@@ -264,7 +271,7 @@ void DiagnosticPanel::rebuild(const mems_data &d)
 
     const double coolant = d.coolant_temp;
     const bool coolantPlausible = coolant > 0 && coolant < 250;
-    addCheck(I18n::text(6824) /* EN: Temperature LDR raw */, QString::number(coolant),
+    addCheck(I18n::text(2971903),coolantPlausible?QString::number(Mems219::temperatureC(d.coolant_temp))+QStringLiteral(" °C"):I18n::text(29002),
              stateFor(coolantPlausible, true),
              coolantPlausible ? I18n::text(6825) /* EN: Usable value; interpret it according to the ECU's MEMS scale. */
                               : I18n::text(6826) /* EN: Value outside plausible range: check the sensor and its circuit. */);
@@ -295,7 +302,7 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     const bool lambdaFault = (fault2 & 0x04) || (fault2 & 0x08);
     addCheck(I18n::text(6838) /* EN: lambda */,
              I18n::text(6839) /* EN: U=%1  freq=%2  duty=%3  status=%4 */
-                 .arg(d.lambda_voltage).arg(d.lambda_sensor_frequency)
+                 .arg(QString::number(Mems219::lambdaMv(d.lambda_voltage))+QStringLiteral(" mV")).arg(d.lambda_sensor_frequency)
                  .arg(d.lambda_sensor_dutycycle).arg(d.lambda_sensor_status),
              lambdaFault ? I18n::text(6840) /* EN: anomaly */ : I18n::text(6841) /* EN: INFORMATION */,
              lambdaFault ? I18n::text(6842) /* EN: Lambda circuit/supply fault: check heater, supply and wiring. */
@@ -304,14 +311,16 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     if (lambdaFault) ++issues;
 
     const int shortFuelTrim = int(d.short_term_fuel_trim) - 100;
-    const int longFuelTrim = int(d.long_term_fuel_trim) - 128;
-    const bool trimWatch = qAbs(shortFuelTrim) > 20 || qAbs(longFuelTrim) > 20;
+    const bool shortQualified=Mems219::lambdaQualified(m_naEvidence);
+    const bool longQualified=Mems219::injectionAvailable(m_naEvidence);
+    const bool trimWatch=shortQualified&&qAbs(shortFuelTrim)>20;
     addCheck(I18n::text(6845) /* EN: Corrections fuel */,
              I18n::text(6846) /* EN: short-term=%1  long-term=%2 */
-                 .arg(shortFuelTrim).arg(longFuelTrim),
-             stateFor(!trimWatch, true),
+                 .arg(shortQualified?QString::number(shortFuelTrim)+QStringLiteral(" %"):I18n::text(29002))
+                 .arg(longQualified?QString::number(Mems217::injectionUs(Mems217::frame7d(m_naEvidence).bytes[11]))+QStringLiteral(" µs"):I18n::text(29002)),
+             shortQualified?stateFor(!trimWatch,true):I18n::text(6849),
              trimWatch ? I18n::text(6847) /* EN: Large correction: check for air leaks, fuel pressure/supply, injection or lambda measurement before changing settings. */
-                       : I18n::text(6848) /* EN: Corrections show no significant deviation according to this indicative criterion. */);
+                       : shortQualified?I18n::text(6848):I18n::text(29002));
     if (trimWatch) ++warnings;
 
     // Vérification indicative MEMS 1.3/1.6 : moteur tournant, tension
@@ -620,7 +629,7 @@ void DiagnosticPanel::rebuildNa(const mems_data &d)
         battery<11.5?I18n::text(6821):battery>15.2?I18n::text(6822):I18n::text(6823));
     if(!batteryOk)++warnings;
     const bool coolantOk=d.coolant_temp>0&&d.coolant_temp<250;
-    add(I18n::text(6824),QString::number(d.coolant_temp),stateFor(coolantOk,true),I18n::text(coolantOk?6825:6826));
+    add(I18n::text(2971903),coolantOk?QString::number(Mems219::temperatureC(d.coolant_temp))+QStringLiteral(" °C"):I18n::text(29002),stateFor(coolantOk,true),I18n::text(coolantOk?6825:6826));
     if(!coolantOk)++issues;
     const bool rpmOk=d.engine_rpm<=8000;
     add(I18n::text(6827),I18n::text(6828).arg(d.engine_rpm),stateFor(rpmOk,true),I18n::text(rpmOk?6829:6830));
@@ -708,7 +717,8 @@ void DiagnosticPanel::refreshCoolantTest()
     m_coolantValues->setText(I18n::text(2971815)
         .arg(t.samples?celsius(t.initial):QStringLiteral("--"),
              t.samples?celsius(t.current):QStringLiteral("--"),
-             t.samples?celsius(t.current-t.initial):QStringLiteral("--")));
+             t.samples?celsius(t.current-t.initial):QStringLiteral("--"))+
+        (t.samples?QStringLiteral("\n")+I18n::text(2971904).arg(celsius(t.minimum),celsius(t.maximum)):QString()));
     int key=2971816;
     if(t.state==TestState::Interrupted)key=2971822;
     else if(t.state==TestState::Finished)key=t.storedFaultSeen?2971821:t.warmingObserved()?2971820:2971819;
