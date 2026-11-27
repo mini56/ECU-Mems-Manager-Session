@@ -90,6 +90,14 @@ protected:
                     scale=qMin(scale,qMin(reference->width()/bw,reference->height()/bh));
             }
         }
+        if(schematic){
+            const QString peerName=revTest?QStringLiteral("actuatorTemperatureDial"):QStringLiteral("actuatorRevCounterDial");
+            if(auto *peer=window()->findChild<QWidget*>(peerName)){
+                if(peer->width()>0&&peer->height()>0)
+                    scale=qMin(scale,qMin(peer->width()/bw,peer->height()/bh));
+            }
+            setProperty("session224DialDiameter",2.0*68.0*scale);
+        }
         p.translate((width()-bw*scale)/2.0,(dialHeight-bh*scale)/2.0);
         p.scale(scale,scale);
 
