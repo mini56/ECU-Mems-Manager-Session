@@ -1,0 +1,9 @@
+# SESSION 227 — Instruments
+
+27 novembre 2026. Analyse statique du corpus de recherche `research/mems-firmwares-20261126`, complétée par les vérifications des sessions précédentes. Pas d'essai physique.
+
+- 123 ROM MEMS 1.6 NA : balayage des signatures de forçage de jauge documentées (00/10, consommateur de bits de forçage, variable de sortie et chemin matériel). 15 profils intégrés. Les autres n'ont pas montré ces signatures ; absence de preuve ne signifie pas impossibilité sur une autre architecture.
+- 215 ROM du répertoire MEMS 1.9 : balayage des tables de dialogue et des handlers 6B/63. 41 profils avec simulation de régime et calibration 0/3000 tr/min ; ne pas confondre avec les handlers qui imposent uniquement un niveau électrique logique. TBP7F015 a une architecture distincte et aucun chemin de sortie jauge prouvé. La borne de table est heuristique pour les ROM sans ASM vérifié.
+- EKDMF009 : ID 900009 (XF1), 10 -> 3F61, 00 -> 3F66, F4 -> 3D13. Forçage AD/08, direction AD/10, consommateur 4B87 -> 4B91 écrit 01AC (m_tmpgauge_dr), sortie 2840 -> masque 40. Annulation efface le bit AD/08 à 3AEA. 
+- Les 56 profils figurent dans mems218_tests.h et dans tools/mems218_selftest.cpp ; les deux catalogues ont été comparés, sans doublon ni identité manquante. D1 automatique à la connexion en mode normal. Les boutons envoient les commandes réelles via le transport existant ; les cadrans ne constituent pas un retour mesuré de la position physique de l'aiguille.
+- Contrôle préalable des sources : concordance 56 profils, transport, retour F4, boutons, contraintes de présentation et étapes de validation. Vérification C++ et rendu Qt Windows aux trois résolutions par le workflow avant fabrication du Setup. Les autres familles MEMS et les autres architectures de commande ne sont pas déclarées compatibles sans preuve. DLL inchangée.
