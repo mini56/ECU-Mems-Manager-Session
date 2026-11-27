@@ -11,5 +11,6 @@
   "2972410": "Passo-passo al minimo",
   "2972411": "Segnale sonda lambda valido",
   "2972412": "Rosso: la ECU indica zero passi. Spento: posizione superiore a zero o non disponibile. La posizione minima da sola non dimostra un guasto.",
-  "2972413": "Verde: la ECU indica un segnale lambda valido su un profilo qualificato. Spento: segnale non valido o non disponibile. Non prova da solo il funzionamento della sonda."
+  "2972413": "Verde: la ECU indica un segnale lambda valido su un profilo qualificato. Spento: segnale non valido o non disponibile. Non prova da solo il funzionamento della sonda.",
+  "2972414": "Osservare gli strumenti del quadro; nessuna posizione misurata."
 }
