@@ -128,8 +128,13 @@ bool verifyInstrumentLayout224(MainWindow &window)
         for(const char *name:{"gaugeTestMinimum","gaugeTestMaximum","gaugeTestStop","revCounterTestStart","revCounterTestStop"}){
             auto *b=find(name);require(b&&b->isVisibleTo(&window)&&!b->isEnabled(),QStringLiteral("unqualified test button enabled or hidden"));
         }
-        if(auto *scroll=qobject_cast<QScrollArea*>(tabs->widget(index)))
+        if(auto *scroll=qobject_cast<QScrollArea*>(tabs->widget(index))){
+            logSmoke(QStringLiteral("SESSION_224 geometry page=%1x%2 viewport=%3x%4 minHint=%5x%6 scroll=%7")
+                .arg(page->width()).arg(page->height()).arg(scroll->viewport()->width()).arg(scroll->viewport()->height())
+                .arg(page->minimumSizeHint().width()).arg(page->minimumSizeHint().height())
+                .arg(scroll->verticalScrollBar()->maximum()));
             require(scroll->verticalScrollBar()->maximum()==0,QStringLiteral("vertical scrolling"));
+        }
         const QPixmap shot=page->grab();
         const qreal diameter=gd->property("session224DialDiameter").toDouble();
         const qreal other=td->property("session224DialDiameter").toDouble();
