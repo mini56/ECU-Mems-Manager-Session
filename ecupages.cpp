@@ -598,7 +598,7 @@ static void composeActuators(QMainWindow *window)
 
     QFrame *right=card(page,QStringLiteral("actuatorIacCard"),I18n::text(7138));
     QVBoxLayout *rv=static_cast<QVBoxLayout*>(right->layout());
-    rv->setSpacing(6);
+    rv->setSpacing(4);
     if(auto *title=cardTitle(right)){
         title->setObjectName(QStringLiteral("actuatorStepperTitle"));
         title->setFixedHeight(22);title->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
@@ -616,16 +616,16 @@ static void composeActuators(QMainWindow *window)
     if(pos){
         prepWidget(pos);
         pos->setParent(right);
-        pos->setMinimumHeight(30);
-        pos->setMaximumHeight(40);
+        pos->setMinimumHeight(24);
+        pos->setMaximumHeight(28);
         pos->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
         rv->addWidget(pos);
     }
     if(slider){
         prepWidget(slider);
         slider->setParent(right);
-        slider->setMinimumHeight(32);
-        slider->setMaximumHeight(40);
+        slider->setMinimumHeight(25);
+        slider->setMaximumHeight(30);
         slider->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
         rv->addWidget(slider);
     }
@@ -668,7 +668,7 @@ static void composeActuators(QMainWindow *window)
         };
         if(tachometer){
             addButton(2972406,"revCounterTestStart");
-            v->addSpacing(28);
+            v->addSpacing(31);
             addButton(2971804,"revCounterTestStop");
         }else{
             addButton(2971802,"gaugeTestMinimum");
@@ -691,7 +691,7 @@ static void composeActuators(QMainWindow *window)
         };
         addNote(2972405,tachometer?"revCounterTestSafety":"gaugeTestSafety",2,true);
         addNote(2971805,tachometer?"revCounterTestReason":"gaugeTestReason",3,true);
-        addNote(tachometer?2972408:2971811,tachometer?"revCounterTestHelp":"gaugeTestHelp",3,false);
+        addNote(tachometer?2972408:2971811,tachometer?"revCounterTestHelp":"gaugeTestHelp",2,false);
         instruments->addWidget(panel,1);
     };
     makeInstrument(false);
