@@ -9,7 +9,7 @@ inline bool gaugePathDocumented(const std::string &f) {
            f=="ABNMF030"||f=="ABNMF032"||f=="ABNMP002"||
            f=="ABNMP005"||f=="ABNMP006"||f=="ACNMF024"||
            f=="ACNMF026"||f=="ACNMP001"||f=="ACNMP003"||
-           f=="ACNMP004"||f=="ACNMP005";
+           f=="ACNMP004"||f=="ACNMP005"||f=="EKDMF009";
 }
 inline GaugeState gaugeState(bool connected,const Mems16Na::SessionEvidence *s) {
     if(!connected)return GaugeState::Disconnected;
@@ -19,8 +19,7 @@ inline GaugeState gaugeState(bool connected,const Mems16Na::SessionEvidence *s) 
     if(!s->identifiedProfile()||!gaugePathDocumented(s->firmwareName()))return GaugeState::Unsupported;
     if(!Mems217::present(a,25))return GaugeState::AwaitData;
     if(a.bytes[25]!=0)return GaugeState::EngineRunning;
-    // Historical read-only documentation status. Active tests below use a
-    // separate, narrower whitelist and independent worker interlock.
+    // The active test also checks the worker interlock and fresh measurements.
     return GaugeState::AwaitBench;
 }
 // Compatible physical output paths, normal diagnostic mode, exact D0/D1 identity.
