@@ -12,5 +12,9 @@
   "2972411": "Valid oxygen sensor signal",
   "2972412": "Red: ECU reports zero steps. Off: position above zero or unavailable. Minimum position alone does not prove a fault.",
   "2972413": "Green: ECU reports a valid oxygen sensor signal on a qualified profile. Off: invalid or unavailable signal. This alone does not prove sensor health.",
-  "2972414": "Observe the dashboard instruments; no measured position."
+  "2972414": "Observe the dashboard instruments; no measured position.",
+  "2972415": "Select the position in 25% steps, then click Move stepper.",
+  "2972416": "Stepper position:",
+  "2972417": "Move stepper",
+  "2972418": "Disable / reset"
 }
