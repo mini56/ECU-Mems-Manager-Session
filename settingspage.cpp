@@ -600,7 +600,7 @@ static void prepareSettingsGauge(QWidget *gauge,bool precision)
 {
     if(!gauge)return;
     // The grid owns gauge geometry on every resize: no stale pixel caps.
-    gauge->setMinimumSize(precision?270:150,precision?280:145);
+    gauge->setMinimumSize(precision?200:110,precision?220:105);
     gauge->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
     gauge->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     gauge->setAttribute(Qt::WA_StyledBackground,true);
@@ -622,7 +622,7 @@ static void applySettingsSizing(QWidget *page,QFrame *metrics,QFrame *adjust)
         prepareSettingsGauge(page->findChild<QWidget*>(QString::fromLatin1(name)),false);
     prepareSettingsGauge(page->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm")),true);
 
-    metrics->setMinimumHeight(280);
+    metrics->setMinimumHeight(220);
     metrics->setMaximumHeight(QWIDGETSIZE_MAX);
     metrics->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 
@@ -1015,16 +1015,27 @@ void fitSettingsPage(QMainWindow *window)
     QFrame *metrics=window->findChild<QFrame*>(QStringLiteral("settingsMetrics"));
     QFrame *adjust=window->findChild<QFrame*>(QStringLiteral("settingsAdjust"));
     applySettingsSizing(page,metrics,adjust);
-    if(page&&metrics&&adjust){
-        // The control block is unchanged. Remove only excess inherited minimum
-        // sizes from the gauge region; the five dials continue to scale together.
-        for(const char *name:{"darkTuneGaugeIdle","darkTuneGaugeTrim","darkTuneGaugeIgnition","darkTuneGaugeLambda"})
-            if(auto *g=metrics->findChild<QWidget*>(QString::fromLatin1(name)))g->setMinimumSize(110,105);
-        if(auto *g=metrics->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm")))g->setMinimumSize(200,220);
-        metrics->setMinimumHeight(220);
+    if(page&&adjust){
+        // Only the two side cards adapt. The existing centre form, its buttons
+        // and LCDs keep their approved sizes. Use the actual viewport width,
+        // never the previous (possibly too large) scroll-area child width.
+        const int available=page->parentWidget()?page->parentWidget()->width():page->width();
+        const int centre=qMax(600,adjust->minimumSizeHint().width());
+        const int sideWidth=qBound(130,(available-centre-40)/2,275);
+        for(const char *name:{"settingsStates","settingsSystemState"}){
+            if(auto *side=window->findChild<QFrame*>(QString::fromLatin1(name))){
+                side->setFixedWidth(sideWidth);
+                side->setFixedHeight(adjust->minimumHeight());
+            }
+        }
+        for(QGridLayout *grid:page->findChildren<QGridLayout*>())
+            if(grid->indexOf(adjust)>=0){
+                grid->setColumnMinimumWidth(0,sideWidth);
+                grid->setColumnMinimumWidth(2,sideWidth);
+                grid->invalidate();
+                break;
+            }
     }
-    if(adjust)for(const char *name:{"settingsStates","settingsSystemState"})
-        if(auto *side=window->findChild<QFrame*>(QString::fromLatin1(name)))side->setFixedHeight(adjust->minimumHeight());
     // QStackedLayout may defer geometry of hidden pages. Use the current
     // content size to lay out the reference Settings page even when the user
     // has never opened it. No geometry changes to visible Settings controls.
