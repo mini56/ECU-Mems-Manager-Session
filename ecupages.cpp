@@ -728,14 +728,11 @@ static void composeActuators(QMainWindow *window)
             label->setObjectName(QString::fromLatin1(name));
             label->setWordWrap(true);
             label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
+            // Identical rows in both cards keep all buttons aligned. The
+            // permanent safety instruction has room for three wrapped lines;
+            // the compact availability label has room for two.
             label->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
-            // A fixed line count computed before the final font pass clipped the instructions.
-            // Let the text calculate its height for the actual column width.
-            label->setMinimumHeight(lines==2?40:45);
-            label->setMaximumHeight(QWIDGETSIZE_MAX);
-            QSizePolicy notePolicy(QSizePolicy::Ignored,QSizePolicy::Minimum);
-            notePolicy.setHeightForWidth(true);
-            label->setSizePolicy(notePolicy);
+            label->setFixedHeight(lines==2?48:36);
             if(orange){
                 const bool dark=qApp&&qApp->property("ecuDarkTheme").toBool();
                 label->setStyleSheet(dark?QStringLiteral("color:#ff9828;background:transparent;border:0;"):
@@ -744,7 +741,7 @@ static void composeActuators(QMainWindow *window)
             v->addWidget(label);
         };
         addNote(2972405,tachometer?"revCounterTestSafety":"gaugeTestSafety",2,true);
-        addNote(2971805,tachometer?"revCounterTestReason":"gaugeTestReason",3,true);
+        addNote(2972428,tachometer?"revCounterTestReason":"gaugeTestReason",3,true);
         // The full observation guidance remains accessible without consuming
         // two duplicate permanent text blocks. Safety and availability stay visible.
         panel->setToolTip(I18n::text(tachometer?2972408:2971811));
@@ -988,8 +985,22 @@ void updateGaugeTestAvailability(QMainWindow *window,bool connected,const Mems16
             else{ready=true;key=2972419;}
         }
         const QString message=I18n::text(key);
+        int shortKey=key;
+        switch(key){
+        case 2971805:shortKey=2972428;break;
+        case 2971806:case 2971807:case 2972407:shortKey=2972429;break;
+        case 2971808:shortKey=2972430;break;
+        case 2971809:shortKey=2972431;break;
+        case 2972419:shortKey=2972432;break;
+        case 2972426:shortKey=2972433;break;
+        case 2972427:shortKey=2972434;break;
+        default:break;
+        }
+        const QString shortMessage=I18n::text(shortKey);
         if(auto *reason=window->findChild<QLabel*>(tach?QStringLiteral("revCounterTestReason"):QStringLiteral("gaugeTestReason"))){
-            if(reason->text()!=message)reason->setText(message);
+            if(reason->text()!=shortMessage)reason->setText(shortMessage);
+            reason->setToolTip(message);
+            reason->setProperty("helpBubbleNoIcon",true);
             if(reason->styleSheet()!=style)reason->setStyleSheet(style);
         }
         if(auto *safety=window->findChild<QLabel*>(tach?QStringLiteral("revCounterTestSafety"):QStringLiteral("gaugeTestSafety")))
