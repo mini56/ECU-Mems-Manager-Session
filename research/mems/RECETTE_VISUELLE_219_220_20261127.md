@@ -15,3 +15,9 @@ ecupages.cpp 162–218, 460–617 : carte système compacte et disposition des a
 ## Critères du prochain lot
 - Contrôles de taille de police, largeur de libellé, absence de blancs anormaux, rendu des bulles et cohérence des états indisponibles ; captures réelles de l'application installée, aux résolutions 1200/1366/1920 et thèmes clair/sombre. Vérifier FR et six catalogues, préserver les autres pages, aucun scroll vertical principal.
 - Reprendre d'abord l'affichage avant de poursuivre les nouvelles fonctionnalités. Cette note documente la demande et les constats ; corrections non effectuées. Pas de relance de 219 ou 220, aucun changement fonctionnel ni DLL.
+
+## Décisions utilisateur complémentaires — impératives pour SESSION 221
+- Tous les cadrans conservent leur aiguille visible, placée à zéro hors connexion, comme dans la présentation d'origine. Ne pas masquer les aiguilles ni imposer un rendu différent au cadran de correction lambda. Reprendre également les changements de masquage de la 220 dans Aperçu. Ce zéro est l'état de repos de l'affichage, non une mesure ECU reçue.
+- Même police et même taille de titre pour les cadrans de Réglages ; raccourcir le libellé si nécessaire plutôt que réduire isolément la police.
+- Actionneurs : agrandir nettement la représentation de la jauge et réduire les trois boutons disproportionnés. Conserver les protections et le commentaire explicatif ; ne pas assimiler le dessin à une mesure de position physique.
+- Ces décisions remplacent R04 et toute proposition antérieure de masquer les aiguilles hors connexion. Regrouper toutes les corrections dans un seul prochain lot ; aucun run de correction isolée.
