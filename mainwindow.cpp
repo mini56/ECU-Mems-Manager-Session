@@ -307,6 +307,16 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
               if (m_diagnosticPanel) m_diagnosticPanel->setEcuId(QByteArray());
           });
   connect(m_mems, SIGNAL(errorSendingCommand()), this, SLOT(onCommandError()));
+  connect(m_mems,&MEMSInterface::actuatorTestReply,this,[this](bool coil,bool received,int reply,QString firmware){
+    if(m_closing||!m_reconnectPolicy.connected())return;
+    auto *label=findChild<QLabel*>(coil?QStringLiteral("coilTestReply"):QStringLiteral("injectorTestReply"));
+    if(!label)return;
+    QString result=received?I18n::text(2972202).arg(reply):I18n::text(2972203);
+    if(received&&!coil&&reply==3&&(firmware==QStringLiteral("AANMP002")||firmware==QStringLiteral("AANMP000")))
+        result=I18n::text(2972204);
+    label->setText(result);
+    label->setToolTip(received?I18n::text(2972205):QString());
+  });
   connect(this, SIGNAL(requestProtocolCommand(quint8)), m_mems, SLOT(onProtocolCommandRequested(quint8)));
   connect(m_mems, SIGNAL(protocolResponse(quint8,QByteArray)), this, SLOT(onProtocolResponse(quint8,QByteArray)));
 
@@ -465,6 +475,7 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
   m_ui->Tab_main->setCurrentIndex(0); // Toujours démarrer sur Aperçu
   initializeInjectionRamTestUi(this);
   I18n::apply(this); // save translated baseline before showing offline reference
+  setDefaultFaultLabels();
   showNaPages(Mems16Na::SessionEvidence(),true);
   TooltipBubbleManager::install(this);
   initializeOverviewLive(this);
@@ -985,6 +996,8 @@ void MainWindow::onDisconnectClicked()
   m_reconnectTimer->stop();
   const bool awaitWorker=m_reconnectPolicy.cancel();
   updateGaugeTestAvailability(this,false,nullptr);
+  updateAdditionalErrors(this,false,nullptr);
+  for(const char *name:{"injectorTestReply","coilTestReply"})if(auto *label=findChild<QLabel*>(QString::fromLatin1(name))){label->clear();label->setToolTip(QString());}
   if(m_diagnosticPanel)m_diagnosticPanel->invalidateCoolantTest();
   m_ui->m_disconnectButton->setEnabled(false);
   m_ui->m_commsGoodLed->setChecked(false);
@@ -1137,6 +1150,7 @@ void MainWindow::onDataReady()
     restoreNaPages();
     clearNaIdentityStatus();
     updateGaugeTestAvailability(this,true,nullptr);
+    updateAdditionalErrors(this,true,nullptr);
     m_summaryTab->update2JData(values,family);
     if (m_diagnosticPanel) m_diagnosticPanel->update2JData(values,faults,family);
     IaMemsService::instance()->clearNaDiagnostic();
@@ -1194,16 +1208,28 @@ void MainWindow::onDataReady()
   const quint8 fault0=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc0).faultBits:data->dtc0;
   const quint8 fault1=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc1).faultBits:data->dtc1;
   const bool knownDtc2=!naIdentified&&MemsExtendedDtc::dtc2Known(naEvidence.firmwareName().c_str());
-  const quint8 fault2=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc2).faultBits:knownDtc2?naEvidence.extendedDtc(2).faults:data->dtc2;
+  quint8 fault2=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc2).faultBits:knownDtc2?naEvidence.extendedDtc(2).faults:data->dtc2;
+  const auto d3=naEvidence.extendedDtc(3);
+  const bool syncProfile=MemsExtendedDtc::sync19(naEvidence.firmwareName().c_str());
+  // DTC3 synchronization shares existing row 21: no duplicate warning.
+  if(syncProfile&&(d3.faults&1))fault2|=0x10;
+  const unsigned extraFaults=updateAdditionalErrors(this,true,&naEvidence);
   if(!naIdentified){
     rememberNaLabel(m_ui->m_faultCode03Label);
     m_ui->m_faultCode03Label->setText(I18n::text(MemsExtendedDtc::pressurePipeLabelKey(naEvidence.firmwareName().c_str(),false)));
+    for(QLabel *label:{m_ui->m_faultCode08Label,m_ui->m_faultCode11Label,m_ui->m_faultCode17Label,m_ui->m_faultCode18Label,m_ui->m_faultCode19Label}){
+      rememberNaLabel(label);label->setText(label->text().left(2)+QStringLiteral(" - ")+I18n::text(2972201));
+    }
   }
+  if(syncProfile){rememberNaLabel(m_ui->m_faultCode21Label);m_ui->m_faultCode21Label->setText(QStringLiteral("21 - ")+I18n::text(29018));}
   if(knownDtc2){
-    rememberNaLabel(m_ui->m_faultCode19Label);m_ui->m_faultCode19Label->setText(I18n::text(29017));
-    rememberNaLabel(m_ui->m_faultCode21Label);m_ui->m_faultCode21Label->setText(I18n::text(29018));
-    rememberNaLabel(m_ui->m_faultCode22Label);m_ui->m_faultCode22Label->setText(I18n::text(29251));
-    rememberNaLabel(m_ui->m_faultCode24Label);m_ui->m_faultCode24Label->setText(I18n::text(29252));
+    rememberNaLabel(m_ui->m_faultCode19Label);m_ui->m_faultCode19Label->setText(QStringLiteral("19 - ")+I18n::text(29017));
+    for(QLabel *label:{m_ui->m_faultCode20Label,m_ui->m_faultCode23Label}){
+      rememberNaLabel(label);label->setText(label->text().left(2)+QStringLiteral(" - ")+I18n::text(2972201));
+    }
+    rememberNaLabel(m_ui->m_faultCode21Label);m_ui->m_faultCode21Label->setText(QStringLiteral("21 - ")+I18n::text(29018));
+    rememberNaLabel(m_ui->m_faultCode22Label);m_ui->m_faultCode22Label->setText(QStringLiteral("22 - ")+I18n::text(29251));
+    rememberNaLabel(m_ui->m_faultCode24Label);m_ui->m_faultCode24Label->setText(QStringLiteral("24 - ")+I18n::text(29252));
   }
   m_summaryTab->updateData(data,&naEvidence);
   if (m_diagnosticPanel) m_diagnosticPanel->updateData(data,&naEvidence);
@@ -1274,7 +1300,7 @@ void MainWindow::onDataReady()
  m_ui->m_faultLed24->setChecked((fault2 & 0x80) != 0);
 
   // Alerte (son + clignotement) si un NOUVEAU code défaut apparaît en direct
-  quint32 currentFaultMask = (quint32)fault0 | ((quint32)fault1 << 8) | ((quint32)fault2 << 16);
+  quint32 currentFaultMask = (quint32)fault0 | ((quint32)fault1 << 8) | ((quint32)fault2 << 16) | (quint32(extraFaults) << 24);
   if ((!naIdentified || naEvidence.ready()) && m_prevFaultMaskValid && (currentFaultMask & ~m_prevFaultMask) != 0)
   {
     QApplication::beep();
@@ -1288,7 +1314,7 @@ void MainWindow::onDataReady()
     naMeasurements.lambdaFault.availability==Mems16Na::Availability::Available&&naMeasurements.lambdaFault.calculated:
     (data->lambda_sensor_status)!=1);
  // 7D/1F is the throttle learning count on NA, not a proven reset fault.
- m_ui->m_JackCount->setChecked(!naIdentified && (data->uk1C)==255);
+ m_ui->m_JackCount->setChecked(!naIdentified && !Mems220::profile19(naEvidence) && (data->uk1C)==255);
  m_ui->m_LambdaMax->setChecked(measurementValid && (data->lambda_voltage)>=200);
     if (measurementValid && data->lambda_voltage>=200)
 	{
@@ -1881,7 +1907,10 @@ void MainWindow::onConnect()
 void MainWindow::onDisconnect()
 {
   updateGaugeTestAvailability(this,false,nullptr);
+  updateAdditionalErrors(this,false,nullptr);
+  for(const char *name:{"injectorTestReply","coilTestReply"})if(auto *label=findChild<QLabel*>(QString::fromLatin1(name))){label->clear();label->setToolTip(QString());}
   restoreNaPages();
+  setDefaultFaultLabels();
   clearNaIdentityStatus();
   if(m_logger)m_logger->endNaSession();
   if(m_summaryTab)m_summaryTab->showNaDocumentation();
@@ -2685,6 +2714,12 @@ void MainWindow::onProtocolResponse(quint8 command, QByteArray response)
 }
 
 
+void MainWindow::setDefaultFaultLabels()
+{
+  m_ui->m_faultCode03Label->setText(I18n::text(29253));
+  m_ui->m_faultCode11Label->setText(QStringLiteral("11 - ")+I18n::text(29010));
+  m_ui->m_faultCode19Label->setText(QStringLiteral("19 - ")+I18n::text(29017));
+}
 void MainWindow::rememberNaLabel(QLabel *label)
 {
   if(!label || m_naOriginalLabels.contains(label))return;
@@ -2890,14 +2925,14 @@ void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na,bool documentat
       rememberNaLabel(label);
       const bool supported=((def.faultMask|def.stateMask)&mask)!=0;
       const QString name=supported?describe(circuit(p,group,mask),mask):
-          (g==0&&i==2?I18n::text(MemsExtendedDtc::pressurePipeLabelKey(p->firmware,true)):I18n::text(29004));
+          I18n::text(2972201);
       QString detail=name;
       if(supported && circuit(p,group,mask)==Circuit::AuxiliaryPtc)
         detail+=QStringLiteral("\n")+I18n::text(29020);
       if(d.availability==Availability::Missing)detail+=QStringLiteral("\n")+I18n::text(29048);
       else if(def.stateMask&mask)detail+=QStringLiteral("\n")+I18n::text((d.stateBits&mask)?29038:29039);
       else if(def.faultMask&mask)detail+=QStringLiteral("\n")+I18n::text((d.faultBits&mask)?circuitKey(circuit(p,group,mask)):29003);
-      label->setText(name);
+      label->setText(QStringLiteral("%1 - ").arg(g*8+i+1,2,10,QLatin1Char('0'))+name);
       label->setToolTip(detail+QStringLiteral("\n")+I18n::text(29021));
     }
   }

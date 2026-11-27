@@ -201,6 +201,7 @@ private:
     void showNaPages(const Mems16Na::SessionEvidence &na,bool documentationOnly=false);
     void restoreNaPages();
     void rememberNaLabel(QLabel *label);
+    void setDefaultFaultLabels();
 
     const float mapGaugeMaxPsi = 16.0f;
     const float mapGaugeMaxKPa = 160.0f;

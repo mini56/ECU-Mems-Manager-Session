@@ -635,10 +635,10 @@ void MEMSInterface::onIgnitionCoilTest()
 {
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-    if (!guardedMemsTestActuator( MEMS_FireCoil, NULL))
-    {
-      emit errorSendingCommand();
-    }
+    uint8_t reply=0;
+    const bool received=guardedMemsTestActuator(MEMS_FireCoil, &reply);
+    emit actuatorTestReply(true,received,int(reply),QString::fromStdString(m_naSession.firmwareName()));
+    if(!received)emit errorSendingCommand();
   }
 }
 
@@ -646,10 +646,10 @@ void MEMSInterface::onFuelInjectorTest()
 {
   if (m_initComplete && mems_is_connected(&m_memsinfo))
   {
-    if (!guardedMemsTestActuator( MEMS_TestInjectors, NULL))
-    {
-      emit errorSendingCommand();
-    }
+    uint8_t reply=0;
+    const bool received=guardedMemsTestActuator(MEMS_TestInjectors, &reply);
+    emit actuatorTestReply(false,received,int(reply),QString::fromStdString(m_naSession.firmwareName()));
+    if(!received)emit errorSendingCommand();
   }
 }
 void MEMSInterface::on_m_fuel_trim_plusButton_clicked()

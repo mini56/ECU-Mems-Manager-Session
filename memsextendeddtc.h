@@ -26,6 +26,14 @@ inline int pressurePipeLabelKey(const char *f,bool documentedUnused) {
     return pressurePipeFaultKnown(f)?29253:documentedUnused?29255:29254;
 }
 inline bool dtc2Known(const char *f) {return eq(f,"KBHBG009");}
+inline unsigned extraFaultMask(const char *f) {
+    unsigned mask=0;
+    if(eq(f,"KBHBG009")||eq(f,"REGI1224"))mask|=6;
+    if(fan(f))mask|=0x18;
+    if(hdc(f))mask|=0x20;
+    if(cruise(f))mask|=0x40;
+    return mask;
+}
 inline unsigned offset(int group) {
     switch(group){case 2:return 5;case 3:return 14;case 4:return 17;case 5:return 22;case 6:return 16;default:return 256;}
 }

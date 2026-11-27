@@ -11,6 +11,12 @@ int main(){
     require(pressurePipeLabelKey("AANMP002",true)==29255);
     require(pressurePipeLabelKey("UNKNOWN",false)==29254);
     require(pressurePipeLabelKey(nullptr,false)==29254);
+    require(extraFaultMask("KBHBG009")==6);
+    require(extraFaultMask("REGI1224")==0x1e);
+    require(extraFaultMask("REGI1297")==0x20);
+    require(extraFaultMask("TAHHG019")==0x40);
+    require(extraFaultMask("AANMP002")==0);
+    require(extraFaultMask("UNKNOWN")==0);
     std::uint8_t b[32]={32};
     for(unsigned r=0;r<256;++r){
         b[14]=static_cast<std::uint8_t>(r);

@@ -114,6 +114,7 @@ signals:
     void notConnected();
     void gotEcuId(uint8_t* id_buffer);
     void errorSendingCommand();
+    void actuatorTestReply(bool coil,bool received,int reply,QString firmware);
     void turnO2HeaterOff();
     void fuelPumpTestComplete();
     void ptcRelayTestComplete();

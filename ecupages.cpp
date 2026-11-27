@@ -27,6 +27,8 @@
 #include "mainwindow.h"
 #include "ecupages.h"
 #include "mems218_tests.h"
+#include "memsextendeddtc_presentation.h"
+#include <qledindicator/qledindicator.h>
 
 namespace {
 
@@ -250,6 +252,18 @@ private:
     QObject *m_source=nullptr;
 };
 
+static QLedIndicator *additionalLed(QWidget *parent,const QString &name,bool state=false)
+{
+    auto *led=new QLedIndicator(parent);
+    led->setObjectName(name);led->setCheckable(true);led->setChecked(false);
+    led->setAttribute(Qt::WA_TransparentForMouseEvents,true);led->setFocusPolicy(Qt::NoFocus);
+    led->setFixedSize(18,18);
+    led->setOnColor1(state?QColor("#6bdd45"):QColor(255,0,0));
+    led->setOnColor2(state?QColor("#348a22"):QColor(176,0,2));
+    led->setOffColor1(state?QColor("#10200a"):QColor(20,0,0));
+    led->setOffColor2(state?QColor("#205013"):QColor(90,0,2));
+    return led;
+}
 static void compactStoredPanel(QMainWindow *w,QFrame *top)
 {
     if(!w || !top) return;
@@ -274,6 +288,23 @@ static void compactStoredPanel(QMainWindow *w,QFrame *top)
             for(int row=1;row<=8;++row)g->setRowStretch(row,1);
         }
     }
+    // Keep the existing 24 numbered faults. Additional independent DTC5
+    // circuits receive their own six indicators; no reuse of an unrelated bit.
+    auto *extra=new QWidget(top);
+    extra->setObjectName(QStringLiteral("extraStoredFaults"));
+    auto *g=new QGridLayout(extra);g->setContentsMargins(0,0,0,0);
+    g->setHorizontalSpacing(8);g->setVerticalSpacing(3);
+    for(int i=0;i<6;++i){
+        const unsigned bit=2u<<i;
+        auto *led=additionalLed(extra,QStringLiteral("extraDtc5Led%1").arg(bit));
+        auto *label=new QLabel(I18n::text(29245+i),extra);
+        label->setObjectName(QStringLiteral("extraDtc5Label%1").arg(bit));
+        label->setWordWrap(true);label->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+        g->addWidget(led,i%2,(i/2)*2,Qt::AlignVCenter);
+        g->addWidget(label,i%2,(i/2)*2+1);
+        g->setColumnStretch((i/2)*2+1,1);
+    }
+    static_cast<QVBoxLayout*>(top->layout())->addWidget(extra);
 }
 
 static void addLed(QGridLayout *grid,QWidget *led,QWidget *parent,int row,int col)
@@ -371,6 +402,12 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
             addLed(grid,w->findChild<QWidget*>(QString::fromLatin1(rows[i].recorded)),signalPanel,row,1);
         addLeftHelpLabel(grid,w->findChild<QLabel*>(QString::fromLatin1(rows[i].label)),signalPanel,row,2);
     }
+    auto *syncLed=additionalLed(signalPanel,QStringLiteral("extraDtc3TeethLed"),true);
+    auto *syncLabel=new QLabel(I18n::text(29240),signalPanel);
+    syncLabel->setObjectName(QStringLiteral("extraDtc3TeethLabel"));
+    syncLabel->setWordWrap(true);
+    grid->addWidget(syncLed,7,0,Qt::AlignCenter);
+    grid->addWidget(syncLabel,7,2);
     sv->addLayout(grid,1);
 
     // The lower signal panel must not contain a separator below the RPM row.
@@ -400,8 +437,8 @@ static void rebalanceErrorsHeight(QFrame *top,QFrame *bottom)
     if(!root) return;
     const int topIndex=root->indexOf(top);
     const int bottomIndex=root->indexOf(bottom);
-    if(topIndex>=0) root->setStretch(topIndex,5);
-    if(bottomIndex>=0) root->setStretch(bottomIndex,6);
+    if(topIndex>=0) root->setStretch(topIndex,6);
+    if(bottomIndex>=0) root->setStretch(bottomIndex,5);
 }
 
 static void applyErrorsVisualPhaseOne(QMainWindow *w)
@@ -435,42 +472,41 @@ class GaugeTestSymbol : public QWidget {
 public:
     explicit GaugeTestSymbol(QWidget *parent):QWidget(parent){
         setObjectName(QStringLiteral("actuatorTemperatureDial"));
-        setMinimumSize(132,88);setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+        setMinimumSize(150,145);setMaximumSize(220,207);
+        setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
     }
 protected:
     void paintEvent(QPaintEvent*) override {
         QPainter p(this);p.setRenderHint(QPainter::Antialiasing,true);
         p.setRenderHint(QPainter::TextAntialiasing,true);
         const bool dark=qApp&&qApp->property("ecuDarkTheme").toBool();
-        const qreal scale=qMin(width()/176.0,height()/116.0);
-        p.translate((width()-176*scale)/2,(height()-116*scale)/2);
+        const qreal scale=qMin(width()/176.0,height()/166.0);
+        p.translate((width()-176*scale)/2,(height()-166*scale)/2);
         p.scale(scale,scale);
-        const QPointF center(88,88);
-        const QRectF bezel(13,13,150,150),face(20,20,136,136);
-        p.setPen(QPen(dark?QColor("#65737d"):QColor("#89939c"),2));
+        const QPointF center(88,83);
+        const qreal r=68.0;
+        p.setPen(QPen(dark?QColor("#6c7479"):QColor("#87939d"),1.35));
         p.setBrush(dark?QColor("#11191e"):QColor("#e4e9ed"));
-        p.drawPie(bezel,0,180*16);
-        p.setPen(QPen(dark?QColor("#34414a"):QColor("#bac4cd"),1.4));
-        p.setBrush(dark?QColor("#05090c"):Qt::white);
-        p.drawPie(face,0,180*16);
-        const QRectF arc(27,27,122,122);
-        p.setPen(QPen(dark?QColor("#64717b"):QColor("#84919c"),2));
-        p.drawArc(arc,0,180*16);
-        p.setPen(QPen(QColor("#478ed0"),4));p.drawArc(arc,150*16,30*16);
-        p.setPen(QPen(QColor("#d95748"),4));p.drawArc(arc,0,30*16);
+        p.drawEllipse(center,r,r);
+        p.setPen(QPen(dark?QColor("#11191e"):QColor("#d5dce2"),5));
+        p.setBrush(dark?QColor("#05090c"):QColor("#ffffff"));
+        p.drawEllipse(center,r-6,r-6);
+        p.setPen(QPen(dark?QColor("#3b474f"):QColor("#acb8c2"),1));
+        p.setBrush(Qt::NoBrush);p.drawEllipse(center,r-12,r-12);
+        const QRectF arc(center.x()-57,center.y()-57,114,114);
+        p.setPen(QPen(QColor("#478ed0"),4));p.drawArc(arc,195*16,30*16);
+        p.setPen(QPen(QColor("#d95748"),4));p.drawArc(arc,-45*16,30*16);
         for(int i=0;i<=12;++i){
-            const qreal a=3.141592653589793*(1-i/12.0);
-            const QPointF d(qCos(a),-qSin(a));
-            p.setPen(QPen(dark?QColor("#e4eaee"):QColor("#25313b"),i%3==0?1.8:0.8));
-            p.drawLine(center+d*56,center+d*(i%3==0?47:51));
+            const qreal a=qDegreesToRadians(135.0+270.0*i/12.0);
+            const QPointF dir(qCos(a),qSin(a));
+            p.setPen(QPen(dark?QColor("#eef2f4"):QColor("#101820"),i%3==0?1.8:0.8));
+            p.drawLine(center+dir*59,center+dir*(i%3==0?50:54));
         }
-        const QPointF d(-0.97,-0.24),n(-d.y(),d.x());
-        QPainterPath needle;needle.moveTo(center+d*51);needle.lineTo(center+n*3);
-        needle.lineTo(center-d*8);needle.lineTo(center-n*3);needle.closeSubpath();
-        p.setPen(Qt::NoPen);p.setBrush(QColor("#ff7417"));p.drawPath(needle);
+        const QPointF d(-0.70710678,0.70710678),n(-d.y(),d.x());
+        QPainterPath needle;needle.moveTo(center+d*54);needle.lineTo(center+n*2.8);
+        needle.lineTo(center-d*8);needle.lineTo(center-n*2.8);needle.closeSubpath();
+        p.setPen(Qt::NoPen);p.setBrush(QColor("#ff8a00"));p.drawPath(needle);
         p.setPen(QPen(QColor("#707980"),1));p.setBrush(QColor("#293239"));p.drawEllipse(center,6,6);
-        p.setPen(QPen(QColor("#ff9828"),1.6));p.drawLine(88,98,88,108);p.drawEllipse(QPointF(88,110),3,3);
-        p.drawLine(78,114,98,114);
     }
 };
 
@@ -550,9 +586,16 @@ static void composeActuators(QMainWindow *window)
                     o2Label->setToolTip(tip);
                 }
                 o2Label->setWordWrap(true);
-                o2Label->setMaximumWidth(QWIDGETSIZE_MAX);
-                o2Label->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
-                grid->setAlignment(o2Label,Qt::Alignment());
+                o2Label->setMaximumWidth(QFontMetrics(o2Label->font()).horizontalAdvance(o2Label->text())+32);
+                o2Label->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
+                grid->setAlignment(o2Label,Qt::AlignLeft|Qt::AlignVCenter);
+            }
+            // Show the actual received result next to each existing test button.
+            for(int row:{12,13}){
+                auto *result=new QLabel(QString(),list);
+                result->setObjectName(row==12?QStringLiteral("injectorTestReply"):QStringLiteral("coilTestReply"));
+                result->setWordWrap(true);result->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
+                grid->addWidget(result,row,2,1,2);
             }
         }
 
@@ -616,25 +659,23 @@ static void composeActuators(QMainWindow *window)
     auto *gv=static_cast<QVBoxLayout*>(gauge->layout());
     gv->setContentsMargins(10,6,10,6);gv->setSpacing(4);
     if(auto *title=cardTitle(gauge)){title->setFixedHeight(20);title->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);}
-    QHBoxLayout *gaugeControls=new QHBoxLayout;
-    gaugeControls->setSpacing(12);
-    gaugeControls->addWidget(new GaugeTestSymbol(gauge),1);
-    QVBoxLayout *actions=new QVBoxLayout;actions->setSpacing(4);
-    actions->addStretch(1);
+    gv->addStretch(1);
+    gv->addWidget(new GaugeTestSymbol(gauge),0,Qt::AlignHCenter);
+    QHBoxLayout *actions=new QHBoxLayout;actions->setSpacing(6);
     for(int key:{2971802,2971803,2971804}){
         QPushButton *button=new QPushButton(I18n::text(key),gauge);
         button->setObjectName(key==2971802?QStringLiteral("gaugeTestMinimum"):
             key==2971803?QStringLiteral("gaugeTestMaximum"):QStringLiteral("gaugeTestStop"));
-        button->setFixedHeight(26);
-        button->setFixedWidth(qMax(98,QFontMetrics(button->font()).horizontalAdvance(button->text())+20));
+        button->setMinimumHeight(32);button->setMaximumHeight(36);
+        button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+        button->setMinimumWidth(0);
         button->setProperty("helpBubbleNoIcon",true);
         button->setEnabled(false);
         // Deliberately no ECU signal: physical restoration not qualified.
-        actions->addWidget(button,0,Qt::AlignHCenter);
+        actions->addWidget(button,1);
     }
-    actions->addStretch(1);
-    gaugeControls->addLayout(actions);
-    gv->addLayout(gaugeControls,1);
+    gv->addLayout(actions);
+    gv->addStretch(1);
     QLabel *reason=new QLabel(I18n::text(2971805),gauge);
     reason->setObjectName(QStringLiteral("gaugeTestReason"));reason->setWordWrap(true);
     reason->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
@@ -783,6 +824,33 @@ static void composeInteractive(QMainWindow *window)
     });
     layout->addStretch(1);
     layout->addWidget(notesBox,2);
+}
+
+unsigned updateAdditionalErrors(QMainWindow *window,bool connected,const Mems16Na::SessionEvidence *evidence)
+{
+    if(!window)return 0;
+    const char *f=evidence?evidence->firmwareName().c_str():"";
+    const auto d5=evidence?evidence->extendedDtc(5):MemsExtendedDtc::Result{MemsExtendedDtc::Status::Missing,0,0,0,0};
+    const auto d3=evidence?evidence->extendedDtc(3):MemsExtendedDtc::Result{MemsExtendedDtc::Status::Missing,0,0,0,0};
+    const unsigned supported=MemsExtendedDtc::extraFaultMask(f);
+    for(int i=0;i<6;++i){
+        const unsigned bit=2u<<i;
+        const bool available=connected&&(supported&bit)&&d5.status!=MemsExtendedDtc::Status::Missing&&d5.raw!=255;
+        if(auto *led=window->findChild<QLedIndicator*>(QStringLiteral("extraDtc5Led%1").arg(bit)))led->setChecked(available&&(d5.faults&bit));
+        if(auto *label=window->findChild<QLabel*>(QStringLiteral("extraDtc5Label%1").arg(bit))){
+            const QString name=I18n::text(29245+i);
+            label->setText(!connected||supported&bit?name:I18n::text(2972201));
+            label->setToolTip(!connected?QString():supported&bit?(available?I18n::text(29021):I18n::text(29048)):name);
+        }
+    }
+    const bool stateSupported=MemsExtendedDtc::sync19(f);
+    const bool stateAvailable=connected&&stateSupported&&d3.status!=MemsExtendedDtc::Status::Missing&&d3.raw!=255;
+    if(auto *led=window->findChild<QLedIndicator*>(QStringLiteral("extraDtc3TeethLed")))led->setChecked(stateAvailable&&(d3.states&4));
+    if(auto *label=window->findChild<QLabel*>(QStringLiteral("extraDtc3TeethLabel"))){
+        label->setText(!connected||stateSupported?I18n::text(29240):I18n::text(2972201));
+        label->setToolTip(connected&&stateSupported&&!stateAvailable?I18n::text(29048):QString());
+    }
+    return connected?d5.faults&supported:0u;
 }
 
 void updateGaugeTestAvailability(QMainWindow *window,bool connected,const Mems16Na::SessionEvidence *evidence)
