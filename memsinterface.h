@@ -6,6 +6,8 @@
 #include <QHash>
 #include <QByteArray>
 #include <QAtomicInteger>
+#include <QElapsedTimer>
+#include "mems218_tests.h"
 #include <QMutex>
 #include <QVariantMap>
 #include <QStringList>
@@ -40,6 +42,12 @@ public:
     void cancelRead();
     MemsEcuFamily ecuFamily() const;
     MemsDiagnosticMode diagnosticMode() const;
+    // Thread-safe, GUI may call directly. Only the polling worker sends ECU bytes.
+    bool requestInstrumentTest(int action);
+    void cancelInstrumentTest(){m_instrumentCancel.storeRelease(1);}
+    int instrumentRequest() const{return m_instrumentRequest.loadAcquire();}
+    bool instrumentOtherForced() const{return m_instrumentOtherForced.loadAcquire()!=0;}
+    bool instrumentNormalMode() const{return m_connectedState.loadAcquire()!=0 && diagnosticMode()==MemsDiagnosticMode::Normal && m_mappedInjectionRequested.loadAcquire()==0;}
 
 public slots:
     void onParentThreadStarted();
@@ -115,6 +123,8 @@ signals:
     void gotEcuId(uint8_t* id_buffer);
     void errorSendingCommand();
     void actuatorTestReply(bool coil,bool received,int reply,QString firmware);
+    // 1 complete/restored, 2 cancelled/restored, 3 refused, 4 restoration unconfirmed, 5 start failed/restored.
+    void instrumentTestResult(int action,int result);
     void turnO2HeaterOff();
     void fuelPumpTestComplete();
     void ptcRelayTestComplete();
@@ -174,6 +184,11 @@ private:
     QAtomicInteger<int> m_shutdownRequested{0};
     QAtomicInteger<int> m_connectedState{0};
     QAtomicInteger<int> m_mappedInjectionRequested{0};
+    QAtomicInteger<int> m_instrumentRequest{0};
+    QAtomicInteger<int> m_instrumentCancel{0};
+    QAtomicInteger<int> m_instrumentOtherForced{0};
+    bool m_instrumentActive=false; // worker only
+    QElapsedTimer m_instrumentTimer;
     QAtomicInteger<int> m_ecuFamily{static_cast<int>(MemsEcuFamily::Unknown)};
     QAtomicInteger<int> m_diagnosticMode{static_cast<int>(MemsDiagnosticMode::Unknown)};
     uint8_t m_d0_response_buffer[4];
@@ -185,6 +200,9 @@ private:
     bool tryRoscoConnect(const QString &devicePath);
     bool performMems19Wakeup(const QString &devicePath, QString *detail = nullptr);
     bool actuatorOnOffDelayTest(actuator_cmd onCmd, actuator_cmd offCmd);
+    bool serviceInstrumentTest(const mems_data &sample,qint64 sampleMs);
+    bool finishInstrumentTest(int result);
+    bool instrumentFamilyMatches(Mems218::InstrumentAction action) const;
 
     void setEcuFamily(MemsEcuFamily family);
     void setDiagnosticMode(MemsDiagnosticMode mode);
