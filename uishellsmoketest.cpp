@@ -80,6 +80,67 @@ QWidget *actualPage(QWidget *tab)
 }
 
 
+// SESSION 224: targeted, real Qt rendering of the instrument cards, no ECU.
+bool verifyInstrumentLayout224(MainWindow &window)
+{
+    auto *tabs=window.findChild<QTabWidget*>(QStringLiteral("Tab_main"));
+    auto *page=window.findChild<QWidget*>(QStringLiteral("actuators"));
+    if(!tabs||!page)return false;
+    int index=-1;
+    for(int i=0;i<tabs->count();++i)if(actualPage(tabs->widget(i))==page){index=i;break;}
+    if(index<0)return false;
+    tabs->setCurrentIndex(index);
+    bool ok=true;
+    auto require=[&](bool value,const QString &description){
+        if(!value){ok=false;logSmoke(QStringLiteral("SESSION_224 FAIL ")+description);}
+    };
+    QDir().mkpath(QStringLiteral("session224-visual"));
+    for(const QSize size:{QSize(1200,768),QSize(1366,768),QSize(1920,1080)}){
+        window.resize(size);
+        QCoreApplication::processEvents();
+        if(page->layout())page->layout()->activate();
+        QCoreApplication::processEvents();
+        auto find=[&](const char *name){return page->findChild<QWidget*>(QString::fromLatin1(name));};
+        auto *g=find("actuatorGaugeTestCard"),*t=find("actuatorRevCounterTestCard");
+        auto *gd=find("actuatorTemperatureDial"),*td=find("actuatorRevCounterDial");
+        auto *gs=find("gaugeTestSafety"),*ts=find("revCounterTestSafety");
+        auto *gb=find("gaugeTestStop"),*tb=find("revCounterTestStop");
+        auto *state=find("actuatorSystemState");
+        require(g&&t&&gd&&td&&gs&&ts&&gb&&tb&&state,QStringLiteral("missing instrument controls"));
+        if(!g||!t||!gd||!td||!gs||!ts||!gb||!tb||!state)continue;
+        auto rect=[&](QWidget *w){return QRect(w->mapTo(page,QPoint(0,0)),w->size());};
+        const QRect gr=rect(g),tr=rect(t);
+        require(gr.right()<tr.left()&&qAbs(gr.top()-tr.top())<=1&&qAbs(gr.height()-tr.height())<=1,
+                QStringLiteral("cards not aligned"));
+        require(page->rect().contains(gr)&&page->rect().contains(tr)&&page->rect().contains(rect(state)),
+                QStringLiteral("cards clipped"));
+        require(gr.bottom()<rect(state).top()&&tr.bottom()<rect(state).top(),QStringLiteral("overlapping state card"));
+        require(qAbs(rect(gb).top()-rect(tb).top())<=1,QStringLiteral("stop buttons not aligned"));
+        for(QWidget *safety:{gs,ts}){
+            auto *label=qobject_cast<QLabel*>(safety);
+            require(label&&safety->isVisibleTo(&window)&&label->text()==I18n::text(2972405),
+                    QStringLiteral("missing permanent safety instruction"));
+            if(label){
+                const QRect needed=label->fontMetrics().boundingRect(QRect(0,0,label->contentsRect().width(),1000),Qt::TextWordWrap,label->text());
+                require(needed.height()<=label->contentsRect().height(),QStringLiteral("safety text clipped"));
+            }
+        }
+        for(const char *name:{"gaugeTestMinimum","gaugeTestMaximum","gaugeTestStop","revCounterTestStart","revCounterTestStop"}){
+            auto *b=find(name);require(b&&b->isVisibleTo(&window)&&!b->isEnabled(),QStringLiteral("unqualified test button enabled or hidden"));
+        }
+        if(auto *scroll=qobject_cast<QScrollArea*>(tabs->widget(index)))
+            require(scroll->verticalScrollBar()->maximum()==0,QStringLiteral("vertical scrolling"));
+        const QPixmap shot=page->grab();
+        const qreal diameter=gd->property("session224DialDiameter").toDouble();
+        const qreal other=td->property("session224DialDiameter").toDouble();
+        require(diameter>=75&&qAbs(diameter-other)<=0.5,QStringLiteral("dial diameter mismatch or too small"));
+        require(shot.save(QStringLiteral("session224-visual/actionneurs-%1.png").arg(size.width())),QStringLiteral("capture failed"));
+        logSmoke(QStringLiteral("SESSION_224 layout %1: actual=%2x%3 dials=%4/%5")
+                 .arg(size.width()).arg(window.width()).arg(window.height()).arg(diameter).arg(other));
+    }
+    return ok;
+}
+
 bool verifyApprovedVisualRules(MainWindow &window)
 {
     auto check=[](bool correct,const char *description){
@@ -1871,7 +1932,8 @@ int runUiShellSmokeTest(QApplication &app)
         logSmoke(QStringLiteral("Enter timer / start checks"));
         const bool startupMenu=uiShellNavigationReady(&window,true);
         if(!startupMenu)logSmoke(QStringLiteral("FAIL first rendered startup navigation"));
-        const bool ok=verifyUi(window)&&startupMenu;
+        const bool instrumentsOnly=app.arguments().contains(QStringLiteral("--session224-instruments"));
+        const bool ok=(instrumentsOnly?verifyInstrumentLayout224(window):verifyUi(window))&&startupMenu;
         logSmoke(ok?QStringLiteral("Checks PASS"):QStringLiteral("Checks FAIL"));
         window.close();
         logSmoke(QStringLiteral("After close"));
