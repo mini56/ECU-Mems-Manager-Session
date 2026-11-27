@@ -2,6 +2,10 @@ name: SESSION 227 - Setup de test
 run-name: SESSION 227 - Validation complete et Setup de test - ${{ github.sha }}
 on:
   workflow_dispatch:
+  push:
+    branches: [fix-documentary-additive-session-161-20261118]
+    paths:
+      - '.github/workflows/session-227-test-setup.yml'
 concurrency:
   group: session-227-private-test
   cancel-in-progress: false
