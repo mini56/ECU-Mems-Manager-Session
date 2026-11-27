@@ -12,5 +12,9 @@
   "2972411": "Signal sonde Lambda valide",
   "2972412": "Rouge : l’ECU indique une position de zéro pas. Éteint : position supérieure à zéro ou donnée indisponible. Une position minimale ne prouve pas à elle seule une panne.",
   "2972413": "Vert : l’ECU indique un signal Lambda valide sur un profil qualifié. Éteint : signal non valide ou donnée indisponible. Ce voyant ne valide pas à lui seul la sonde.",
-  "2972414": "Observer les instruments du tableau de bord ; aucune position mesurée."
+  "2972414": "Observer les instruments du tableau de bord ; aucune position mesurée.",
+  "2972415": "Choisissez la position par pas de 25 %, puis cliquez sur Déplacer le pas-à-pas.",
+  "2972416": "Position du pas-à-pas :",
+  "2972417": "Déplacer le pas-à-pas",
+  "2972418": "Désactiver / réinitialiser"
 }
