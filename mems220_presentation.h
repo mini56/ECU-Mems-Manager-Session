@@ -6,4 +6,5 @@ inline QString voltage(const Measurements &m){return Mems16Na::numeric(m.learnVo
 inline QString idleError(const Measurements &m){return Mems16Na::numeric(m.idleError,0,QStringLiteral(" RPM"));}
 inline QString reference(const Measurements &m){return Mems16Na::numeric(m.throttleReference,2,QStringLiteral(" ")+I18n::text(2972003));}
 inline QString count(const Measurements &m){return Mems16Na::numeric(m.learnCount,0);}
+inline QString inputState(const Mems16Na::Value &v){return v.availability==Mems16Na::Availability::Available?I18n::text(v.calculated?2972305:2972306):Mems16Na::statusText(v);}
 }

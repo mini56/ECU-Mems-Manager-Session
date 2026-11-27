@@ -1,0 +1,11 @@
+{
+  "2972301": "D/N-Eingang (Steuergerätezustand)",
+  "2972302": "Klimaanlageneingang (Steuergerätezustand)",
+  "2972303": "Zündschalter (Steuergerätezustand)",
+  "2972304": "Lüfteranforderung (Steuergerätezustand)",
+  "2972305": "Aktiver Zustand",
+  "2972306": "Inaktiver Zustand",
+  "2972307": "Interner Logikzustand des Steuergeräts. Physische Schalterpolarität und tatsächliche Funktion sind daraus allein nicht ableitbar.",
+  "2972308": "Bei dokumentierten Profilen zählt dies Drosselklappen-Lernvorgänge, keine Steuergeräte-Resets. Keine Auswertung bei unbekanntem Profil.",
+  "2972309": "Die Einspritzkorrektur kann bei erfüllten Regelbedingungen automatisch angepasst werden. Bei den untersuchten Kalibrierungen AANMP002 und KBHBG009 beträgt die nominelle Verzögerung 22,528 s, gefolgt von Auswertungen der Lambdawechsel. Keine garantierte Zeit nach dem Start oder bis zur Konvergenz."
+}

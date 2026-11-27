@@ -1,0 +1,11 @@
+{
+  "2972301": "Entrada D/N (estado ECU)",
+  "2972302": "Entrada climatización (estado ECU)",
+  "2972303": "Contacto de encendido (estado ECU)",
+  "2972304": "Solicitud ventilador (estado ECU)",
+  "2972305": "Estado activo",
+  "2972306": "Estado inactivo",
+  "2972307": "Estado lógico interno de la ECU. No permite deducir por sí solo la polaridad física ni el funcionamiento del equipo.",
+  "2972308": "En los perfiles documentados cuenta aprendizajes de mariposa, no reinicios de ECU. Sin interpretación para perfiles no identificados.",
+  "2972309": "La corrección de inyección puede adaptarse automáticamente si se cumplen las condiciones de regulación. En las calibraciones estudiadas AANMP002 y KBHBG009 el retardo nominal es de 22,528 s, seguido de evaluaciones ligadas a las transiciones lambda. No es un plazo garantizado tras el arranque ni de convergencia."
+}

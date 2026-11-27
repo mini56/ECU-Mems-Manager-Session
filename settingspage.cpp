@@ -482,7 +482,7 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
         if(row==0){
             unitLabel->setObjectName(QStringLiteral("session217InjectionUnit"));
             unitLabel->setProperty("helpBubbleNoIcon",true);
-            if(rows[row].label){rows[row].label->setText(I18n::text(2971701));rows[row].label->setToolTip(I18n::text(2021)+QStringLiteral("\n")+I18n::text(2971901));}
+            if(rows[row].label){rows[row].label->setText(I18n::text(2971701));rows[row].label->setToolTip(I18n::text(2972309)+QStringLiteral("\n")+I18n::text(2971901));}
         }
         QFont unitFont=unitLabel->font();
         unitFont.setBold(true);

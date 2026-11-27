@@ -1317,7 +1317,11 @@ void MainWindow::onDataReady()
     naMeasurements.lambdaFault.availability==Mems16Na::Availability::Available&&naMeasurements.lambdaFault.calculated:
     (data->lambda_sensor_status)!=1);
  // 7D/1F is the throttle learning count on NA, not a proven reset fault.
- m_ui->m_JackCount->setChecked(!naIdentified && !Mems220::profile19(naEvidence) && (data->uk1C)==255);
+ m_ui->m_JackCount->setChecked(false);
+ if(!naIdentified&&!Mems220::profile19(naEvidence)){
+   m_ui->m_JackCountLabel->setText(I18n::text(2972201));
+   m_ui->m_JackCountLabel->setToolTip(I18n::text(2972308));
+ }
  m_ui->m_LambdaMax->setChecked(measurementValid && (data->lambda_voltage)>=200);
     if (measurementValid && data->lambda_voltage>=200)
 	{
@@ -1639,7 +1643,7 @@ void MainWindow::onDataReady()
     using namespace Mems16Na;
     rememberNaLabel(m_ui->m_JackCountLabel);
     m_ui->m_JackCountLabel->setText(I18n::text(29033)+QStringLiteral(" : ")+Mems220::count(m));
-    m_ui->m_JackCountLabel->setToolTip(I18n::text(29054));
+    m_ui->m_JackCountLabel->setToolTip(I18n::text(2972308));
     auto extra=[&](QLabel *raw,QGridLayout *grid)->QLabel*{
       if(m_naExtraValues.contains(raw)){auto *label=m_naExtraValues.value(raw);label->show();return label;}
       const int index=grid->indexOf(raw);if(index<0)return nullptr;
@@ -1653,6 +1657,10 @@ void MainWindow::onDataReady()
       rememberNaLabel(name);name->setText(I18n::text(title));name->setToolTip(I18n::text(help));
       raw->setText(rawText(v));if(out)out->setText(value);
     };
+    field(m_ui->label_80x0B,m_ui->m_80_0B,m_ui->r_80_0B,2972301,m.dn,Mems220::inputState(m.dn),2972307);
+    field(m_ui->label_80x0C,m_ui->m_80_0C,m_ui->r_80_0C,2972302,m.ac,Mems220::inputState(m.ac),2972307);
+    field(m_ui->label_80x1B,m_ui->m_80_1B,extra(m_ui->m_80_1B,m_ui->HF_table_2),2972303,m.ignition80,Mems220::inputState(m.ignition80),2972307);
+    field(m_ui->label_0x01,m_ui->m_7D_01,m_ui->r_7D_01,2972303,m.ignition7d,Mems220::inputState(m.ignition7d),2972307);
     field(m_ui->label_80x10,m_ui->m_80_10,m_ui->r_80_10,29025,m.hotPosition,steps(m.hotPosition),29054);
     field(m_ui->label_80x11,m_ui->m_80_11,extra(m_ui->m_80_11,m_ui->HF_table_2),29026,m.learnVoltage,Mems220::voltage(m),29054);
     field(m_ui->label_0x13,m_ui->m_7D_13,m_ui->r_7D_13,29024,m.idleCorrection,numeric(m.idleCorrection,0,QStringLiteral(" RPM")),29054);
@@ -2729,6 +2737,9 @@ void MainWindow::setDefaultFaultLabels()
   m_ui->m_faultCode03Label->setText(I18n::text(29253));
   m_ui->m_faultCode11Label->setText(QStringLiteral("11 - ")+I18n::text(29010));
   m_ui->m_faultCode19Label->setText(QStringLiteral("19 - ")+I18n::text(29017));
+  m_ui->m_JackCountLabel->setText(I18n::text(29033));
+  m_ui->m_JackCountLabel->setToolTip(I18n::text(2972308));
+  m_ui->m_JackCount->setChecked(false);
 }
 void MainWindow::rememberNaLabel(QLabel *label)
 {
@@ -2845,8 +2856,8 @@ void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na,bool documentat
   m_ui->m_long_trim->setText(m.injectionTime.availability==Availability::Available?
       QString::number(m.injectionTime.calculated,'f',0)+QStringLiteral(" µs"):QStringLiteral("--"));
   rememberNaLabel(m_ui->m_JackCountLabel);
-  m_ui->m_JackCountLabel->setText(I18n::text(29033));
-  m_ui->m_JackCountLabel->setToolTip(numeric(m.learnCount,0)+QStringLiteral("\n")+I18n::text(29054));
+  m_ui->m_JackCountLabel->setText(I18n::text(29033)+QStringLiteral(" : ")+numeric(m.learnCount,0));
+  m_ui->m_JackCountLabel->setToolTip(I18n::text(2972308));
   rememberNaLabel(m_ui->m_LambdaSensorLabel);
   m_ui->m_LambdaSensorLabel->setToolTip(I18n::text(29053).arg(state(m.lambdaFault,29038,29039)));
   rememberNaLabel(m_ui->m_engineerrorLabel);

@@ -12,7 +12,9 @@ struct Measurements {
     bool profile=false, pair=false;
     Mems16Na::Value hotPosition=Mems16Na::missing(), learnVoltage=Mems16Na::missing(),
         idleCorrection=Mems16Na::missing(), idleError=Mems16Na::missing(),
-        throttleReference=Mems16Na::missing(), learnCount=Mems16Na::missing();
+        throttleReference=Mems16Na::missing(), learnCount=Mems16Na::missing(),
+        dn=Mems16Na::missing(), ac=Mems16Na::missing(), ignition80=Mems16Na::missing(),
+        ignition7d=Mems16Na::missing(), fanRequest=Mems16Na::missing();
 };
 inline Measurements decode(const Mems16Na::SessionEvidence &s){
     using namespace Mems16Na;
@@ -32,6 +34,14 @@ inline Measurements decode(const Mems16Na::SessionEvidence &s){
     for(unsigned i=1;i<4;++i)repeated=repeated&&word(b,23+2*i)==ref;
     m.throttleReference=repeated?available(ref,ref/256.0):unverified(ref);
     m.learnCount=available(b.bytes[31],b.bytes[31]);
+    // V1.43 ch137: internal bit states, not physical switch polarity.
+    const unsigned dn=a.bytes[11],ac=a.bytes[12],i80=a.bytes[27],i7=b.bytes[1],fan=b.bytes[32];
+    m.dn=(dn==0||dn==128)?available(dn,dn!=0):unverified(dn);
+    m.ac=ac<=1?available(ac,ac==0):unverified(ac);
+    const bool coherent=(i80==1&&i7==0)||(i80==0&&i7==64);
+    m.ignition80=coherent?available(i80,i7!=0):unverified(i80);
+    m.ignition7d=coherent?available(i7,i7!=0):unverified(i7);
+    m.fanRequest=(fan==0||fan==8)?available(fan,fan!=0):unverified(fan);
     return m;
 }
 }

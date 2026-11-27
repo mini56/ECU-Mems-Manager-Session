@@ -648,8 +648,9 @@ void SummaryTab::clear220Presentation()
 {
   if(!m_showing220)return;
   const int rows[]={m_rowIdleHot,m_rowUk2,m_rowIdleSpeedOffset,m_rowIdleErrorHotCorrected,
-      m_rowUk11,m_rowUk12,m_rowUk13,m_rowUk14,m_rowUk15,m_rowUk16,m_rowUk1A,m_rowUk1B,m_rowUk1C};
-  for(int j=0;j<13;++j){
+      m_rowUk11,m_rowUk12,m_rowUk13,m_rowUk14,m_rowUk15,m_rowUk16,m_rowUk1A,m_rowUk1B,m_rowUk1C,
+      m_rowUk1,m_rowParkNeutralSwitch,m_rowUk5,m_rowIgnitionSwitch};
+  for(int j=0;j<int(sizeof(rows)/sizeof(rows[0]));++j){
     const int i=rows[j];auto *t=i/m_rowsPerTable==0?m_table0:i/m_rowsPerTable==1?m_table1:m_table2;
     t->item(i%m_rowsPerTable,0)->setText(m_220Labels.value(j));
     setTooltip(i,m_220Tips.value(j));setValue(i,QStringLiteral("--"),QStringLiteral("--"));
@@ -664,7 +665,8 @@ void SummaryTab::apply220Presentation(const Mems16Na::SessionEvidence &s)
   auto table=[&](int i){return i/m_rowsPerTable==0?m_table0:i/m_rowsPerTable==1?m_table1:m_table2;};
   auto item=[&](int i,int col){return table(i)->item(i%m_rowsPerTable,col);};
   const int rows[]={m_rowIdleHot,m_rowUk2,m_rowIdleSpeedOffset,m_rowIdleErrorHotCorrected,
-      m_rowUk11,m_rowUk12,m_rowUk13,m_rowUk14,m_rowUk15,m_rowUk16,m_rowUk1A,m_rowUk1B,m_rowUk1C};
+      m_rowUk11,m_rowUk12,m_rowUk13,m_rowUk14,m_rowUk15,m_rowUk16,m_rowUk1A,m_rowUk1B,m_rowUk1C,
+      m_rowUk1,m_rowParkNeutralSwitch,m_rowUk5,m_rowIgnitionSwitch};
   const bool first=!m_showing220;
   if(first){
     m_220Labels.clear();m_220Tips.clear();
@@ -674,6 +676,10 @@ void SummaryTab::apply220Presentation(const Mems16Na::SessionEvidence &s)
   auto field=[&](int i,int title,const Value &v,const QString &value,int help){
     item(i,0)->setText(I18n::text(title));setValue(i,rawText(v),value);setTooltip(i,I18n::text(help));
   };
+  field(m_rowUk1,2972301,m.dn,Mems220::inputState(m.dn),2972307);
+  field(m_rowParkNeutralSwitch,2972302,m.ac,Mems220::inputState(m.ac),2972307);
+  field(m_rowUk5,2972303,m.ignition80,Mems220::inputState(m.ignition80),2972307);
+  field(m_rowIgnitionSwitch,2972303,m.ignition7d,Mems220::inputState(m.ignition7d),2972307);
   field(m_rowIdleHot,29025,m.hotPosition,steps(m.hotPosition),29054);
   field(m_rowUk2,29026,m.learnVoltage,Mems220::voltage(m),29054);
   field(m_rowIdleSpeedOffset,29024,m.idleCorrection,numeric(m.idleCorrection,0,QStringLiteral(" RPM")),29054);

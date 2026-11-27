@@ -18,6 +18,7 @@
 #include <QColor>
 #include <QScreen>
 #include <QTextDocument>
+#include <QFontMetrics>
 #include <QStringList>
 #include <QAbstractButton>
 #include <QGuiApplication>
@@ -103,11 +104,19 @@ protected:
         if(lines.isEmpty() && title.isEmpty())return false;
         QScreen *screen=QGuiApplication::screenAt(help->globalPos());
         if(!screen)screen=QGuiApplication::primaryScreen();
-        const int width=screen?qBound(200,screen->availableGeometry().width()/3,450):420;
+        const int maximum=screen?qMax(120,qMin(450,screen->availableGeometry().width()/3)):420;
         QString body=lines.join(QLatin1Char('\n')).toHtmlEscaped();
         body.replace(QLatin1Char('\n'),QStringLiteral("<br/>"));
-        if(!title.isEmpty())body=QStringLiteral("<b>")+title.toHtmlEscaped()+QStringLiteral("</b><br/>")+body;
-        const QString html=QStringLiteral("<table width='%1' cellspacing='0' cellpadding='0'><tr><td>%2</td></tr></table>").arg(width).arg(body);
+        if(!title.isEmpty())body=QStringLiteral("<b>")+title.toHtmlEscaped()+QStringLiteral("</b>")+
+            (body.isEmpty()?QString():QStringLiteral("<br/>")+body);
+        // Short help needs no fixed-width table. Measure natural text width
+        // in the native tooltip font; constrain only long explanations.
+        QTextDocument measure;measure.setDefaultFont(QToolTip::font());
+        measure.setDocumentMargin(0);measure.setHtml(body);measure.setTextWidth(-1);
+        const int natural=qMax(1,int(measure.idealWidth()+0.999));
+        const int width=qMin(natural,maximum);
+        const QString html=natural<=maximum?body:
+            QStringLiteral("<table width='%1' cellspacing='0' cellpadding='0'><tr><td>%2</td></tr></table>").arg(width).arg(body);
         QPoint anchor=widget->mapToGlobal(region.bottomRight());
         // Prefer the adjacent side; Qt clamps the tooltip to the active screen.
         if(screen && anchor.x()+width+30>screen->availableGeometry().right())

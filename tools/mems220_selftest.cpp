@@ -18,6 +18,14 @@ int main(){
     assert(std::abs(m.learnVoltage.calculated-14.3)<1e-9);
     assert(m.idleCorrection.calculated==-50&&m.idleError.calculated==-1);
     assert(m.throttleReference.calculated==42.5&&m.learnCount.calculated==7);
+    auto a=s.extended80();auto states=s.extended7d();
+    a[11]=128;a[12]=0;a[27]=0;states[1]=64;states[32]=8;
+    s.setExtended80(a);s.setExtended7d(states);m=Mems220::decode(s);
+    assert(m.dn.calculated==1&&m.ac.calculated==1&&m.ignition80.calculated==1&&m.ignition7d.calculated==1&&m.fanRequest.calculated==1);
+    a[27]=1;states[32]=7;s.setExtended80(a);s.setExtended7d(states);m=Mems220::decode(s);
+    assert(m.ignition80.availability==Availability::Unverified&&m.ignition7d.availability==Availability::Unverified&&m.fanRequest.availability==Availability::Unverified);
+    a[11]=0;a[12]=1;states[1]=0;states[32]=0;s.setExtended80(a);s.setExtended7d(states);m=Mems220::decode(s);
+    assert(m.dn.calculated==0&&m.ac.calculated==0&&m.ignition7d.calculated==0&&m.fanRequest.calculated==0);
     auto wrong=fixture(0x99);assert(!Mems220::decode(wrong).profile);
     auto b=s.extended7d();b[29]++;s.setExtended7d(b);
     m=Mems220::decode(s);assert(m.pair&&m.throttleReference.availability==Availability::Unverified);

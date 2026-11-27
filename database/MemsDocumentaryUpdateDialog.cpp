@@ -1,5 +1,7 @@
 #include "MemsDocumentaryUpdateDialog.h"
 #include "../i18n.h"
+#include "../nativewindowstyle.h"
+#include <QApplication>
 #include "MemsDocumentaryLocalInstaller.h"
 #ifdef Q_OS_WIN
 #include "MemsDocumentaryWindowsTransport.h"
@@ -67,6 +69,20 @@ MemsDocumentaryUpdateDialog::MemsDocumentaryUpdateDialog(
     setObjectName(QStringLiteral("documentaryUpdateDialog"));
     setMinimumWidth(430);
     setModal(true);
+    const bool dark=qApp&&qApp->property("ecuDarkTheme").toBool();
+    setStyleSheet(dark?QStringLiteral(
+        "QDialog{background:#090e13;color:#e7ecef;}"
+        "QLabel{color:#e7ecef;background:transparent;}"
+        "QPushButton{background:#18232b;color:#edf2f5;border:1px solid #3b4b58;border-radius:5px;padding:6px;}"
+        "QPushButton:hover,QPushButton:focus{border-color:#ff8a00;}"
+        "QPushButton:disabled{background:#171e24;color:#69747d;border-color:#29323a;}"):
+        QStringLiteral(
+        "QDialog{background:#ffffff;color:#202936;}"
+        "QLabel{color:#202936;background:transparent;}"
+        "QPushButton{background:#f0f4f8;color:#202936;border:1px solid #bfcbd7;border-radius:5px;padding:6px;}"
+        "QPushButton:hover,QPushButton:focus{border-color:#f07800;}"
+        "QPushButton:disabled{background:#e9edf1;color:#8b939c;border-color:#d5dde5;}"));
+    applyNativeTitleBar(this,dark);
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setContentsMargins(18,18,18,16);
     layout->setSpacing(14);

@@ -1,0 +1,11 @@
+{
+  "2972301": "Ingresso D/N (stato ECU)",
+  "2972302": "Ingresso climatizzazione (stato ECU)",
+  "2972303": "Contatto accensione (stato ECU)",
+  "2972304": "Richiesta ventola (stato ECU)",
+  "2972305": "Stato attivo",
+  "2972306": "Stato inattivo",
+  "2972307": "Stato logico interno ECU. La polarità del contatto fisico e il funzionamento reale non sono deducibili da questo solo dato.",
+  "2972308": "Nei profili documentati conta gli apprendimenti della farfalla, non i reset ECU. Nessuna interpretazione per profilo non identificato.",
+  "2972309": "La correzione iniezione può adattarsi automaticamente quando sono soddisfatte le condizioni di regolazione. Nelle calibrazioni studiate AANMP002 e KBHBG009 il ritardo nominale è 22,528 s, seguito da valutazioni legate alle commutazioni lambda. Non è un tempo garantito dopo l’avviamento né di convergenza."
+}

@@ -374,6 +374,11 @@ void DiagnosticPanel::rebuild(const mems_data &d)
         add(29024,Mems16Na::numeric(extended.idleCorrection,0,QStringLiteral(" RPM")),29054);
         add(2972001,Mems220::reference(extended),2972004);
         add(29033,Mems220::count(extended),29054);
+        const bool fresh=m_coolantConnected&&m_coolantFresh.isValid()&&m_coolantFresh.elapsed()<=3000;
+        add(2972301,fresh?Mems220::inputState(extended.dn):QStringLiteral("--"),2972307);
+        add(2972302,fresh?Mems220::inputState(extended.ac):QStringLiteral("--"),2972307);
+        add(2972303,fresh?Mems220::inputState(extended.ignition7d):QStringLiteral("--"),2972307);
+        add(2972304,fresh?Mems220::inputState(extended.fanRequest):QStringLiteral("--"),2972307);
     } else {
     const bool hotIdleErrorOk = qAbs(hotIdleErrorCorrected) <= 15;
     addCheck(I18n::text(6859) /* EN: Hot idle error */,
@@ -822,6 +827,7 @@ QString DiagnosticPanel::sensorObservationsReport() const
     for(int row=0;row<m_checks->rowCount();++row){
         const QString title=m_checks->item(row,0)->text();
         bool match=false;for(int key=2972206;key<=2972209;++key)match=match||title==I18n::text(key);
+        for(int key=2972301;key<=2972304;++key)match=match||title==I18n::text(key);
         if(!match)continue;
         QStringList fields;for(int col=0;col<4;++col)fields<<m_checks->item(row,col)->text();
         lines<<fields.join(QStringLiteral(" | "));

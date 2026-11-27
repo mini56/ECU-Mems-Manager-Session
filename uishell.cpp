@@ -153,7 +153,7 @@ static void applySidebarState(QMainWindow *w)
         toggle->setIconSize(QSize(19,19));
         toggle->setToolButtonStyle(collapsed?Qt::ToolButtonIconOnly:Qt::ToolButtonTextBesideIcon);
         toggle->setText(collapsed?QString():I18n::text(7101));
-        toggle->setToolTip(collapsed?I18n::text(7103):I18n::text(7102));
+        toggle->setToolTip(collapsed?I18n::text(7103):QString());
         toggle->setMinimumHeight(30); toggle->setMaximumHeight(32);
     }
 
@@ -189,6 +189,7 @@ static void applySidebarState(QMainWindow *w)
         if(!item->data(textRole).isValid()) item->setData(textRole,item->text());
         const QString original=item->data(textRole).toString();
         item->setText(collapsed?QString():original);
+        item->setToolTip(collapsed?original:QString());
         item->setTextAlignment(collapsed?Qt::AlignCenter:(Qt::AlignLeft|Qt::AlignVCenter));
         item->setSizeHint(QSize(0,rowHeight));
     }
@@ -717,7 +718,7 @@ static bool applyDeterministicNavigation(MainWindow *window)
         {
             const QString title = translatedTitle(rank);
             QListWidgetItem *item = new QListWidgetItem(iconForRank(rank), title, nav);
-            item->setToolTip(title);
+            item->setData(Qt::UserRole+42,title);
         }
         nav->setCurrentRow(qBound(0, tabs->currentIndex(), kFinalTabCount - 1),
                            QItemSelectionModel::ClearAndSelect);
