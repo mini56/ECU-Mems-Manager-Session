@@ -15,8 +15,8 @@ inline GaugeState gaugeState(bool connected,const Mems16Na::SessionEvidence *s) 
     if(!s->identifiedProfile()||!gaugePathDocumented(s->firmwareName()))return GaugeState::Unsupported;
     if(!Mems217::present(a,25))return GaugeState::AwaitData;
     if(a.bytes[25]!=0)return GaugeState::EngineRunning;
-    // Static proof is not physical qualification. No enabled state or transport
-    // exists until bench restoration and the actual vehicle wiring are checked.
+    // Historical read-only documentation status. Active tests below use a
+    // separate, narrower whitelist and independent worker interlock.
     return GaugeState::AwaitBench;
 }
 // Active instrument tests: only the exact firmware whose output path and
@@ -27,7 +27,8 @@ inline bool instrumentSupported(InstrumentAction action,const Mems16Na::SessionE
     if(action==InstrumentAction::GaugeMin||action==InstrumentAction::GaugeMax)
         return s.firmwareName()=="AANMP002" && s.identifiedProfile()!=nullptr;
     if(action==InstrumentAction::Tachometer)
-        return s.firmwareName()=="TFH7G029" && s.identifiedProfile()==nullptr;
+        return s.firmwareName()=="TFH7G029" && s.identifiedProfile()==nullptr &&
+               s.identity()[0]==0x90 && s.identity()[1]==0x00 && s.identity()[2]==0x29;
     return false;
 }
 inline bool instrumentSafeSample(InstrumentAction action,const Mems16Na::SessionEvidence &s) {
