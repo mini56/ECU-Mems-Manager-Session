@@ -1220,14 +1220,18 @@ void MainWindow::onDataReady()
   if(!naIdentified){
     rememberNaLabel(m_ui->m_faultCode03Label);
     m_ui->m_faultCode03Label->setText(I18n::text(MemsExtendedDtc::pressurePipeLabelKey(naEvidence.firmwareName().c_str(),false)));
-    for(QLabel *label:{m_ui->m_faultCode08Label,m_ui->m_faultCode11Label,m_ui->m_faultCode17Label,m_ui->m_faultCode18Label,m_ui->m_faultCode19Label}){
+    for(QLabel *label:{m_ui->m_faultCode08Label,m_ui->m_faultCode11Label,m_ui->m_faultCode19Label}){
       rememberNaLabel(label);label->setText(label->text().left(2)+QStringLiteral(" - ")+I18n::text(knownDtc2?2972201:2972310));
     }
   }
-  if(!naIdentified&&MemsExtendedDtc::short13(naEvidence.firmwareName().c_str())){
+  if(!naIdentified){
+    const bool short13=MemsExtendedDtc::short13(naEvidence.firmwareName().c_str());
+    rememberNaLabel(m_ui->m_faultCode17Label);
     rememberNaLabel(m_ui->m_faultCode18Label);
-    m_ui->m_faultCode18Label->setText(QStringLiteral("18 - ")+I18n::text(2972311));
-    m_ui->m_faultCode18Label->setToolTip(I18n::text(2972313));
+    m_ui->m_faultCode17Label->setText(QStringLiteral("17 - ")+I18n::text(2972401));
+    m_ui->m_faultCode18Label->setText(QStringLiteral("18 - ")+I18n::text(2972402));
+    m_ui->m_faultCode17Label->setToolTip(I18n::text(short13?2972403:knownDtc2?2972201:2972310));
+    m_ui->m_faultCode18Label->setToolTip(I18n::text(short13?2972313:knownDtc2?2972201:2972310));
   }
   if(syncProfile){rememberNaLabel(m_ui->m_faultCode21Label);m_ui->m_faultCode21Label->setText(QStringLiteral("21 - ")+I18n::text(29018));}
   if(knownDtc2){
@@ -2754,8 +2758,10 @@ void MainWindow::setDefaultFaultLabels()
   m_ui->m_JackCount->setChecked(false);
   m_ui->m_RPMSensor->setChecked(false);
   m_ui->m_faultCode08Label->setText(QStringLiteral("08 - ")+I18n::text(2972310));
-  m_ui->m_faultCode17Label->setText(QStringLiteral("17 - ")+I18n::text(2972310));
-  m_ui->m_faultCode18Label->setText(QStringLiteral("18 - ")+I18n::text(2972311));
+  m_ui->m_faultCode17Label->setText(QStringLiteral("17 - ")+I18n::text(2972401));
+  m_ui->m_faultCode18Label->setText(QStringLiteral("18 - ")+I18n::text(2972402));
+  m_ui->m_faultCode17Label->setToolTip(I18n::text(2972403));
+  m_ui->m_faultCode18Label->setToolTip(I18n::text(2972313));
 }
 void MainWindow::rememberNaLabel(QLabel *label)
 {
@@ -2961,9 +2967,10 @@ void MainWindow::showNaPages(const Mems16Na::SessionEvidence &na,bool documentat
       QLabel *label=faultLabels[g*8+i];
       rememberNaLabel(label);
       const bool supported=((def.faultMask|def.stateMask)&mask)!=0;
+      const int faultNumber=g*8+i+1;
       const QString name=supported?describe(circuit(p,group,mask),mask):
-          I18n::text(2972201);
-      QString detail=name;
+          I18n::text(faultNumber==17?2972401:faultNumber==18?2972402:2972201);
+      QString detail=supported?name:I18n::text(2972201);
       if(supported && circuit(p,group,mask)==Circuit::AuxiliaryPtc)
         detail+=QStringLiteral("\n")+I18n::text(29020);
       if(d.availability==Availability::Missing)detail+=QStringLiteral("\n")+I18n::text(29048);
