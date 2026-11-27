@@ -16,5 +16,14 @@
   "2972415": "Select the position in 25% steps, then click Move stepper.",
   "2972416": "Stepper position:",
   "2972417": "Move stepper",
-  "2972418": "Disable / reset"
+  "2972418": "Disable / reset",
+  "2972419": "Test available — watch the dashboard.",
+  "2972420": "Test running.",
+  "2972421": "Test ended: normal mode acknowledged.",
+  "2972422": "Test stopped: normal mode acknowledged.",
+  "2972423": "Test refused: conditions not met.",
+  "2972424": "Normal return unconfirmed. Switch ignition off.",
+  "2972425": "Command not acknowledged; normal return acknowledged.",
+  "2972426": "Another test or diagnostic mode is active.",
+  "2972427": "Reset other actuators first."
 }
