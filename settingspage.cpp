@@ -1019,7 +1019,9 @@ void fitSettingsPage(QMainWindow *window)
         // Only the two side cards adapt. The existing centre form, its buttons
         // and LCDs keep their approved sizes. Use the actual viewport width,
         // never the previous (possibly too large) scroll-area child width.
-        const int available=page->parentWidget()?page->parentWidget()->width():page->width();
+        const auto *navigation=window->findChild<QWidget*>(QStringLiteral("uiRebuildNav"));
+        const int available=navigation?qMax(0,window->width()-navigation->width()):
+            (page->parentWidget()?page->parentWidget()->width():page->width());
         const int centre=qMax(600,adjust->minimumSizeHint().width());
         const int sideWidth=qBound(130,(available-centre-40)/2,275);
         for(const char *name:{"settingsStates","settingsSystemState"}){
