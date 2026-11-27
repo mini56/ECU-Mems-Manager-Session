@@ -7,5 +7,9 @@
   "2972406": "Test",
   "2972407": "Test del contagiri non validato per questo firmware.",
   "2972408": "Osservare il contagiri sul quadro; il test non misura il regime.",
-  "2972409": "TEST DELL’INDICATORE DI TEMPERATURA"
+  "2972409": "TEST DELL’INDICATORE DI TEMPERATURA",
+  "2972410": "Motore in moto",
+  "2972411": "Segnale sonda lambda valido",
+  "2972412": "Verde: regime superiore a zero. Spento: motore fermo o regime non disponibile.",
+  "2972413": "Verde: la ECU indica un segnale lambda valido su un profilo qualificato. Spento: segnale non valido o non disponibile. Non prova da solo il funzionamento della sonda."
 }
