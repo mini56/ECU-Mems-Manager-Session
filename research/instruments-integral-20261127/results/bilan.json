@@ -1,0 +1,102 @@
+{
+  "Land Rover Td5": {
+    "files": 30,
+    "asm": 30,
+    "xf": 0,
+    "dialogue_tables": 0,
+    "gauge": {
+      "NON_QUALIFIE": 30
+    },
+    "tach": {
+      "NON_QUALIFIE": 30
+    }
+  },
+  "Rover L-Series Di": {
+    "files": 4,
+    "asm": 4,
+    "xf": 4,
+    "dialogue_tables": 0,
+    "gauge": {
+      "NON_QUALIFIE": 4
+    },
+    "tach": {
+      "NON_QUALIFIE": 4
+    }
+  },
+  "Rover MEMS 1.3": {
+    "files": 3,
+    "asm": 3,
+    "xf": 0,
+    "dialogue_tables": 0,
+    "gauge": {
+      "NON_QUALIFIE": 3
+    },
+    "tach": {
+      "NON_QUALIFIE": 3
+    }
+  },
+  "Rover MEMS 1.6": {
+    "files": 123,
+    "asm": 123,
+    "xf": 123,
+    "dialogue_tables": 123,
+    "gauge": {
+      "INTEGRE_227": 15,
+      "CANDIDAT_A_PROUVER": 101,
+      "NON_QUALIFIE": 7
+    },
+    "tach": {
+      "NON_QUALIFIE": 123
+    }
+  },
+  "Rover MEMS 1.6 TURBO": {
+    "files": 4,
+    "asm": 0,
+    "xf": 0,
+    "dialogue_tables": 0,
+    "gauge": {
+      "NON_QUALIFIE": 4
+    },
+    "tach": {
+      "NON_QUALIFIE": 4
+    }
+  },
+  "Rover MEMS 1.9": {
+    "files": 215,
+    "asm": 215,
+    "xf": 215,
+    "dialogue_tables": 215,
+    "gauge": {
+      "NON_QUALIFIE": 214,
+      "CANDIDAT_A_PROUVER": 1
+    },
+    "tach": {
+      "NON_QUALIFIE": 174,
+      "INTEGRE_227": 41
+    }
+  },
+  "Rover MEMS 2J": {
+    "files": 9,
+    "asm": 9,
+    "xf": 7,
+    "dialogue_tables": 0,
+    "gauge": {
+      "NON_QUALIFIE": 9
+    },
+    "tach": {
+      "NON_QUALIFIE": 9
+    }
+  },
+  "Rover MEMS3": {
+    "files": 95,
+    "asm": 95,
+    "xf": 83,
+    "dialogue_tables": 0,
+    "gauge": {
+      "NON_QUALIFIE": 95
+    },
+    "tach": {
+      "NON_QUALIFIE": 95
+    }
+  }
+}
