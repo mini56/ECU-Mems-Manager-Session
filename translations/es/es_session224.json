@@ -11,5 +11,6 @@
   "2972410": "Motor paso a paso al mínimo",
   "2972411": "Señal de sonda lambda válida",
   "2972412": "Rojo: la ECU indica cero pasos. Apagado: posición superior a cero o no disponible. La posición mínima no demuestra por sí sola un fallo.",
-  "2972413": "Verde: la ECU indica una señal lambda válida en un perfil cualificado. Apagado: señal no válida o no disponible. No demuestra por sí solo el buen estado de la sonda."
+  "2972413": "Verde: la ECU indica una señal lambda válida en un perfil cualificado. Apagado: señal no válida o no disponible. No demuestra por sí solo el buen estado de la sonda.",
+  "2972414": "Observe los instrumentos del cuadro; no se mide su posición."
 }
