@@ -1,0 +1,5 @@
+{
+  "2972401": "Fallo de tensión de alimentación del potenciómetro de mariposa",
+  "2972402": "Entrada analógica fuera de rango",
+  "2972403": "Interpretación confirmada en tres perfiles MEMS 1.3 identificados; no atribuir este fallo a otro firmware."
+}
