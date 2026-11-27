@@ -253,12 +253,14 @@ private:
     QObject *m_source=nullptr;
 };
 
+static constexpr int kErrorLedSize=22;
+
 static QLedIndicator *additionalLed(QWidget *parent,const QString &name,bool state=false)
 {
     auto *led=new QLedIndicator(parent);
     led->setObjectName(name);led->setCheckable(true);led->setChecked(false);
     led->setAttribute(Qt::WA_TransparentForMouseEvents,true);led->setFocusPolicy(Qt::NoFocus);
-    led->setFixedSize(18,18);
+    led->setFixedSize(kErrorLedSize,kErrorLedSize);
     led->setOnColor1(state?QColor("#6bdd45"):QColor(255,0,0));
     led->setOnColor2(state?QColor("#348a22"):QColor(176,0,2));
     led->setOffColor1(state?QColor("#202429"):QColor(20,0,0));
@@ -304,7 +306,7 @@ static void compactStoredPanel(QMainWindow *w,QFrame *top)
     g->setHorizontalSpacing(8);g->setVerticalSpacing(3);
     for(int i=0;i<30;++i){
         const int row=i%10,col=2*(i/10);
-        leds[i]->setFixedSize(22,22);
+        leds[i]->setFixedSize(kErrorLedSize,kErrorLedSize);
         leds[i]->setAttribute(Qt::WA_TransparentForMouseEvents,true);
         labels[i]->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
         labels[i]->setWordWrap(true);
@@ -313,7 +315,7 @@ static void compactStoredPanel(QMainWindow *w,QFrame *top)
         labels[i]->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
         g->addWidget(leds[i],row,col,Qt::AlignCenter);
         g->addWidget(labels[i],row,col+1);
-        g->setRowStretch(row,1);g->setRowMinimumHeight(row,22);
+        g->setRowStretch(row,1);g->setRowMinimumHeight(row,kErrorLedSize);
         g->setColumnStretch(col+1,1);
         leds[i]->show();labels[i]->show();
     }
@@ -324,7 +326,7 @@ static void addLed(QGridLayout *grid,QWidget *led,QWidget *parent,int row,int co
 {
     if(!grid || !led || !parent) return;
     moveWidget(led,parent);
-    led->setFixedSize(22,22);
+    led->setFixedSize(kErrorLedSize,kErrorLedSize);
     grid->addWidget(led,row,col,Qt::AlignHCenter|Qt::AlignVCenter);
 }
 
@@ -570,8 +572,8 @@ static void composeActuators(QMainWindow *window)
                 o2Label->setContentsMargins(0,margins.top(),30,margins.bottom());
                 const int completeWidth=QFontMetrics(o2Label->font()).horizontalAdvance(o2Label->text())+30+8;
                 o2Label->setMinimumWidth(completeWidth);
-                o2Label->setMaximumWidth(completeWidth);
-                o2Label->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Preferred);
+                o2Label->setMaximumWidth(QWIDGETSIZE_MAX);
+                o2Label->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Preferred);
                 grid->setColumnMinimumWidth(0,qMax(grid->columnMinimumWidth(0),completeWidth));
                 grid->setAlignment(o2Label,Qt::AlignLeft|Qt::AlignVCenter);
             }
@@ -830,7 +832,7 @@ unsigned updateAdditionalErrors(QMainWindow *window,bool connected,const Mems16N
         }
     }
     const bool stateSupported=MemsExtendedDtc::sync19(f);
-    const bool stateAvailable=connected&&stateSupported&&d3.status!=MemsExtendedDtc::Status::Missing&&d3.raw!=255;
+    const bool stateAvailable=connected&&stateSupported&&d3.status==MemsExtendedDtc::Status::Decoded;
     if(auto *led=window->findChild<QLedIndicator*>(QStringLiteral("extraDtc3TeethLed")))led->setChecked(stateAvailable&&(d3.states&4));
     if(auto *label=window->findChild<QLabel*>(QStringLiteral("extraDtc3TeethLabel"))){
         label->setText(!connected||stateSupported?I18n::text(29240):I18n::text(2972201));
