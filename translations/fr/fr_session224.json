@@ -25,5 +25,12 @@
   "2972424": "Retour normal non confirmé. Coupez le contact.",
   "2972425": "Commande non acquittée ; retour normal acquitté.",
   "2972426": "Autre test ou mode de diagnostic actif.",
-  "2972427": "Réinitialisez d’abord les autres actionneurs."
+  "2972427": "Réinitialisez d’abord les autres actionneurs.",
+  "2972428": "ECU non connecté.",
+  "2972429": "Compatibilité non confirmée.",
+  "2972430": "Attente des mesures ECU.",
+  "2972431": "Arrêtez le moteur, contact mis.",
+  "2972432": "Test disponible.",
+  "2972433": "Autre test ou mode actif.",
+  "2972434": "Réinitialisez les actionneurs."
 }
