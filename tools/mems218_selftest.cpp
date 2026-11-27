@@ -61,6 +61,7 @@ int main(){
         {"ACNMP003",0x9A0003u,true},
         {"ACNMP004",0x9A0004u,true},
         {"ACNMP005",0x9A0005u,true},
+        {"EKDMF009",0x900009u,true},
         {"TAHHG019",0x900019u,false},
         {"TBH7G019",0x900019u,false},
         {"TFH7G028",0x900028u,false},
@@ -103,7 +104,7 @@ int main(){
         {"TFH7V006",0x440006u,false},
         {"TFH7V007",0x440007u,false}
     };
-    static_assert(sizeof(compatible)/sizeof(compatible[0])==55,"All qualified profiles must be tested");
+    static_assert(sizeof(compatible)/sizeof(compatible[0])==56,"All qualified profiles must be tested");
     for(const auto &p:compatible){
         const auto hi=static_cast<std::uint8_t>(p.id>>16);
         const auto mid=static_cast<std::uint8_t>(p.id>>8);
