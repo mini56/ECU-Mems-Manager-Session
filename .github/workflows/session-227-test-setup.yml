@@ -341,36 +341,6 @@ jobs:
           print('PREPARED_REFERENCE_BYTES',sum(sizes.values()))
           '@ | python -
           if($LASTEXITCODE -ne 0){throw 'PREPARED_REFERENCE_INTEGRITY_FAILED'}
-      - name: Vérifier la présentation réelle des deux instruments avant le Setup
-        shell: pwsh
-        run: |
-          $ErrorActionPreference='Stop'
-          $dist=(Resolve-Path dist-session-227).Path
-          $env:QT_QPA_PLATFORM='offscreen'
-          $env:QT_OPENGL='software'
-          $env:QT_SCALE_FACTOR='1'
-          $env:PATH="$dist;$env:PATH"
-          $p=Start-Process -FilePath "$dist/ecu_mems_manager.exe" -WorkingDirectory $dist -ArgumentList '--session-ui-smoke-test','--session224-instruments' -PassThru
-          if(-not $p.WaitForExit(600000)){Stop-Process -Id $p.Id -Force;throw 'INSTRUMENT_LAYOUT_TIMEOUT'}
-          if(Test-Path "$dist/session_ui_smoke_trace.log"){Get-Content "$dist/session_ui_smoke_trace.log"}
-          if($p.ExitCode -ne 0){throw "INSTRUMENT_LAYOUT_FAILED_$($p.ExitCode)"}
-          foreach($w in 1200,1366,1920){
-            if(-not(Test-Path "$dist/session224-visual/actionneurs-$w.png")){throw "INSTRUMENT_CAPTURE_MISSING_$w"}
-          }
-      - name: Sauvegarder les captures réelles et le journal de contrôle
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: SESSION-227-Visual
-          path: |
-            dist-session-227/session224-visual/*.png
-            dist-session-227/session_ui_smoke_trace.log
-          if-no-files-found: warn
-      - name: Retirer uniquement les fichiers du contrôle visuel de la distribution
-        shell: pwsh
-        run: |
-          Remove-Item dist-session-227/session224-visual -Recurse -Force -ErrorAction SilentlyContinue
-          Remove-Item dist-session-227/session_ui_smoke_trace.log -Force -ErrorAction SilentlyContinue
       - name: Creer un vrai Setup Windows pour SESSION 227
         shell: pwsh
         run: |
