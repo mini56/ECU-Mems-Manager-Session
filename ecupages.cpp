@@ -576,7 +576,7 @@ static void composeActuators(QMainWindow *window)
                 o2Label->setMinimumWidth(0);
                 o2Label->setMaximumWidth(QWIDGETSIZE_MAX);
                 o2Label->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
-                grid->setAlignment(o2Label,Qt::AlignLeft|Qt::AlignVCenter);
+                grid->setAlignment(o2Label,Qt::AlignVCenter);
             }
             // Show the actual received result next to each existing test button.
             for(int row:{12,13}){
