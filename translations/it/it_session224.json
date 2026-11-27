@@ -25,5 +25,12 @@
   "2972424": "Ritorno normale non confermato. Spegnere il quadro.",
   "2972425": "Comando non confermato; ritorno normale confermato.",
   "2972426": "Altro test o modo diagnostico attivo.",
-  "2972427": "Ripristinare prima gli altri attuatori."
+  "2972427": "Ripristinare prima gli altri attuatori.",
+  "2972428": "ECU scollegata.",
+  "2972429": "Compatibilità non confermata.",
+  "2972430": "Attesa dati ECU.",
+  "2972431": "Motore fermo, quadro acceso.",
+  "2972432": "Test disponibile.",
+  "2972433": "Altro test o modo attivo.",
+  "2972434": "Ripristinare gli attuatori."
 }
