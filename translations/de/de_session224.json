@@ -8,8 +8,8 @@
   "2972407": "Drehzahlmessertest für diese Firmware nicht validiert.",
   "2972408": "Drehzahlmesser im Fahrzeug beobachten; keine Drehzahlmessung durch diesen Test.",
   "2972409": "TEMPERATURANZEIGETEST",
-  "2972410": "Motor läuft",
+  "2972410": "Schrittmotor auf Minimum",
   "2972411": "Gültiges Lambdasondensignal",
-  "2972412": "Grün: Drehzahl größer als null. Aus: Motor steht oder Drehzahl nicht verfügbar.",
+  "2972412": "Rot: Steuergerät meldet null Schritte. Aus: Position über null oder nicht verfügbar. Die Mindestposition allein beweist keinen Fehler.",
   "2972413": "Grün: Steuergerät meldet gültiges Lambdasondensignal bei qualifiziertem Profil. Aus: ungültig oder nicht verfügbar. Kein alleiniger Nachweis der Sondenfunktion."
 }
