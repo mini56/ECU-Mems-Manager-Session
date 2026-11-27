@@ -25,5 +25,12 @@
   "2972424": "Normalbetrieb unbestätigt. Zündung ausschalten.",
   "2972425": "Befehl nicht quittiert; Normalbetrieb quittiert.",
   "2972426": "Anderer Test oder Diagnosemodus aktiv.",
-  "2972427": "Zuerst andere Aktoren zurücksetzen."
+  "2972427": "Zuerst andere Aktoren zurücksetzen.",
+  "2972428": "ECU nicht verbunden.",
+  "2972429": "Kompatibilität unbestätigt.",
+  "2972430": "Warte auf ECU-Daten.",
+  "2972431": "Motor aus, Zündung ein.",
+  "2972432": "Test verfügbar.",
+  "2972433": "Anderer Test/Modus aktiv.",
+  "2972434": "Aktoren zurücksetzen."
 }
