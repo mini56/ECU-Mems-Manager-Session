@@ -3,5 +3,16 @@
   "2972202": "ECU-Antwort: %1",
   "2972203": "Keine ECU-Antwort",
   "2972204": "Antwort erhalten — Aktivierung nicht bestätigt",
-  "2972205": "Die ECU-Antwort allein bestätigt keine elektrische oder mechanische Funktion."
+  "2972205": "Die ECU-Antwort allein bestätigt keine elektrische oder mechanische Funktion.",
+  "2972206": "Ansauglufttemperatur beobachten",
+  "2972207": "Drosselklappenpotentiometer beobachten",
+  "2972208": "Leerlaufkontakt beobachten",
+  "2972209": "Saugrohrdruck (MAP) beobachten",
+  "2972210": "Gespeicherter Stromkreisfehler; Ersatzwert möglich. Stromkreis prüfen und mit unabhängiger Messung vergleichen.",
+  "2972211": "Natürliche Temperaturänderung: ein stabiler Wert beweist keinen Defekt.",
+  "2972212": "Motor aus, Zündung an: Drosselklappe langsam öffnen und schließen. Eine Änderung beweist keine durchgängige Funktion über den gesamten Weg.",
+  "2972213": "%1 Zustandswechsel",
+  "2972214": "Vom Steuergerät verwendeter Leerlaufzustand, kein isolierter physischer Kontakt. Zwei Wechsel mit TPS-Änderung: Reaktion beobachtet.",
+  "2972215": "Gespeicherter MAP-Fehler: auch Schlauch, Druckanschluss und Verkabelung prüfen. Ersatzwert möglich.",
+  "2972216": "Druckänderung beobachtet oder zu beobachten. Kein Funktionsnachweis allein durch diese Messung."
 }

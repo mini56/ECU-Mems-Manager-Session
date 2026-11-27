@@ -162,7 +162,8 @@ DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
     QTimer *freshness=new QTimer(this);freshness->setInterval(500);
     connect(freshness,&QTimer::timeout,this,[this](){
         if(m_coolantFresh.isValid()&&m_coolantFresh.elapsed()>3000){
-            m_coolantFresh.invalidate();m_coolantTest.interrupt();refreshCoolantTest();
+            m_coolantFresh.invalidate();m_coolantTest.interrupt();m_sensorObservation.reset();refreshCoolantTest();
+            if(m_haveData&&!m_showing2J)rebuild(m_last);
             if(m_haveData)m_report->setPlainText(buildReport());
         }
     });
@@ -189,11 +190,12 @@ void DiagnosticPanel::updateData(const mems_data *data,const Mems16Na::SessionEv
     if(m_naEvidence.identifiedProfile()!=profile||
        (profile&&m_naEvidence.identity()!=na->identity()))m_naReference=Snapshot();
     if(!na || m_naEvidence.firmwareName()!=na->firmwareName() || m_naEvidence.identity()!=na->identity()){
-        m_passive.reset();resetCoolantTest();
+        m_passive.reset();m_sensorObservation.reset();resetCoolantTest();
     }
     if(na)m_naEvidence=*na;
     else m_naEvidence.reset();
     m_passive.sample(m_naEvidence);
+    m_sensorObservation.observe(Mems222::sample(m_naEvidence));
     m_coolantConnected=true;m_coolantFresh.start();
     m_coolantTest.sample(Mems218::coolantSample(true,m_naEvidence));
     if(m_coolantTest.state==Mems218::TestState::Running)
@@ -208,7 +210,7 @@ void DiagnosticPanel::updateData(const mems_data *data,const Mems16Na::SessionEv
 void DiagnosticPanel::endNaSession()
 {
     restoreNaChecksStyle();
-    m_passive.reset();resetCoolantTest();m_coolantConnected=false;refreshCoolantTest();
+    m_passive.reset();m_sensorObservation.reset();resetCoolantTest();m_coolantConnected=false;refreshCoolantTest();
     if(!m_naEvidence.identifiedProfile()&&m_naEvidence.firmwareName().empty())return;
     m_naEvidence.reset();
     m_naReference=Snapshot();
@@ -401,6 +403,7 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     }
 
     addPassiveChecks();
+    addSensorObservations();
     const int total = issues * 2 + warnings;
     const QString level = issues == 0 ? (warnings == 0 ? I18n::text(6871) /* EN: NORMAL */ : I18n::text(6872) /* EN: SURVEILLER */)
                                       : I18n::text(6873) /* EN: ANOMALY TO INVESTIGATE */;
@@ -511,6 +514,7 @@ QString DiagnosticPanel::buildReport() const
             text+=QStringLiteral("\n")+fields.join(QStringLiteral(" | "))+QStringLiteral("\n");
         }
     }
+    text+=sensorObservationsReport();
     if(m_coolantTest.state!=Mems218::TestState::Idle)
         text+=QStringLiteral("\n")+coolantTestSummary()+QStringLiteral("\n");
     if (m_reference.valid)
@@ -704,6 +708,7 @@ void DiagnosticPanel::rebuildNa(const mems_data &d)
             .arg(int(d.throttle_pot)-int(m_naReference.data.throttle_pot)),info,I18n::text(6870).arg(m_naReference.timestamp));
     }
     addPassiveChecks();
+    addSensorObservations();
     const QString level=issues?I18n::text(6873):warnings?I18n::text(6872):I18n::text(6871);
     m_score->setText(I18n::text(6874).arg(level).arg(issues).arg(warnings));
     m_status->setText(I18n::text(6875).arg(QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss"))).arg(2*issues+warnings));
@@ -718,7 +723,8 @@ void DiagnosticPanel::resetCoolantTest()
 
 void DiagnosticPanel::invalidateCoolantTest()
 {
-    m_coolantConnected=false;m_coolantFresh.invalidate();m_coolantTest.interrupt();
+    m_coolantConnected=false;m_coolantFresh.invalidate();m_coolantTest.interrupt();m_sensorObservation.reset();
+    if(m_haveData&&!m_showing2J)rebuild(m_last);
     refreshCoolantTest();if(m_haveData)m_report->setPlainText(buildReport());
 }
 
@@ -793,6 +799,35 @@ void DiagnosticPanel::addPassiveChecks()
         !o.valid?2971713:o.coolantFault?2971718:o.coolantObserved?2971719:2971720);
 }
 
+void DiagnosticPanel::addSensorObservations()
+{
+    if(!(m_naEvidence.identifiedProfile()&&m_naEvidence.firmwareName()=="AANMP002")&&!Mems220::profile19(m_naEvidence))return;
+    const auto &o=m_sensorObservation;
+    auto row=[&](int title,const QString &value,bool stored,bool observed,int advice){
+        addCheck(I18n::text(title),value,stored?I18n::text(29051):observed?I18n::text(2971712):I18n::text(6849),I18n::text(advice));
+    };
+    auto range=[&](const Mems222::Range &r,const QString &unit,double factor,int decimals){
+        if(!r.count)return QStringLiteral("--");
+        return QStringLiteral("%1 %2 | %3 – %4 %2").arg(r.last*factor,0,'f',decimals).arg(unit)
+            .arg(r.low*factor,0,'f',decimals).arg(r.high*factor,0,'f',decimals);
+    };
+    row(2972206,range(o.air,QStringLiteral("°C"),1,0),o.air.stored,o.air.changed()&&!o.air.stored,o.air.stored?2972210:2972211);
+    row(2972207,range(o.tps,QStringLiteral("V"),5.0/255.0,2),o.tps.stored,o.tps.changed()&&!o.tps.stored,o.tps.stored?2972210:2972212);
+    row(2972208,o.switchKnown?I18n::text(2972213).arg(o.transitions):QStringLiteral("--"),false,o.switchResponse(),2972214);
+    row(2972209,range(o.map,QStringLiteral("kPa"),1,0),o.map.stored,o.map.changed()&&!o.map.stored,o.map.stored?2972215:2972216);
+}
+QString DiagnosticPanel::sensorObservationsReport() const
+{
+    QStringList lines;
+    for(int row=0;row<m_checks->rowCount();++row){
+        const QString title=m_checks->item(row,0)->text();
+        bool match=false;for(int key=2972206;key<=2972209;++key)match=match||title==I18n::text(key);
+        if(!match)continue;
+        QStringList fields;for(int col=0;col<4;++col)fields<<m_checks->item(row,col)->text();
+        lines<<fields.join(QStringLiteral(" | "));
+    }
+    return lines.isEmpty()?QString():QStringLiteral("\n")+lines.join(QLatin1Char('\n'))+QStringLiteral("\n");
+}
 QString DiagnosticPanel::buildNaReport() const
 {
     QStringList lines;

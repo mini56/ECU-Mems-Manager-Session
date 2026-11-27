@@ -9,6 +9,7 @@
 #include "mems16na_session_evidence.h"
 #include "mems217_passive.h"
 #include "mems218_tests.h"
+#include "mems222_sensor_observation.h"
 #include <QElapsedTimer>
 
 class QLabel;
@@ -54,6 +55,9 @@ private:
     Snapshot m_naReference;
     Mems16Na::SessionEvidence m_naEvidence;
     Mems217::Observation m_passive;
+    Mems222::Observation m_sensorObservation;
+    void addSensorObservations();
+    QString sensorObservationsReport() const;
     Mems218::CoolantTest m_coolantTest;
     QElapsedTimer m_coolantFresh,m_coolantElapsed;
     bool m_coolantConnected=false;

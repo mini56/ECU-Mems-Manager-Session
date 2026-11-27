@@ -3,5 +3,16 @@
   "2972202": "Risposta ECU: %1",
   "2972203": "Nessuna risposta ECU",
   "2972204": "Risposta ricevuta — attivazione non confermata",
-  "2972205": "La risposta ECU da sola non dimostra il funzionamento elettrico o meccanico."
+  "2972205": "La risposta ECU da sola non dimostra il funzionamento elettrico o meccanico.",
+  "2972206": "Osservazione temperatura aria aspirata",
+  "2972207": "Osservazione potenziometro farfalla",
+  "2972208": "Osservazione contatto minimo",
+  "2972209": "Osservazione pressione aspirazione (MAP)",
+  "2972210": "Guasto circuito memorizzato; possibile valore sostitutivo. Controllare il circuito e confrontare con una misura indipendente.",
+  "2972211": "Variazione naturale della temperatura: un valore stabile non dimostra un guasto.",
+  "2972212": "Motore fermo, quadro acceso: aprire e chiudere lentamente la farfalla. La variazione non garantisce la continuità sull’intera corsa.",
+  "2972213": "%1 transizione/i",
+  "2972214": "Stato minimo usato dalla ECU, non il contatto fisico isolato. Due transizioni con variazione TPS: risposta osservata.",
+  "2972215": "Guasto MAP memorizzato: controllare anche tubo, presa di pressione e cablaggio. Possibile valore sostitutivo.",
+  "2972216": "Variazione pressione osservata o da osservare. Questa misura da sola non dimostra lo stato del sensore."
 }

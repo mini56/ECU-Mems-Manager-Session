@@ -3,5 +3,16 @@
   "2972202": "ECU reply: %1",
   "2972203": "No ECU reply",
   "2972204": "Reply received — activation not confirmed",
-  "2972205": "The ECU reply alone does not prove electrical or mechanical operation."
+  "2972205": "The ECU reply alone does not prove electrical or mechanical operation.",
+  "2972206": "Intake air temperature observation",
+  "2972207": "Throttle potentiometer observation",
+  "2972208": "Idle switch observation",
+  "2972209": "Manifold pressure (MAP) observation",
+  "2972210": "Stored circuit fault; substitute value possible. Check the circuit and compare with an independent measurement.",
+  "2972211": "Natural temperature variation: a stable value does not prove failure.",
+  "2972212": "Engine stopped, ignition on: slowly open and close the throttle. Observed variation does not prove continuity throughout the travel.",
+  "2972213": "%1 transition(s)",
+  "2972214": "Idle state used by the ECU, not an isolated physical switch. Two transitions with TPS variation: response observed.",
+  "2972215": "Stored MAP fault: also check the hose, pressure port and wiring. Substitute value possible.",
+  "2972216": "Pressure variation observed or to be observed. This measurement alone does not establish sensor health."
 }

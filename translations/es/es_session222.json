@@ -3,5 +3,16 @@
   "2972202": "Respuesta ECU: %1",
   "2972203": "Sin respuesta ECU",
   "2972204": "Respuesta recibida — activación no confirmada",
-  "2972205": "La respuesta de la ECU por sí sola no demuestra el funcionamiento eléctrico o mecánico."
+  "2972205": "La respuesta de la ECU por sí sola no demuestra el funcionamiento eléctrico o mecánico.",
+  "2972206": "Observación temperatura de aire de admisión",
+  "2972207": "Observación potenciómetro de mariposa",
+  "2972208": "Observación contacto de ralentí",
+  "2972209": "Observación presión de admisión (MAP)",
+  "2972210": "Fallo de circuito memorizado; posible valor de sustitución. Revisar el circuito y comparar con una medición independiente.",
+  "2972211": "Variación natural de temperatura: un valor estable no demuestra un fallo.",
+  "2972212": "Motor parado, contacto puesto: abrir y cerrar lentamente la mariposa. La variación no garantiza continuidad en todo el recorrido.",
+  "2972213": "%1 transición(es)",
+  "2972214": "Estado de ralentí usado por la ECU, no el contacto físico aislado. Dos transiciones con variación TPS: reacción observada.",
+  "2972215": "Fallo MAP memorizado: revisar también tubo, toma de presión y cableado. Posible valor de sustitución.",
+  "2972216": "Variación de presión observada o pendiente. Esta medición sola no demuestra el estado del sensor."
 }

@@ -3,5 +3,16 @@
   "2972202": "Réponse ECU : %1",
   "2972203": "Aucune réponse ECU",
   "2972204": "Réponse reçue — activation non confirmée",
-  "2972205": "La réponse ECU ne prouve pas à elle seule le fonctionnement électrique ou mécanique de l’organe."
+  "2972205": "La réponse ECU ne prouve pas à elle seule le fonctionnement électrique ou mécanique de l’organe.",
+  "2972206": "Observation sonde température d’air",
+  "2972207": "Observation potentiomètre papillon",
+  "2972208": "Observation contact de ralenti",
+  "2972209": "Observation pression admission (MAP)",
+  "2972210": "Défaut de circuit mémorisé ; valeur de secours possible. Vérifier le circuit et comparer à une mesure indépendante.",
+  "2972211": "Variation naturelle de la température : une valeur stable ne prouve pas une panne.",
+  "2972212": "Moteur arrêté, contact mis : ouvrir et refermer lentement le papillon. Une variation observée ne garantit pas la continuité sur toute la course.",
+  "2972213": "%1 transition(s)",
+  "2972214": "État de ralenti utilisé par l’ECU, pas le contact physique isolé. Deux transitions avec variation TPS : réaction observée.",
+  "2972215": "Défaut MAP mémorisé : contrôler aussi le conduit, la prise de pression et le faisceau. Valeur de secours possible.",
+  "2972216": "Variation de pression observée ou à observer. Aucun verdict de santé sur cette seule mesure."
 }

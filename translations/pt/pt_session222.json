@@ -3,5 +3,16 @@
   "2972202": "Resposta ECU: %1",
   "2972203": "Sem resposta ECU",
   "2972204": "Resposta recebida — ativação não confirmada",
-  "2972205": "A resposta da ECU por si só não comprova o funcionamento elétrico ou mecânico."
+  "2972205": "A resposta da ECU por si só não comprova o funcionamento elétrico ou mecânico.",
+  "2972206": "Observação temperatura do ar de admissão",
+  "2972207": "Observação potenciómetro da borboleta",
+  "2972208": "Observação contacto de ralenti",
+  "2972209": "Observação pressão de admissão (MAP)",
+  "2972210": "Falha de circuito memorizada; possível valor de substituição. Verificar o circuito e comparar com uma medição independente.",
+  "2972211": "Variação natural da temperatura: um valor estável não prova avaria.",
+  "2972212": "Motor parado, ignição ligada: abrir e fechar lentamente a borboleta. A variação não garante continuidade em todo o curso.",
+  "2972213": "%1 transição(ões)",
+  "2972214": "Estado de ralenti usado pela ECU, não o contacto físico isolado. Duas transições com variação TPS: reação observada.",
+  "2972215": "Falha MAP memorizada: verificar também tubo, tomada de pressão e cablagem. Possível valor de substituição.",
+  "2972216": "Variação de pressão observada ou a observar. Esta medição isolada não demonstra a saúde do sensor."
 }
