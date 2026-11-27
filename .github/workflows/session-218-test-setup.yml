@@ -6,6 +6,7 @@ on:
     branches: [fix-documentary-additive-session-161-20261118]
     paths:
       - '.github/workflows/session-218-test-setup.yml'
+      - 'uishellsmoketest.cpp'
 concurrency:
   group: session-218-private-test
   cancel-in-progress: false

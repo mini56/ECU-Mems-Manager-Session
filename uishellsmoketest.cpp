@@ -184,7 +184,7 @@ bool verifyApprovedVisualRules(MainWindow &window)
     }
 
     // Approved Actuators arrangement: names at left, lambda help after
-    // its title, stepper commands grouped, and large live system indicator.
+    // its title, stepper commands grouped, gauge test, and compact live indicator.
     QLabel *lambda=window.findChild<QLabel*>(QStringLiteral("m_O2Heater"));
     QLabel *function=window.findChild<QLabel*>(QStringLiteral("m_PTCRelay"));
     ok=check(lambda && function,"Actuator labels missing") && ok;
@@ -198,10 +198,27 @@ bool verifyApprovedVisualRules(MainWindow &window)
     }
     QWidget *state=window.findChild<QWidget*>(QStringLiteral("actuatorSystemState"));
     ok=check(state!=nullptr,"Actuator state indicator absent") && ok;
-    if(state){
-        ok=check(state->minimumWidth()>=270 && state->minimumHeight()>=215 &&
-                 state->maximumWidth()>=350,
-                 "Actuator state indicator was reduced") && ok;
+    QWidget *gauge=window.findChild<QWidget*>(QStringLiteral("actuatorGaugeTestCard"));
+    QWidget *move=window.findChild<QWidget*>(QStringLiteral("m_moveIACButton"));
+    QLabel *reason=window.findChild<QLabel*>(QStringLiteral("gaugeTestReason"));
+    ok=check(state && gauge && move && reason,"Actuator temperature test sections absent") && ok;
+    if(state && gauge && move){
+        QWidget *right=state->parentWidget();
+        ok=check(state->minimumWidth()>=200 && state->minimumHeight()>=96 &&
+                 state->maximumHeight()<=126 && state->maximumWidth()>=350 &&
+                 gauge->parentWidget()==right && move->parentWidget()==right &&
+                 right->layout() && right->layout()->indexOf(gauge)>=0 &&
+                 right->layout()->indexOf(gauge)<right->layout()->indexOf(state),
+                 "Actuator compact state indicator must follow the gauge test") && ok;
+    }
+    ok=check(reason && gauge && reason->parentWidget()==gauge && reason->wordWrap() &&
+             reason->text()==I18n::text(2971805),
+             "Disconnected gauge test must display its translated explanation") && ok;
+    for(const char *name:{"gaugeTestMinimum","gaugeTestMaximum","gaugeTestStop"}){
+        auto *button=window.findChild<QPushButton*>(QString::fromLatin1(name));
+        ok=check(button && gauge && button->parentWidget()==gauge && !button->isEnabled() &&
+                 button->toolTip()==I18n::text(2971805),
+                 "Disconnected gauge commands must be locked with an explanation") && ok;
     }
 
     // Verify the real actuator stepper slider, not a decorative or duplicate
@@ -1017,6 +1034,39 @@ bool verifyUi(MainWindow &window)
         // Verify real geometry with the Database tab visible after layout and
         // resize, rather than merely inspecting section resize modes.
         const int previousTab=tabs->currentIndex();
+        if(size.width()>=1200){
+            QWidget *actuatorPage=window.findChild<QWidget*>(QStringLiteral("actuators"));
+            int actuatorIndex=-1;
+            for(int i=0;i<tabs->count();++i)
+                if(actualPage(tabs->widget(i))==actuatorPage){actuatorIndex=i;break;}
+            ok=check(actuatorIndex>=0,"Actuator page missing from navigation") && ok;
+            if(actuatorIndex>=0){
+                tabs->setCurrentIndex(actuatorIndex);
+                QCoreApplication::processEvents();
+                QCoreApplication::processEvents();
+                auto *gauge=actuatorPage->findChild<QWidget*>(QStringLiteral("actuatorGaugeTestCard"));
+                auto *state=actuatorPage->findChild<QWidget*>(QStringLiteral("actuatorSystemState"));
+                auto *move=actuatorPage->findChild<QWidget*>(QStringLiteral("m_moveIACButton"));
+                auto *reason=actuatorPage->findChild<QLabel*>(QStringLiteral("gaugeTestReason"));
+                if(gauge&&state&&move&&reason){
+                    const QRect g(gauge->mapTo(actuatorPage,QPoint(0,0)),gauge->size());
+                    const QRect st(state->mapTo(actuatorPage,QPoint(0,0)),state->size());
+                    const QRect m(move->mapTo(actuatorPage,QPoint(0,0)),move->size());
+                    const QRect msg(reason->mapTo(gauge,QPoint(0,0)),reason->size());
+                    logSmoke(QStringLiteral("SESSION_218_ACTUATOR_LAYOUT %1px: stepperBottom=%2 gauge=%3..%4 state=%5..%6")
+                        .arg(size.width()).arg(m.bottom()).arg(g.top()).arg(g.bottom()).arg(st.top()).arg(st.bottom()));
+                    ok=check(move->isVisibleTo(&window)&&gauge->isVisibleTo(&window)&&
+                             state->isVisibleTo(&window)&&reason->isVisibleTo(&window)&&
+                             m.bottom()<g.top()&&g.bottom()<st.top()&&
+                             actuatorPage->rect().contains(g)&&actuatorPage->rect().contains(st)&&
+                             gauge->rect().contains(msg)&&state->height()>=96&&state->height()<=126,
+                             "Actuator sections must be visible, ordered and non-overlapping") && ok;
+                    if(auto *scroll=qobject_cast<QScrollArea*>(tabs->widget(actuatorIndex)))
+                        ok=check(scroll->verticalScrollBar()->maximum()==0,
+                                 "Actuator page must not require vertical scrolling") && ok;
+                }else ok=check(false,"Actuator section missing after resize") && ok;
+            }
+        }
         tabs->setCurrentIndex(11);
         QCoreApplication::processEvents();
         if(resultTable && resultTable->horizontalHeader()){
