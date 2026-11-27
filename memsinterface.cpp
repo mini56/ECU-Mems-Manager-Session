@@ -468,6 +468,8 @@ void MEMSInterface::runServiceLoop()
     // instrument is forced. Stop and disconnection use direct atomic flags.
     if(!m_instrumentActive)QCoreApplication::processEvents();
   }
+  // Refuse a new GUI request before the final cancellation/transport close.
+  m_connectedState.storeRelease(0);
   if(m_instrumentRequest.loadAcquire()!=0)finishInstrumentTest(2);
   m_serviceLoopRunning = false;
 
