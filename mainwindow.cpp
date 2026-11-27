@@ -1127,9 +1127,9 @@ void MainWindow::setAdjustmentsEnabled(bool enabled)
 }
 
 
-static void updateSettingsStateIndicators(QWidget *window,bool running,bool lambdaValid)
+static void updateSettingsStateIndicators(QWidget *window,bool iacMinimum,bool lambdaValid)
 {
-  if(auto *led=window->findChild<QAbstractButton*>(QStringLiteral("settingsEngineRunningLed")))led->setChecked(running);
+  if(auto *led=window->findChild<QAbstractButton*>(QStringLiteral("settingsIacMinimumLed")))led->setChecked(iacMinimum);
   if(auto *led=window->findChild<QAbstractButton*>(QStringLiteral("settingsLambdaValidLed")))led->setChecked(lambdaValid);
 }
 
@@ -1150,9 +1150,7 @@ void MainWindow::onDataReady()
         ? QStringLiteral("MEMS 3") : QStringLiteral("MEMS 2J");
     const QVariantMap values=m_mems->mems2jValues();
     const QStringList faults=m_mems->mems2jFaults();
-    bool rpmOk=false;
-    const double rpm=values.value(QStringLiteral("rpm")).toDouble(&rpmOk);
-    updateSettingsStateIndicators(this,rpmOk&&std::isfinite(rpm)&&rpm>0,false);
+    updateSettingsStateIndicators(this,false,false);
     m_ui->m_short_term_correction->setProperty("session220Unavailable",true);
     m_ui->m_waterTempGauge->setProperty("session220Unavailable",!values.contains(QStringLiteral("coolant_c")));
     m_ui->m_airTempGauge->setProperty("session220Unavailable",!values.contains(QStringLiteral("intake_c")));
@@ -1204,11 +1202,11 @@ void MainWindow::onDataReady()
   const auto naMeasurements=naEvidence.measurements();
   const auto settingsFrame80=Mems217::frame80(naEvidence);
   const auto settingsFrame7d=Mems217::frame7d(naEvidence);
-  const bool settingsRunning=measurementValid&&Mems217::injectionProfile(naEvidence)&&
-      Mems217::present(settingsFrame80,2)&&Mems16Na::word(settingsFrame80,1)>0;
+  const bool settingsIacMinimum=measurementValid&&Mems217::injectionProfile(naEvidence)&&
+      Mems217::present(settingsFrame80,18)&&settingsFrame80.bytes[18]==0;
   const bool settingsLambdaValid=measurementValid&&Mems217::passiveProfile(naEvidence.firmwareName())&&
       Mems217::present(settingsFrame7d,9)&&settingsFrame7d.bytes[9]==1;
-  updateSettingsStateIndicators(this,settingsRunning,settingsLambdaValid);
+  updateSettingsStateIndicators(this,settingsIacMinimum,settingsLambdaValid);
   // The header explains the active decoding without sending a new command.
   if(m_mems->ecuFamily()==MemsEcuFamily::Rosco13_16) {
     if(!m_naIdentityTipActive) {
