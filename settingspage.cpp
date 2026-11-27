@@ -288,6 +288,7 @@ static void styleAdjustButton(QPushButton *button)
     button->setMaximumHeight(42);
     button->setMinimumWidth(125);
     button->setMaximumWidth(170);
+    button->setProperty("helpBubbleNoIcon",true);
     button->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
     button->show();
 }
@@ -493,6 +494,7 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
 
     for(int row=0;row<4;row++) {
         if(rows[row].label) {
+            rows[row].label->setProperty("helpBubbleNoIcon",true);
             rows[row].label->setParent(form);
             rows[row].label->setMinimumWidth(210);
             rows[row].label->setMaximumWidth(240);
@@ -630,7 +632,7 @@ static void applySettingsSizing(QWidget *page,QFrame *metrics,QFrame *adjust)
     const int controlsHeight=qMax(210,adjust->minimumSizeHint().height());
     adjust->setMinimumHeight(controlsHeight);
     adjust->setMaximumHeight(controlsHeight);
-    adjust->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+    adjust->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
 }
 
 static void suppressLegacyOverlays(QFrame *metrics)
@@ -756,6 +758,7 @@ static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFr
     body->removeWidget(metrics);
     body->removeWidget(states);
     body->removeWidget(adjust);
+    body->removeWidget(system);
     body->addWidget(metrics,0,0,1,3);
     body->addWidget(states,1,0);
     states->show();
@@ -763,7 +766,7 @@ static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFr
     body->addWidget(system,1,2);
     system->show();
     body->setColumnStretch(0,1);
-    body->setColumnStretch(1,4);
+    body->setColumnStretch(1,0);
     body->setColumnStretch(2,1);
     // The precision dial owns any spare vertical room; controls keep their
     // natural height rather than expanding into an oversized lower band.
@@ -773,14 +776,15 @@ static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFr
     body->setVerticalSpacing(4);
 
     for(QFrame *side:{states,system}){
-        side->setMinimumWidth(145);
-        side->setMaximumWidth(275);
+        side->setMinimumWidth(0);
+        side->setMaximumWidth(QWIDGETSIZE_MAX);
         side->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
     }
-    adjust->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-    // Preserve the centre form at its natural width; lateral cards absorb the resize.
-    body->setColumnMinimumWidth(0,145);
-    body->setColumnMinimumWidth(2,145);
+    // Preserve the existing control geometry. Equal stretch gives both
+    // lateral panels the spare width of the actual content layout.
+    adjust->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+    body->setColumnMinimumWidth(0,0);
+    body->setColumnMinimumWidth(2,0);
 }
 
 static void shortenSettingsSeparator(QFrame *adjust)
@@ -1016,27 +1020,14 @@ void fitSettingsPage(QMainWindow *window)
     QFrame *adjust=window->findChild<QFrame*>(QStringLiteral("settingsAdjust"));
     applySettingsSizing(page,metrics,adjust);
     if(page&&adjust){
-        // Only the two side cards adapt. The existing centre form, its buttons
-        // and LCDs keep their approved sizes. Use the actual viewport width,
-        // never the previous (possibly too large) scroll-area child width.
-        const auto *navigation=window->findChild<QWidget*>(QStringLiteral("uiRebuildNav"));
-        const int available=navigation?qMax(0,window->width()-navigation->width()):
-            (page->parentWidget()?page->parentWidget()->width():page->width());
-        const int centre=qMax(600,adjust->minimumSizeHint().width());
-        const int sideWidth=qBound(130,(available-centre-40)/2,275);
+        // The grid owns width. Do not impose a second width calculation
+        // based on the main window or the sidebar.
         for(const char *name:{"settingsStates","settingsSystemState"}){
             if(auto *side=window->findChild<QFrame*>(QString::fromLatin1(name))){
-                side->setFixedWidth(sideWidth);
-                side->setFixedHeight(adjust->minimumHeight());
+                side->setMinimumHeight(adjust->minimumHeight());
+                side->setMaximumHeight(adjust->maximumHeight());
             }
         }
-        for(QGridLayout *grid:page->findChildren<QGridLayout*>())
-            if(grid->indexOf(adjust)>=0){
-                grid->setColumnMinimumWidth(0,sideWidth);
-                grid->setColumnMinimumWidth(2,sideWidth);
-                grid->invalidate();
-                break;
-            }
     }
     // QStackedLayout may defer geometry of hidden pages. Use the current
     // content size to lay out the reference Settings page even when the user
