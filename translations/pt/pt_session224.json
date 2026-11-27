@@ -1,5 +1,11 @@
 {
   "2972401": "Falha de tensão de alimentação do potenciómetro da borboleta",
   "2972402": "Entrada analógica fora do intervalo",
-  "2972403": "Interpretação confirmada em três perfis MEMS 1.3 identificados; não atribuir esta avaria a outro firmware."
+  "2972403": "Interpretação confirmada em três perfis MEMS 1.3 identificados; não atribuir esta avaria a outro firmware.",
+  "2972404": "TESTE DO CONTA-ROTAÇÕES",
+  "2972405": "Ignição ligada — motor obrigatoriamente parado.",
+  "2972406": "Testar",
+  "2972407": "Teste do conta-rotações não validado para este firmware.",
+  "2972408": "Observe o conta-rotações do painel; este teste não mede as rotações.",
+  "2972409": "TESTE DO INDICADOR DE TEMPERATURA"
 }
