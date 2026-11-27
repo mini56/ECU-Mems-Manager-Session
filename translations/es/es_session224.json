@@ -16,5 +16,14 @@
   "2972415": "Elija la posición en pasos del 25 % y pulse Mover motor.",
   "2972416": "Posición paso a paso:",
   "2972417": "Mover motor",
-  "2972418": "Desactivar / restablecer"
+  "2972418": "Desactivar / restablecer",
+  "2972419": "Prueba disponible: observe el cuadro.",
+  "2972420": "Prueba en curso.",
+  "2972421": "Prueba terminada: retorno normal confirmado.",
+  "2972422": "Prueba interrumpida: retorno normal confirmado.",
+  "2972423": "Prueba rechazada: condiciones no cumplidas.",
+  "2972424": "Retorno normal sin confirmar. Quite el contacto.",
+  "2972425": "Orden no confirmada; retorno normal confirmado.",
+  "2972426": "Otra prueba o modo de diagnóstico activo.",
+  "2972427": "Restablezca primero los otros actuadores."
 }
