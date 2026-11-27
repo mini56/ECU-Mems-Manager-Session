@@ -261,8 +261,8 @@ static QLedIndicator *additionalLed(QWidget *parent,const QString &name,bool sta
     led->setFixedSize(18,18);
     led->setOnColor1(state?QColor("#6bdd45"):QColor(255,0,0));
     led->setOnColor2(state?QColor("#348a22"):QColor(176,0,2));
-    led->setOffColor1(state?QColor("#10200a"):QColor(20,0,0));
-    led->setOffColor2(state?QColor("#205013"):QColor(90,0,2));
+    led->setOffColor1(state?QColor("#202429"):QColor(20,0,0));
+    led->setOffColor2(state?QColor("#41474d"):QColor(90,0,2));
     return led;
 }
 static void compactStoredPanel(QMainWindow *w,QFrame *top)
@@ -419,6 +419,11 @@ static void rebuildLivePanel(QMainWindow *w,QFrame *bottom)
     auto *syncLabel=new QLabel(I18n::text(29240),signalPanel);
     syncLabel->setObjectName(QStringLiteral("extraDtc3TeethLabel"));
     syncLabel->setWordWrap(true);
+    if(auto *reference=w->findChild<QLabel*>(QStringLiteral("m_RPMSensorLabel")))
+        syncLabel->setFont(reference->font());
+    // Same grid, same dimensions, same reserved help column as the existing
+    // live indicators. No extra offset when the help icon is absent.
+    syncLabel->setContentsMargins(30,0,0,0);
     addLed(grid,syncLed,signalPanel,7,0);
     addLeftHelpLabel(grid,syncLabel,signalPanel,7,2);
     // Preserve the original counter indicator and its position. A confirmed
