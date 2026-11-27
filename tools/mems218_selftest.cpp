@@ -45,6 +45,52 @@ int main(){
     b19[1]=1;a19[2]=1;tach.setExtended80(a19);tach.setExtended7d(b19);
     assert(!instrumentSafeSample(InstrumentAction::Tachometer,tach));
     tach.discardPair();assert(!instrumentSafeSample(InstrumentAction::Tachometer,tach));
+    struct ProfileCase {const char *name; unsigned id; bool gauge;};
+    const ProfileCase compatible[]={
+        {"AANMP000",0x980000u,true},{"AANMP002",0x980002u,true},
+        {"ABNMF032",0x900032u,true},{"ABNMP005",0x990005u,true},
+        {"ACNMF024",0x900024u,true},{"ACNMF026",0x900026u,true},
+        {"TAHHG019",0x900019u,false},{"TBH7G019",0x900019u,false},
+        {"TFH7G028",0x900028u,false},{"TFH7G029",0x900029u,false},
+        {"TAH7G018",0x900018u,false},{"REGI1371",0x901371u,false},
+        {"TAHHV006",0xAD0006u,false},{"TFH7G025",0x900025u,false},
+        {"TFHSG011",0x900011u,false},{"TFHSV000",0x510000u,false},
+        {"TFHSV006",0x510006u,false}
+    };
+    for(const auto &p:compatible){
+        const auto hi=static_cast<std::uint8_t>(p.id>>16);
+        const auto mid=static_cast<std::uint8_t>(p.id>>8);
+        const auto lo=static_cast<std::uint8_t>(p.id);
+        Mems16Na::SessionEvidence e;
+        e.tx({0xd0});e.rx({0xd0,hi,mid,lo,1});e.finish();
+        std::vector<std::uint8_t> identity={0xd1};
+        for(const char *c=p.name;*c;++c)identity.push_back(static_cast<std::uint8_t>(*c));
+        identity.insert(identity.end(),{hi,mid,lo,1});
+        e.tx({0xd1});e.rx(identity);e.finish();
+        const auto action=p.gauge?InstrumentAction::GaugeMax:InstrumentAction::Tachometer;
+        assert(instrumentSupported(action,e));
+        assert(!instrumentSupported(p.gauge?InstrumentAction::Tachometer:InstrumentAction::GaugeMin,e));
+        assert(!instrumentSafeSample(action,e));
+        std::vector<std::uint8_t> a(28,0),b(32,0);
+        a[0]=28;b[0]=32;b[1]=1;
+        const auto setSample=[&](){
+            if(p.gauge){
+                std::vector<std::uint8_t> aa={0x80},bb={0x7d};
+                aa.insert(aa.end(),a.begin(),a.end());bb.insert(bb.end(),b.begin(),b.end());
+                e.tx({0x80});e.rx(aa);e.finish();e.tx({0x7d});e.rx(bb);e.finish();
+            }else{e.setExtended80(a);e.setExtended7d(b);}
+        };
+        setSample();assert(instrumentSafeSample(action,e));
+        a[25]=1;setSample();assert(!instrumentSafeSample(action,e));
+        a[25]=0;a[2]=1;setSample();assert(!instrumentSafeSample(action,e));
+        a[2]=0;b[1]=0;setSample();assert(!instrumentSafeSample(action,e));
+        e.discardPair();assert(!instrumentSafeSample(action,e));
+    }
+    // A name alone, or a numerical identity alone, never authorizes a test.
+    Mems16Na::SessionEvidence wrong;
+    wrong.tx({0xd0});wrong.rx({0xd0,0x90,0,0x28,1});wrong.finish();
+    wrong.tx({0xd1});wrong.rx({0xd1,'T','F','H','7','G','0','2','9',0x90,0,0x28,1});wrong.finish();
+    assert(!instrumentSupported(InstrumentAction::Tachometer,wrong));
     CoolantTest t;
     assert(!t.start(coolantSample(true,stopped)));
     assert(t.start(coolantSample(true,cold))&&t.initial==20);
