@@ -1127,6 +1127,12 @@ void MainWindow::setAdjustmentsEnabled(bool enabled)
 }
 
 
+static void updateSettingsStateIndicators(QWidget *window,bool running,bool lambdaValid)
+{
+  if(auto *led=window->findChild<QAbstractButton*>(QStringLiteral("settingsEngineRunningLed")))led->setChecked(running);
+  if(auto *led=window->findChild<QAbstractButton*>(QStringLiteral("settingsLambdaValidLed")))led->setChecked(lambdaValid);
+}
+
 /**
  * Updates the gauges and indicators with the latest data available from
  * the ECU.
@@ -1144,6 +1150,9 @@ void MainWindow::onDataReady()
         ? QStringLiteral("MEMS 3") : QStringLiteral("MEMS 2J");
     const QVariantMap values=m_mems->mems2jValues();
     const QStringList faults=m_mems->mems2jFaults();
+    bool rpmOk=false;
+    const double rpm=values.value(QStringLiteral("rpm")).toDouble(&rpmOk);
+    updateSettingsStateIndicators(this,rpmOk&&std::isfinite(rpm)&&rpm>0,false);
     m_ui->m_short_term_correction->setProperty("session220Unavailable",true);
     m_ui->m_waterTempGauge->setProperty("session220Unavailable",!values.contains(QStringLiteral("coolant_c")));
     m_ui->m_airTempGauge->setProperty("session220Unavailable",!values.contains(QStringLiteral("intake_c")));
@@ -1193,6 +1202,13 @@ void MainWindow::onDataReady()
   m_ui->m_waterTempGauge->setProperty("session220Unavailable",!measurementValid||!Mems219::temperatureAvailable(data->coolant_temp));
   m_ui->m_airTempGauge->setProperty("session220Unavailable",!measurementValid||!Mems219::temperatureAvailable(data->intake_air_temp));
   const auto naMeasurements=naEvidence.measurements();
+  const auto settingsFrame80=Mems217::frame80(naEvidence);
+  const auto settingsFrame7d=Mems217::frame7d(naEvidence);
+  const bool settingsRunning=measurementValid&&Mems217::injectionProfile(naEvidence)&&
+      Mems217::present(settingsFrame80,2)&&Mems16Na::word(settingsFrame80,1)>0;
+  const bool settingsLambdaValid=measurementValid&&Mems217::passiveProfile(naEvidence.firmwareName())&&
+      Mems217::present(settingsFrame7d,9)&&settingsFrame7d.bytes[9]==1;
+  updateSettingsStateIndicators(this,settingsRunning,settingsLambdaValid);
   // The header explains the active decoding without sending a new command.
   if(m_mems->ecuFamily()==MemsEcuFamily::Rosco13_16) {
     if(!m_naIdentityTipActive) {
@@ -1903,6 +1919,7 @@ void MainWindow::refreshConnectionHeader()
 void MainWindow::onConnect()
 {
   if(m_closing || !m_reconnectPolicy.established())return;
+  updateSettingsStateIndicators(this,false,false);
   EcuCommunicationLog::confirmSession();
   setProperty("ecuConnectInProgress", false);
   m_reconnectTimer->stop();
@@ -1936,6 +1953,7 @@ void MainWindow::onConnect()
  */
 void MainWindow::onDisconnect()
 {
+  updateSettingsStateIndicators(this,false,false);
   updateGaugeTestAvailability(this,false,nullptr);
   updateAdditionalErrors(this,false,nullptr);
   for(const char *name:{"injectorTestReply","coilTestReply"})if(auto *label=findChild<QLabel*>(QString::fromLatin1(name))){label->clear();label->setToolTip(QString());}
@@ -2030,6 +2048,7 @@ void MainWindow::onDisconnect()
 void MainWindow::onReadError()
 {
   if(m_closing || !m_reconnectPolicy.lost())return;
+  updateSettingsStateIndicators(this,false,false);
   updateGaugeTestAvailability(this,false,nullptr);
   updateAdditionalErrors(this,false,nullptr);
   for(const char *name:{"injectorTestReply","coilTestReply"})if(auto *label=findChild<QLabel*>(QString::fromLatin1(name))){label->clear();label->setToolTip(QString());}
