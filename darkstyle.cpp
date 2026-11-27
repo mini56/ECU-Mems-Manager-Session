@@ -21,6 +21,7 @@
 #include <QPalette>
 #include <QScrollBar>
 #include <QSlider>
+#include <QProgressBar>
 #include <QStatusBar>
 #include <QMenu>
 #include <QMenuBar>
@@ -424,6 +425,9 @@ void applyApplicationVisualStyle(QMainWindow *window)
             "width:14px;margin:-5px 0;border-radius:7px;}"
             "QSlider::sub-page:horizontal{background:#ff8a1c;border-radius:2px;}"
         ));
+    }
+    if(auto *progress=window->findChild<QProgressBar*>(QStringLiteral("m_idleBypassPosBar_2"))){
+        progress->setStyleSheet(dark?QStringLiteral("QProgressBar{background:#0b1217;color:#e4ebef;border:1px solid #34434e;border-radius:4px;text-align:center;}QProgressBar::chunk{background:#ff8a1c;border-radius:3px;}"):QStringLiteral("QProgressBar{background:#edf1f5;color:#101820;border:1px solid #b8c4cf;border-radius:4px;text-align:center;}QProgressBar::chunk{background:#ff8a1c;border-radius:3px;}"));
     }
     if(SummaryTab *summary=window->findChild<SummaryTab*>())
         summary->applyVisualTheme(dark);
