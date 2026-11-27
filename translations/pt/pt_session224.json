@@ -7,5 +7,9 @@
   "2972406": "Testar",
   "2972407": "Teste do conta-rotações não validado para este firmware.",
   "2972408": "Observe o conta-rotações do painel; este teste não mede as rotações.",
-  "2972409": "TESTE DO INDICADOR DE TEMPERATURA"
+  "2972409": "TESTE DO INDICADOR DE TEMPERATURA",
+  "2972410": "Motor em funcionamento",
+  "2972411": "Sinal da sonda lambda válido",
+  "2972412": "Verde: rotação superior a zero. Apagado: motor parado ou rotação indisponível.",
+  "2972413": "Verde: a ECU indica sinal lambda válido num perfil qualificado. Apagado: sinal inválido ou indisponível. Não comprova por si só o estado da sonda."
 }
