@@ -778,6 +778,9 @@ static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFr
         side->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
     }
     adjust->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    // Preserve the centre form at its natural width; lateral cards absorb the resize.
+    body->setColumnMinimumWidth(0,145);
+    body->setColumnMinimumWidth(2,145);
 }
 
 static void shortenSettingsSeparator(QFrame *adjust)
@@ -1012,6 +1015,14 @@ void fitSettingsPage(QMainWindow *window)
     QFrame *metrics=window->findChild<QFrame*>(QStringLiteral("settingsMetrics"));
     QFrame *adjust=window->findChild<QFrame*>(QStringLiteral("settingsAdjust"));
     applySettingsSizing(page,metrics,adjust);
+    if(page&&metrics&&adjust){
+        // The control block is unchanged. Remove only excess inherited minimum
+        // sizes from the gauge region; the five dials continue to scale together.
+        for(const char *name:{"darkTuneGaugeIdle","darkTuneGaugeTrim","darkTuneGaugeIgnition","darkTuneGaugeLambda"})
+            if(auto *g=metrics->findChild<QWidget*>(QString::fromLatin1(name)))g->setMinimumSize(110,105);
+        if(auto *g=metrics->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm")))g->setMinimumSize(200,220);
+        metrics->setMinimumHeight(220);
+    }
     if(adjust)for(const char *name:{"settingsStates","settingsSystemState"})
         if(auto *side=window->findChild<QFrame*>(QString::fromLatin1(name)))side->setFixedHeight(adjust->minimumHeight());
     // QStackedLayout may defer geometry of hidden pages. Use the current
