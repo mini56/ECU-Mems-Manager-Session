@@ -613,7 +613,13 @@ static void composeActuators(QMainWindow *window)
         title->setObjectName(QStringLiteral("actuatorStepperTitle"));
         title->setFixedHeight(22);title->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
     }
-    // Three vertically ordered sections, preserving the left actuator grid.
+    // A single owned section allows the instrument test to exclude the existing
+    // stepper controls without changing their individual enabled states.
+    auto *iacSection=new QWidget(right);
+    iacSection->setObjectName(QStringLiteral("actuatorStepperControls"));
+    iacSection->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
+    auto *iacLayout=new QVBoxLayout(iacSection);
+    iacLayout->setContentsMargins(0,0,0,0);iacLayout->setSpacing(3);
     if(info){
         info->setParent(right);
         info->setWordWrap(true);
@@ -623,7 +629,7 @@ static void composeActuators(QMainWindow *window)
         info->setMaximumHeight(56);
         info->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
         info->show();
-        rv->addWidget(info);
+        iacLayout->addWidget(info);
     }
     if(pos){
         prepWidget(pos);
@@ -640,7 +646,7 @@ static void composeActuators(QMainWindow *window)
         }
         if(pos->layout())pos->layout()->setContentsMargins(0,0,0,0);
         pos->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
-        rv->addWidget(pos);
+        iacLayout->addWidget(pos);
     }
     if(slider){
         prepWidget(slider);
@@ -648,7 +654,7 @@ static void composeActuators(QMainWindow *window)
         slider->setMinimumHeight(25);
         slider->setMaximumHeight(30);
         slider->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-        rv->addWidget(slider);
+        iacLayout->addWidget(slider);
     }
 
     QHBoxLayout *buttons=new QHBoxLayout;
@@ -664,7 +670,8 @@ static void composeActuators(QMainWindow *window)
         button->show();
         buttons->addWidget(button,button==move?1:0);
     }
-    rv->addLayout(buttons);
+    iacLayout->addLayout(buttons);
+    rv->addWidget(iacSection);
 
     auto *main=qobject_cast<MainWindow*>(window);
     auto *worker=main?main->memsInterface():nullptr;
@@ -959,6 +966,8 @@ void updateGaugeTestAvailability(QMainWindow *window,bool connected,const Mems16
     const int request=connected&&worker?worker->instrumentRequest():0;
     const bool normal=connected&&worker&&worker->instrumentNormalMode();
     const bool dirty=connected&&worker&&worker->instrumentOtherForced();
+    for(const char *name:{"actuatorListCard","actuatorStepperControls"})
+        if(auto *section=window->findChild<QWidget*>(QString::fromLatin1(name)))section->setEnabled(request==0);
     const bool dark=qApp&&qApp->property("ecuDarkTheme").toBool();
     const QString style=dark?QStringLiteral("color:#ff9828;background:transparent;border:0;"):
                              QStringLiteral("color:#a04a00;background:transparent;border:0;");
