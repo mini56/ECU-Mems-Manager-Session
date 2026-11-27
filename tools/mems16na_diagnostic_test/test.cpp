@@ -98,6 +98,28 @@ int main(int argc,char **argv) {
     CHECK(!report->toPlainText().contains(QStringLiteral("-1 RPM")));
     panel.endNaSession();CHECK(table->rowCount()==0&&report->toPlainText().isEmpty());
     panel.updateData(&d);CHECK(table->item(0,0)->text()==I18n::text(6813));
+    // The manually started coolant observation is independent of lambda validity.
+    auto coolantFrame=[&](unsigned raw,unsigned rpm,unsigned fault){
+        auto sample=evidence("AANMP002",0x98,0,2,0,0,false);
+        std::vector<std::uint8_t> a(29,0),b(33,0);
+        a[0]=0x80;a[1]=28;a[2]=rpm>>8;a[3]=rpm&255;a[4]=raw;a[14]=fault;
+        b[0]=0x7d;b[1]=32;b[10]=255;b[11]=255;
+        tx(sample,0x80,a);tx(sample,0x7d,b);return sample;
+    };
+    auto *start=panel.findChild<QPushButton*>(QStringLiteral("coolantTestStart"));
+    auto *stop=panel.findChild<QPushButton*>(QStringLiteral("coolantTestStop"));
+    auto *values=panel.findChild<QLabel*>(QStringLiteral("coolantTestValues"));
+    auto *status=panel.findChild<QLabel*>(QStringLiteral("coolantTestStatus"));
+    CHECK(start&&stop&&values&&status);
+    auto cold=coolantFrame(75,900,0);
+    panel.updateData(&d,&cold);CHECK(start->isEnabled()&&!stop->isEnabled());start->click();
+    CHECK(!start->isEnabled()&&stop->isEnabled()&&values->text().contains(QStringLiteral("20 °C")));
+    auto warmer=coolantFrame(80,900,0);panel.updateData(&d,&warmer);stop->click();
+    CHECK(status->text().contains(I18n::text(2971820))&&values->text().contains(QStringLiteral("5 °C")));
+    CHECK(report->toPlainText().contains(I18n::text(2971820)));
+    start->click();auto stopped=coolantFrame(80,0,0);panel.updateData(&d,&stopped);
+    CHECK(!start->isEnabled()&&!stop->isEnabled()&&status->text().contains(I18n::text(2971822)));
+    panel.endNaSession();CHECK(!start->isEnabled()&&!stop->isEnabled());
     // Real SummaryTab widget: both themes, all six languages, target widths.
     for(const char *lang:{"fr","en","de","es","it","pt"}) {
         CHECK(I18n::load(QString::fromLatin1(lang)));

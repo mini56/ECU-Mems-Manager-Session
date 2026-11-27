@@ -35,6 +35,7 @@
 #include "analysistab.h"
 #include "ecucommunicationlog.h"
 #include "mems217_passive.h"
+#include "ecupages.h"
 #include "summarytab.h"
 #include <qapplication.h>
 #include <QLCDNumber>
@@ -979,6 +980,8 @@ void MainWindow::onDisconnectClicked()
 {
   m_reconnectTimer->stop();
   const bool awaitWorker=m_reconnectPolicy.cancel();
+  updateGaugeTestAvailability(this,false,nullptr);
+  if(m_diagnosticPanel)m_diagnosticPanel->invalidateCoolantTest();
   m_ui->m_disconnectButton->setEnabled(false);
   m_ui->m_commsGoodLed->setChecked(false);
   m_ui->m_commsBadLed->setChecked(true);
@@ -1125,6 +1128,7 @@ void MainWindow::onDataReady()
     const QStringList faults=m_mems->mems2jFaults();
     restoreNaPages();
     clearNaIdentityStatus();
+    updateGaugeTestAvailability(this,true,nullptr);
     m_summaryTab->update2JData(values,family);
     if (m_diagnosticPanel) m_diagnosticPanel->update2JData(values,faults,family);
     IaMemsService::instance()->clearNaDiagnostic();
@@ -1152,6 +1156,7 @@ void MainWindow::onDataReady()
   }
   Mems16Na::SessionEvidence naEvidence;
   mems_data* data = m_mems->getData(&naEvidence);
+  updateGaugeTestAvailability(this,true,&naEvidence);
   const bool naIdentified=naEvidence.identifiedProfile()!=nullptr;
   if(!naIdentified)restoreNaPages();
   const QByteArray naIdentity=naIdentified?
@@ -1819,6 +1824,7 @@ void MainWindow::onConnect()
  */
 void MainWindow::onDisconnect()
 {
+  updateGaugeTestAvailability(this,false,nullptr);
   restoreNaPages();
   clearNaIdentityStatus();
   if(m_logger)m_logger->endNaSession();
@@ -1907,6 +1913,8 @@ void MainWindow::onDisconnect()
 void MainWindow::onReadError()
 {
   if(m_closing || !m_reconnectPolicy.lost())return;
+  updateGaugeTestAvailability(this,false,nullptr);
+  if(m_diagnosticPanel)m_diagnosticPanel->invalidateCoolantTest();
   EcuCommunicationLog::note(QStringLiteral("ERREUR_LECTURE"));
   // Do not arm the timer until disconnected() acknowledges worker closure.
   setProperty("ecuConnectInProgress", true);

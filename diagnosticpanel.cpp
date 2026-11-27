@@ -1,6 +1,10 @@
 #include "diagnosticpanel.h"
 
 #include <QDateTime>
+#include <QTimer>
+#include <QPainter>
+#include <QPainterPath>
+#include <QVector>
 #include <QApplication>
 #include <QFile>
 #include <QFileDialog>
@@ -28,6 +32,39 @@ QString stateFor(bool ok, bool warn = false)
 }
 }
 
+class CoolantTrend : public QWidget {
+public:
+    explicit CoolantTrend(QWidget *parent):QWidget(parent){setMinimumSize(90,44);setMaximumHeight(52);setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);}
+    void clear(){points.clear();update();}
+    void append(qint64 ms,int c){
+        if(!points.isEmpty()&&ms-points.last().x()<1000)return;
+        if(points.size()>=600)points.remove(1);
+        points.append(QPointF(qreal(ms),c));update();
+    }
+protected:
+    void paintEvent(QPaintEvent*)override{
+        QPainter p(this);p.setRenderHint(QPainter::Antialiasing);
+        const bool dark=qApp&&qApp->property("ecuDarkTheme").toBool();
+        p.setPen(dark?QColor("#44505a"):QColor("#c1cbd3"));
+        const QRectF r=QRectF(rect()).adjusted(4,4,-4,-4);p.drawRect(r);
+        if(points.isEmpty())return;
+        qreal lo=points.first().y(),hi=lo;
+        for(const auto &v:points){lo=qMin(lo,v.y());hi=qMax(hi,v.y());}
+        if(hi-lo<4){const qreal mid=(hi+lo)*0.5;lo=mid-2;hi=mid+2;}
+        const qreal span=qMax(qreal(1000),points.last().x());
+        QPainterPath path;
+        for(int i=0;i<points.size();++i){
+            const QPointF pt(r.left()+r.width()*points[i].x()/span,
+                              r.bottom()-r.height()*(points[i].y()-lo)/(hi-lo));
+            if(i==0)path.moveTo(pt);else path.lineTo(pt);
+        }
+        p.setPen(QPen(dark?QColor("#ff9828"):QColor("#a04a00"),2));
+        p.drawPath(path);
+    }
+private:
+    QVector<QPointF> points;
+};
+
 DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
 {
     QVBoxLayout *root = new QVBoxLayout(this);
@@ -52,6 +89,25 @@ DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
     buttons->addStretch();
     buttons->addWidget(m_export);
     root->addLayout(buttons);
+
+    QGroupBox *coolantBox=new QGroupBox(I18n::text(2971812),this);
+    coolantBox->setObjectName(QStringLiteral("coolantTestCard"));
+    QVBoxLayout *cv=new QVBoxLayout(coolantBox);cv->setContentsMargins(6,6,6,6);cv->setSpacing(3);
+    QHBoxLayout *cr=new QHBoxLayout;
+    m_coolantValues=new QLabel(coolantBox);m_coolantValues->setObjectName(QStringLiteral("coolantTestValues"));
+    m_coolantValues->setWordWrap(true);m_coolantValues->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
+    cr->addWidget(m_coolantValues,2);
+    m_coolantTrend=new CoolantTrend(coolantBox);cr->addWidget(m_coolantTrend,1);
+    m_coolantStart=new QPushButton(I18n::text(2971813),coolantBox);
+    m_coolantStart->setObjectName(QStringLiteral("coolantTestStart"));
+    m_coolantStop=new QPushButton(I18n::text(2971814),coolantBox);
+    m_coolantStop->setObjectName(QStringLiteral("coolantTestStop"));
+    QVBoxLayout *cb=new QVBoxLayout;cb->setSpacing(3);cb->addWidget(m_coolantStart);cb->addWidget(m_coolantStop);
+    cr->addLayout(cb);cv->addLayout(cr);
+    m_coolantStatus=new QLabel(coolantBox);m_coolantStatus->setObjectName(QStringLiteral("coolantTestStatus"));
+    m_coolantStatus->setWordWrap(true);m_coolantStatus->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
+    m_coolantStatus->setMinimumHeight(30);cv->addWidget(m_coolantStatus);
+    root->addWidget(coolantBox);
 
     m_checks = new QTableWidget(0, 4, this);
     m_checks->setHorizontalHeaderLabels(QStringList()
@@ -84,6 +140,25 @@ DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
     connect(m_capture, &QPushButton::clicked, this, &DiagnosticPanel::captureReference);
     connect(m_clear, &QPushButton::clicked, this, &DiagnosticPanel::clearReference);
     connect(m_export, &QPushButton::clicked, this, &DiagnosticPanel::exportReport);
+    connect(m_coolantStart,&QPushButton::clicked,this,[this](){
+        if(!m_coolantFresh.isValid()||m_coolantFresh.elapsed()>3000)return;
+        if(m_coolantTest.start(Mems218::coolantSample(m_coolantConnected,m_naEvidence))){
+            m_coolantElapsed.start();m_coolantTrend->clear();
+            m_coolantTrend->append(0,m_coolantTest.current);
+        }
+        refreshCoolantTest();if(m_haveData)m_report->setPlainText(buildReport());
+    });
+    connect(m_coolantStop,&QPushButton::clicked,this,[this](){
+        m_coolantTest.stop();refreshCoolantTest();if(m_haveData)m_report->setPlainText(buildReport());
+    });
+    QTimer *freshness=new QTimer(this);freshness->setInterval(500);
+    connect(freshness,&QTimer::timeout,this,[this](){
+        if(m_coolantFresh.isValid()&&m_coolantFresh.elapsed()>3000){
+            m_coolantFresh.invalidate();m_coolantTest.interrupt();refreshCoolantTest();
+            if(m_haveData)m_report->setPlainText(buildReport());
+        }
+    });
+    freshness->start();refreshCoolantTest();
 }
 
 QString DiagnosticPanel::hexByte(quint8 v)
@@ -105,11 +180,17 @@ void DiagnosticPanel::updateData(const mems_data *data,const Mems16Na::SessionEv
     const auto *profile=na?na->identifiedProfile():nullptr;
     if(m_naEvidence.identifiedProfile()!=profile||
        (profile&&m_naEvidence.identity()!=na->identity()))m_naReference=Snapshot();
-    if(!na || m_naEvidence.firmwareName()!=na->firmwareName() || m_naEvidence.identity()!=na->identity())
-        m_passive.reset();
+    if(!na || m_naEvidence.firmwareName()!=na->firmwareName() || m_naEvidence.identity()!=na->identity()){
+        m_passive.reset();resetCoolantTest();
+    }
     if(na)m_naEvidence=*na;
     else m_naEvidence.reset();
     m_passive.sample(m_naEvidence);
+    m_coolantConnected=true;m_coolantFresh.start();
+    m_coolantTest.sample(Mems218::coolantSample(true,m_naEvidence));
+    if(m_coolantTest.state==Mems218::TestState::Running)
+        m_coolantTrend->append(m_coolantElapsed.elapsed(),m_coolantTest.current);
+    refreshCoolantTest();
     m_showing2J=false;
     m_last = *data;
     m_haveData = true;
@@ -119,7 +200,7 @@ void DiagnosticPanel::updateData(const mems_data *data,const Mems16Na::SessionEv
 void DiagnosticPanel::endNaSession()
 {
     restoreNaChecksStyle();
-    m_passive.reset();
+    m_passive.reset();resetCoolantTest();m_coolantConnected=false;refreshCoolantTest();
     if(!m_naEvidence.identifiedProfile()&&m_naEvidence.firmwareName().empty())return;
     m_naEvidence.reset();
     m_naReference=Snapshot();
@@ -397,6 +478,8 @@ QString DiagnosticPanel::buildReport() const
             text+=QStringLiteral("\n")+fields.join(QStringLiteral(" | "))+QStringLiteral("\n");
         }
     }
+    if(m_coolantTest.state!=Mems218::TestState::Idle)
+        text+=QStringLiteral("\n")+coolantTestSummary()+QStringLiteral("\n");
     if (m_reference.valid)
         text += I18n::text(6889) /* EN: Reference: %1  */.arg(m_reference.timestamp);
     text += I18n::text(6890) /* EN:  The statuses and guidance in this report are consistency checks and do not replace manufacturer specifications.  */;
@@ -427,6 +510,7 @@ void DiagnosticPanel::update2JData(const QVariantMap &values, const QStringList 
                                    const QString &family)
 {
     endNaSession();
+    m_coolantConnected=true;refreshCoolantTest();
     m_showing2J=true;
     m_structuredEcuName=family;
     m_haveData=true;
@@ -593,6 +677,66 @@ void DiagnosticPanel::rebuildNa(const mems_data &d)
     m_report->setPlainText(buildNaReport());
 }
 
+void DiagnosticPanel::resetCoolantTest()
+{
+    m_coolantTest.reset();m_coolantFresh.invalidate();m_coolantElapsed.invalidate();
+    m_coolantTrend->clear();
+}
+
+void DiagnosticPanel::invalidateCoolantTest()
+{
+    m_coolantConnected=false;m_coolantFresh.invalidate();m_coolantTest.interrupt();
+    refreshCoolantTest();if(m_haveData)m_report->setPlainText(buildReport());
+}
+
+QString DiagnosticPanel::coolantTestSummary() const
+{
+    return I18n::text(2971812)+QStringLiteral(" : ")+m_coolantValues->text()+
+        QStringLiteral(" | ")+m_coolantStatus->text();
+}
+
+void DiagnosticPanel::refreshCoolantTest()
+{
+    using namespace Mems218;
+    const auto sample=coolantSample(m_coolantConnected,m_naEvidence);
+    const bool fresh=m_coolantFresh.isValid()&&m_coolantFresh.elapsed()<=3000;
+    const bool running=m_coolantTest.state==TestState::Running;
+    m_coolantStart->setEnabled(fresh&&sample.availability==CoolantAvailability::Ready&&!running);
+    m_coolantStop->setEnabled(running);
+    const auto &t=m_coolantTest;
+    auto celsius=[](int c){return QString::number(c)+QStringLiteral(" °C");};
+    m_coolantValues->setText(I18n::text(2971815)
+        .arg(t.samples?celsius(t.initial):QStringLiteral("--"),
+             t.samples?celsius(t.current):QStringLiteral("--"),
+             t.samples?celsius(t.current-t.initial):QStringLiteral("--")));
+    int key=2971816;
+    if(t.state==TestState::Interrupted)key=2971822;
+    else if(t.state==TestState::Finished)key=t.storedFaultSeen?2971821:t.warmingObserved()?2971820:2971819;
+    else if(running)key=t.storedFaultSeen?2971821:2971818;
+    else switch(sample.availability){
+        case CoolantAvailability::Disconnected:key=2971805;break;
+        case CoolantAvailability::Unsupported:key=2971806;break;
+        case CoolantAvailability::AwaitData:key=2971808;break;
+        case CoolantAvailability::EngineStopped:key=2971817;break;
+        case CoolantAvailability::Ready:key=fresh?2971816:2971808;break;
+    }
+    const QString message=I18n::text(key);m_coolantStatus->setText(message);
+    if(!m_coolantStart->isEnabled()){
+        int why=key;
+        if(running)why=2971818;
+        else if(!m_coolantConnected)why=2971805;
+        else if(sample.availability==CoolantAvailability::Unsupported)why=2971806;
+        else if(sample.availability==CoolantAvailability::EngineStopped)why=2971817;
+        else if(!fresh||sample.availability!=CoolantAvailability::Ready)why=2971808;
+        m_coolantStart->setToolTip(I18n::text(why));
+        if(t.state==TestState::Finished||t.state==TestState::Interrupted)
+            m_coolantStatus->setText(message+QStringLiteral(" ")+I18n::text(why));
+    } else m_coolantStart->setToolTip(I18n::text(2971816));
+    m_coolantStop->setToolTip(running?I18n::text(2971814):I18n::text(2971823));
+    const bool dark=qApp&&qApp->property("ecuDarkTheme").toBool();
+    m_coolantStatus->setStyleSheet(dark?QStringLiteral("color:#ff9828;"):QStringLiteral("color:#a04a00;"));
+}
+
 void DiagnosticPanel::addPassiveChecks()
 {
     if(!Mems217::passiveProfile(m_naEvidence.firmwareName()))return;
@@ -627,6 +771,7 @@ QString DiagnosticPanel::buildNaReport() const
         for(int col=0;col<4;++col)fields<<m_checks->item(row,col)->text();
         lines<<fields.join(QStringLiteral(" | "));
     }
+    if(m_coolantTest.state!=Mems218::TestState::Idle)lines<<coolantTestSummary();
     if(m_naReference.valid)lines<<I18n::text(6889).arg(m_naReference.timestamp).trimmed();
     lines<<I18n::text(6890).trimmed();
     return lines.join(QLatin1Char('\n'));

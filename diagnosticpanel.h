@@ -8,11 +8,14 @@
 #include "rosco.h"
 #include "mems16na_session_evidence.h"
 #include "mems217_passive.h"
+#include "mems218_tests.h"
+#include <QElapsedTimer>
 
 class QLabel;
 class QPushButton;
 class QTableWidget;
 class QPlainTextEdit;
+class CoolantTrend;
 
 class DiagnosticPanel : public QWidget
 {
@@ -21,6 +24,7 @@ public:
     explicit DiagnosticPanel(QWidget *parent = nullptr);
     void updateData(const mems_data *data, const Mems16Na::SessionEvidence *na = nullptr);
     void endNaSession();
+    void invalidateCoolantTest();
     void update2JData(const QVariantMap &values, const QStringList &faults,
                       const QString &family = QStringLiteral("MEMS 2J"));
     void setEcuId(const QByteArray &id);
@@ -50,6 +54,15 @@ private:
     Snapshot m_naReference;
     Mems16Na::SessionEvidence m_naEvidence;
     Mems217::Observation m_passive;
+    Mems218::CoolantTest m_coolantTest;
+    QElapsedTimer m_coolantFresh,m_coolantElapsed;
+    bool m_coolantConnected=false;
+    QPushButton *m_coolantStart=nullptr,*m_coolantStop=nullptr;
+    QLabel *m_coolantValues=nullptr,*m_coolantStatus=nullptr;
+    CoolantTrend *m_coolantTrend=nullptr;
+    void refreshCoolantTest();
+    void resetCoolantTest();
+    QString coolantTestSummary() const;
     void addPassiveChecks();
     void rebuildNa(const mems_data &d);
     void restoreNaChecksStyle();

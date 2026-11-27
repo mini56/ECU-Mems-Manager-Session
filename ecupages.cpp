@@ -25,6 +25,7 @@
 #include "i18n.h"
 #include "mainwindow.h"
 #include "ecupages.h"
+#include "mems218_tests.h"
 
 namespace {
 
@@ -204,8 +205,9 @@ protected:
         const bool disconnected=m_window&&m_window->isEcuDisconnected();
         const QColor state=disconnected?QColor("#ff9828"):(fault?QColor("#ff4b3b"):QColor("#6bdd45"));
 
-        const QPointF c(width()/2.0,height()*0.48);
-        const qreal rr=qMin(width()*0.19,height()*0.16);
+        const bool compact=objectName()==QStringLiteral("actuatorSystemState");
+        const QPointF c(compact?40.0:width()/2.0,compact?height()*0.62:height()*0.48);
+        const qreal rr=compact?qMin(22.0,height()*0.23):qMin(width()*0.19,height()*0.16);
         QPainterPath shield;
         shield.moveTo(c.x(),c.y()-rr);
         shield.lineTo(c.x()+rr*.75,c.y()-rr*.65);
@@ -230,7 +232,7 @@ protected:
         stateFont.setPointSizeF(7.8);
         p.setFont(stateFont);
         p.setPen(state);
-        p.drawText(QRectF(8,height()*0.67,qMax(0,width()-16),24),
+        p.drawText(compact?QRectF(72,30,qMax(0,width()-80),25):QRectF(8,height()*0.67,qMax(0,width()-16),24),
                    Qt::AlignCenter,disconnected?I18n::disconnectedStatus():(fault?I18n::text(7144):I18n::text(7143)));
 
         QFont sub=p.font();
@@ -238,7 +240,7 @@ protected:
         sub.setPointSizeF(6.2);
         p.setFont(sub);
         p.setPen(darkTheme?QColor("#8d99a3"):QColor("#485767"));
-        p.drawText(QRectF(8,qMax(30,height()-38),qMax(0,width()-16),30),
+        p.drawText(compact?QRectF(72,55,qMax(0,width()-80),32):QRectF(8,qMax(30,height()-38),qMax(0,width()-16),30),
                    Qt::AlignCenter|Qt::TextWordWrap,I18n::text(7145));
     }
 
@@ -427,6 +429,22 @@ static void composeErrors(QMainWindow *window)
     if(live){prepWidget(live);live->setParent(bottom);static_cast<QVBoxLayout*>(bottom->layout())->addWidget(live,1);}root->addWidget(bottom,2);
 }
 
+// A static gauge symbol, without an artificial needle or a reported position.
+class GaugeTestSymbol : public QWidget {
+public:
+    explicit GaugeTestSymbol(QWidget *parent):QWidget(parent){setFixedSize(68,50);}
+protected:
+    void paintEvent(QPaintEvent*) override {
+        QPainter p(this);p.setRenderHint(QPainter::Antialiasing,true);
+        const QRectF r(9,4,50,50);
+        p.setPen(QPen(QColor("#73818c"),4));p.drawArc(r,30*16,120*16);
+        p.setPen(QPen(QColor("#478ed0"),4));p.drawArc(r,125*16,25*16);
+        p.setPen(QPen(QColor("#d95748"),4));p.drawArc(r,30*16,25*16);
+        p.setPen(QPen(QColor("#ff9828"),1.8));p.drawLine(34,18,34,32);p.drawEllipse(QPointF(34,35),3,3);
+        p.drawLine(21,43,47,43);
+    }
+};
+
 static void composeActuators(QMainWindow *window)
 {
     QWidget *page=pageFor(window,QStringLiteral("actuators"));
@@ -521,14 +539,13 @@ static void composeActuators(QMainWindow *window)
 
     QFrame *right=card(page,QStringLiteral("actuatorIacCard"),I18n::text(7138));
     QVBoxLayout *rv=static_cast<QVBoxLayout*>(right->layout());
-    rv->setSpacing(12);
-    // Compact stepper instructions and controls: the only remaining
-    // flexible spacer sits BEFORE the bottom system-state indicator.
+    rv->setSpacing(6);
+    // Three vertically ordered sections, preserving the left actuator grid.
     if(info){
         info->setParent(right);
         info->setWordWrap(true);
-        info->setMinimumHeight(42);
-        info->setMaximumHeight(72);
+        info->setMinimumHeight(30);
+        info->setMaximumHeight(60);
         info->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
         info->show();
         rv->addWidget(info);
@@ -536,16 +553,16 @@ static void composeActuators(QMainWindow *window)
     if(pos){
         prepWidget(pos);
         pos->setParent(right);
-        pos->setMinimumHeight(40);
-        pos->setMaximumHeight(48);
+        pos->setMinimumHeight(30);
+        pos->setMaximumHeight(40);
         pos->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
         rv->addWidget(pos);
     }
     if(slider){
         prepWidget(slider);
         slider->setParent(right);
-        slider->setMinimumHeight(46);
-        slider->setMaximumHeight(52);
+        slider->setMinimumHeight(32);
+        slider->setMaximumHeight(40);
         slider->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
         rv->addWidget(slider);
     }
@@ -555,22 +572,47 @@ static void composeActuators(QMainWindow *window)
     for(QPushButton *button:{minus,move,plus}){
         if(!button)continue;
         button->setParent(right);
-        button->setMinimumHeight(40);
+        button->setMinimumHeight(30);
         button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
         button->show();
         buttons->addWidget(button,button==move?1:0);
     }
     rv->addLayout(buttons);
 
-    // Reuse the same real ECU status source and drawing as on the Errors
-    // page. On Actionneurs the larger indicator owns the spare vertical
-    // space; a fixed 200x180 size previously left most of the panel unused.
+    QFrame *gauge=card(right,QStringLiteral("actuatorGaugeTestCard"),I18n::text(2971801));
+    auto *gv=static_cast<QVBoxLayout*>(gauge->layout());
+    gv->setContentsMargins(8,6,8,6);gv->setSpacing(4);
+    QHBoxLayout *gaugeControls=new QHBoxLayout;
+    gaugeControls->setSpacing(4);
+    gaugeControls->addWidget(new GaugeTestSymbol(gauge));
+    QVBoxLayout *actions=new QVBoxLayout;actions->setSpacing(4);
+    QHBoxLayout *extremes=new QHBoxLayout;extremes->setSpacing(4);
+    for(int key:{2971802,2971803,2971804}){
+        QPushButton *button=new QPushButton(I18n::text(key),gauge);
+        button->setObjectName(key==2971802?QStringLiteral("gaugeTestMinimum"):
+            key==2971803?QStringLiteral("gaugeTestMaximum"):QStringLiteral("gaugeTestStop"));
+        button->setMinimumHeight(26);button->setEnabled(false);
+        // Deliberately no ECU signal: physical restoration not qualified.
+        if(key==2971804)actions->addWidget(button);else extremes->addWidget(button,1);
+    }
+    actions->insertLayout(0,extremes);gaugeControls->addLayout(actions,1);
+    gv->addLayout(gaugeControls);
+    QLabel *reason=new QLabel(I18n::text(2971805),gauge);
+    reason->setObjectName(QStringLiteral("gaugeTestReason"));reason->setWordWrap(true);
+    reason->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
+    reason->setMinimumHeight(30);reason->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
+    reason->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
+    gv->addWidget(reason);rv->addWidget(gauge);
+    QLabel *help=new QLabel(I18n::text(2971811),gauge);
+    help->setWordWrap(true);help->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
+    help->setMinimumHeight(28);gv->addWidget(help);
+    // Reuse the actual system status, with a shorter horizontal arrangement.
     QObject *systemSource=window->findChild<QObject*>(QStringLiteral("m_engine_error"));
     SystemStatePreview *state=new SystemStatePreview(
         qobject_cast<MainWindow*>(window),systemSource,right);
     state->setObjectName(QStringLiteral("actuatorSystemState"));
-    state->setMinimumSize(270,215);
-    state->setMaximumSize(350,QWIDGETSIZE_MAX);
+    state->setMinimumSize(200,96);
+    state->setMaximumSize(350,126);
     state->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     rv->addWidget(state,1,Qt::AlignHCenter);
 
@@ -703,6 +745,32 @@ static void composeInteractive(QMainWindow *window)
     layout->addWidget(notesBox,2);
 }
 
+void updateGaugeTestAvailability(QMainWindow *window,bool connected,const Mems16Na::SessionEvidence *evidence)
+{
+    if(!window)return;
+    auto *reason=window->findChild<QLabel*>(QStringLiteral("gaugeTestReason"));
+    if(!reason)return;
+    int key=2971805;
+    switch(Mems218::gaugeState(connected,evidence)){
+        case Mems218::GaugeState::Disconnected:key=2971805;break;
+        case Mems218::GaugeState::Unidentified:key=2971806;break;
+        case Mems218::GaugeState::Unsupported:key=2971807;break;
+        case Mems218::GaugeState::AwaitData:key=2971808;break;
+        case Mems218::GaugeState::EngineRunning:key=2971809;break;
+        case Mems218::GaugeState::AwaitBench:key=2971810;break;
+    }
+    const QString message=I18n::text(key);
+    if(reason->text()!=message)reason->setText(message);
+    const bool dark=qApp&&qApp->property("ecuDarkTheme").toBool();
+    const QString style=dark?QStringLiteral("color:#ff9828;background:transparent;border:0;"):
+                             QStringLiteral("color:#a04a00;background:transparent;border:0;");
+    if(reason->styleSheet()!=style)reason->setStyleSheet(style);
+    for(const char *name:{"gaugeTestMinimum","gaugeTestMaximum","gaugeTestStop"})
+        if(auto *button=window->findChild<QPushButton*>(QString::fromLatin1(name))){
+            button->setEnabled(false);button->setToolTip(message);
+        }
+}
+
 void buildEcuControlPages(QMainWindow *window)
 {
     if (!window)
@@ -711,6 +779,7 @@ void buildEcuControlPages(QMainWindow *window)
     // No late global event filter or repeated 240/900 ms corrective passes.
     composeErrors(window);
     composeActuators(window);
+    updateGaugeTestAvailability(window,false,nullptr);
     composeInteractive(window);
     applyErrorsVisualPhaseOne(window);
 }
