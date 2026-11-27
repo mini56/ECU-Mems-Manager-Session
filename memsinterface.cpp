@@ -337,6 +337,14 @@ void MEMSInterface::runServiceLoop()
 
   m_serviceLoopRunning = true;
   m_instrumentOtherForced.storeRelease(0);
+  // The instrument capabilities depend on the exact firmware, not the
+  // vehicle of reference. Obtain D1 once in the normal diagnostic session
+  // before publishing measurements, using the existing read transport.
+  if (connected && (family==MemsEcuFamily::Rosco13_16 || family==MemsEcuFamily::Mems19) &&
+      m_naSession.firmwareName().empty() &&
+      MemsProtocolSafety::allowsGenericCommand(family,diagnosticMode(),0xD1u) &&
+      m_disconnectRequested.loadAcquire()==0 && m_shutdownRequested.loadAcquire()==0)
+      sendRoscoReadCommand(0xD1u);
   while (!m_stopPolling && !m_shutdownThread &&
          m_disconnectRequested.loadAcquire() == 0 &&
          m_shutdownRequested.loadAcquire() == 0 && connected)
@@ -1065,7 +1073,10 @@ void MEMSInterface::sendRoscoReadCommand(quint8 command)
   // inter-byte timeout expires, with a hard upper bound.
   QElapsedTimer timer;
   timer.start();
-  while (timer.elapsed() < 350 && m_shutdownRequested.loadAcquire() == 0)
+  QElapsedTimer hardLimit;
+  hardLimit.start();
+  while (timer.elapsed() < 350 && hardLimit.elapsed() < 750 &&
+         m_shutdownRequested.loadAcquire() == 0 && m_disconnectRequested.loadAcquire() == 0)
   {
     unsigned char b = 0;
     DWORD n = 0;
@@ -1076,7 +1087,8 @@ void MEMSInterface::sendRoscoReadCommand(quint8 command)
     }
     else
     {
-      QCoreApplication::processEvents();
+      // Do not dispatch queued serial operations in the middle of D1.
+      if (command != 0xD1u) QCoreApplication::processEvents();
     }
   }
 
@@ -1104,7 +1116,10 @@ void MEMSInterface::sendRoscoReadCommand(quint8 command)
 
   QElapsedTimer timer;
   timer.start();
-  while (timer.elapsed() < 350 && m_shutdownRequested.loadAcquire() == 0)
+  QElapsedTimer hardLimit;
+  hardLimit.start();
+  while (timer.elapsed() < 350 && hardLimit.elapsed() < 750 &&
+         m_shutdownRequested.loadAcquire() == 0 && m_disconnectRequested.loadAcquire() == 0)
   {
     fd_set set;
     FD_ZERO(&set);
