@@ -47,7 +47,7 @@ static void clearLayout(QLayout *layout)
 class SettingsGauge : public QWidget
 {
 public:
-    enum Kind { IdleError, EngineRpm, FuelTrim, IgnitionAdvance, Lambda, TemperatureTest };
+    enum Kind { IdleError, EngineRpm, FuelTrim, IgnitionAdvance, Lambda, TemperatureTest, RevCounterTest };
 
     SettingsGauge(QObject *source,const QString &title,const QString &unit,Kind kind,
                   qreal titleSize,QWidget *parent=nullptr)
@@ -78,7 +78,8 @@ protected:
         // Keep the RPM caption in its own bottom strip below the dial.
         const qreal dialHeight=qMax<qreal>(1,height()-(large?30:0));
         qreal scale=qMin(width()/bw,dialHeight/bh);
-        const bool schematic=m_kind==TemperatureTest;
+        const bool revTest=m_kind==RevCounterTest;
+        const bool schematic=m_kind==TemperatureTest||revTest;
         if(schematic){
             // The test dial uses the SAME rendered diameter as the small
             // Settings instrument at this window size. Only shrink if the
@@ -172,7 +173,7 @@ protected:
         p.setPen(QPen(darkTheme?QColor("#3a454d"):QColor("#9aa7b2"),large?2.8:1.8,Qt::SolidLine,Qt::RoundCap));
         p.drawPath(baseArc);
 
-        if(schematic){
+        if(m_kind==TemperatureTest){
             drawRange(minv,minv+(maxv-minv)/9.0,QColor("#478ed0"),4.5);
             drawRange(maxv-(maxv-minv)/9.0,maxv,QColor("#d95748"),4.5);
         } else if(m_kind==EngineRpm) {
@@ -205,11 +206,12 @@ protected:
         p.setFont(scaleFont);
         p.setPen(darkTheme?QColor("#eef2f4"):QColor("#101820"));
         const qreal labelR=r-(large?38.0:25.0);
-        for(int i=0;!schematic&&i<=majorCount;i++) {
+        for(int i=0;(!schematic||revTest)&&i<=majorCount;i++) {
             const double fv=minv+(maxv-minv)*i/qreal(majorCount);
             const QPointF pos=pointFor(i/qreal(majorCount),labelR);
             QString text;
-            if(qAbs(maxv-minv)<=50.0) text=QString::number(fv,'f',0);
+            if(revTest) text=QString::number(i);
+            else if(qAbs(maxv-minv)<=50.0) text=QString::number(fv,'f',0);
             else text=QString::number(qRound(fv));
             p.drawText(QRectF(pos.x()-(large?28:18),pos.y()-(large?9:7),large?56:36,large?18:14),Qt::AlignCenter,text);
         }
@@ -237,6 +239,10 @@ protected:
 
         // The actuator illustration is not a measured gauge; do not invent
         // a temperature or scale. Shared bezel, ticks and resting needle only.
+        if(revTest){
+            p.setPen(darkTheme?QColor("#d4dbe0"):QColor("#101820"));
+            p.drawText(QRectF(c.x()-39,c.y()+30,78,15),Qt::AlignCenter,QStringLiteral("x 1000 rpm"));
+        }
         if(schematic)return;
         QFont valueFont=p.font();
         valueFont.setBold(true);
@@ -945,7 +951,17 @@ QWidget *createActuatorTemperatureGauge(QWidget *parent)
 {
     auto *gauge=new SettingsGauge(nullptr,QString(),QString(),SettingsGauge::TemperatureTest,10.0,parent);
     gauge->setObjectName(QStringLiteral("actuatorTemperatureDial"));
-    gauge->setMinimumSize(150,145);
+    gauge->setMinimumSize(105,100);
+    gauge->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+    gauge->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    return gauge;
+}
+
+QWidget *createActuatorRevCounterGauge(QWidget *parent)
+{
+    auto *gauge=new SettingsGauge(nullptr,QString(),QString(),SettingsGauge::RevCounterTest,10.0,parent);
+    gauge->setObjectName(QStringLiteral("actuatorRevCounterDial"));
+    gauge->setMinimumSize(105,100);
     gauge->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
     gauge->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     return gauge;
