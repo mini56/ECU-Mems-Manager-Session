@@ -25,5 +25,12 @@
   "2972424": "Retorno normal não confirmado. Desligue a ignição.",
   "2972425": "Comando não confirmado; retorno normal confirmado.",
   "2972426": "Outro teste ou modo de diagnóstico ativo.",
-  "2972427": "Reponha primeiro os outros atuadores."
+  "2972427": "Reponha primeiro os outros atuadores.",
+  "2972428": "ECU desligada.",
+  "2972429": "Compatibilidade não confirmada.",
+  "2972430": "A aguardar dados da ECU.",
+  "2972431": "Motor parado, ignição ligada.",
+  "2972432": "Teste disponível.",
+  "2972433": "Outro teste ou modo ativo.",
+  "2972434": "Reponha os atuadores."
 }
