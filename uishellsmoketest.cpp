@@ -134,6 +134,17 @@ bool verifyInstrumentLayout224(MainWindow &window)
                 .arg(page->minimumSizeHint().width()).arg(page->minimumSizeHint().height())
                 .arg(scroll->verticalScrollBar()->maximum()));
             require(scroll->verticalScrollBar()->maximum()==0,QStringLiteral("vertical scrolling"));
+            require(scroll->horizontalScrollBar()->maximum()==0&&page->width()<=scroll->viewport()->width(),
+                    QStringLiteral("horizontal overflow"));
+        }
+        for(const char *name:{"actuatorListCard","actuatorIacCard","layoutWidget_4","layoutWidget_5","layoutWidget_6","m_O2Heater","m_moveIACButton","m_AllActuatorsOffButton"}){
+            if(auto *w=find(name)){
+                logSmoke(QStringLiteral("SESSION_226 widget %1 actual=%2x%3 minimum=%4x%5 hint=%6x%7")
+                    .arg(w->objectName()).arg(w->width()).arg(w->height())
+                    .arg(w->minimumWidth()).arg(w->minimumHeight())
+                    .arg(w->minimumSizeHint().width()).arg(w->minimumSizeHint().height()));
+                require(w->isVisibleTo(&window)&&page->rect().contains(rect(w)),QStringLiteral("control clipped: ")+w->objectName());
+            }
         }
         const QPixmap shot=page->grab();
         const qreal diameter=gd->property("session224DialDiameter").toDouble();
@@ -142,6 +153,41 @@ bool verifyInstrumentLayout224(MainWindow &window)
         require(shot.save(QStringLiteral("session224-visual/actionneurs-%1.png").arg(size.width())),QStringLiteral("capture failed"));
         logSmoke(QStringLiteral("SESSION_224 layout %1: actual=%2x%3 dials=%4/%5")
                  .arg(size.width()).arg(window.width()).arg(window.height()).arg(diameter).arg(other));
+    }
+    // Verify the actual Settings page, without modifying any existing ECU button.
+    auto *settings=window.findChild<QWidget*>(QStringLiteral("emission_tab"));
+    int settingsIndex=-1;
+    for(int i=0;i<tabs->count();++i)if(actualPage(tabs->widget(i))==settings){settingsIndex=i;break;}
+    require(settings&&settingsIndex>=0,QStringLiteral("Settings page missing"));
+    if(settings&&settingsIndex>=0){
+        tabs->setCurrentIndex(settingsIndex);
+        for(const QSize size:{QSize(1200,768),QSize(1366,768),QSize(1920,1080)}){
+            window.resize(size);
+            QCoreApplication::processEvents();
+            if(settings->layout())settings->layout()->activate();
+            QCoreApplication::processEvents();
+            auto *left=settings->findChild<QWidget*>(QStringLiteral("settingsStates"));
+            auto *middle=settings->findChild<QWidget*>(QStringLiteral("settingsAdjust"));
+            auto *right=settings->findChild<QWidget*>(QStringLiteral("settingsSystemState"));
+            auto *rpm=settings->findChild<QWidget*>(QStringLiteral("darkTuneGaugeRpm"));
+            require(left&&middle&&right&&rpm,QStringLiteral("Settings three blocks missing"));
+            if(left&&middle&&right&&rpm){
+                auto rect=[&](QWidget *w){return QRect(w->mapTo(settings,QPoint(0,0)),w->size());};
+                const QRect a=rect(left),b=rect(middle),c=rect(right),d=rect(rpm);
+                logSmoke(QStringLiteral("SESSION_226 Settings %1: side widths %2/%3 center delta %4")
+                    .arg(size.width()).arg(a.width()).arg(c.width()).arg(b.center().x()-d.center().x()));
+                require(a.right()<b.left()&&b.right()<c.left()&&qAbs(a.width()-c.width())<=2&&
+                        qAbs(a.height()-c.height())<=1&&qAbs(b.center().x()-d.center().x())<=3,
+                        QStringLiteral("Settings blocks not centered/symmetric"));
+                require(settings->rect().contains(a)&&settings->rect().contains(b)&&settings->rect().contains(c),
+                        QStringLiteral("Settings block clipped"));
+            }
+            if(auto *scroll=qobject_cast<QScrollArea*>(tabs->widget(settingsIndex)))
+                require(scroll->verticalScrollBar()->maximum()==0&&scroll->horizontalScrollBar()->maximum()==0,
+                        QStringLiteral("Settings overflow"));
+            require(settings->grab().save(QStringLiteral("session224-visual/reglages-%1.png").arg(size.width())),
+                    QStringLiteral("Settings capture failed"));
+        }
     }
     return ok;
 }
