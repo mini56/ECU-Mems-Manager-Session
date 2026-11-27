@@ -522,12 +522,12 @@ static void composeActuators(QMainWindow *window)
         // Centre the complete existing grid, keeping all actuator signals
         // and button sizes intact.  On narrower windows it can still shrink.
         list->setMinimumWidth(0);
-        list->setMaximumWidth(740);
+        list->setMaximumWidth(650);
         list->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 
         if(QGridLayout *grid=qobject_cast<QGridLayout*>(list->layout())){
             grid->setContentsMargins(6,4,6,4);
-            grid->setHorizontalSpacing(9);
+            grid->setHorizontalSpacing(6);
             grid->setVerticalSpacing(5);
             for(int row=0;row<grid->rowCount();++row)grid->setRowStretch(row,0);
             for(int row=2;row<=10;++row)grid->setRowStretch(row,1);
@@ -594,7 +594,7 @@ static void composeActuators(QMainWindow *window)
         centered->addStretch(1);
         static_cast<QVBoxLayout*>(left->layout())->addLayout(centered,1);
     }
-    body->addWidget(left,3);
+    body->addWidget(left,5);
 
     QFrame *right=card(page,QStringLiteral("actuatorIacCard"),I18n::text(7138));
     QVBoxLayout *rv=static_cast<QVBoxLayout*>(right->layout());
@@ -642,48 +642,72 @@ static void composeActuators(QMainWindow *window)
     }
     rv->addLayout(buttons);
 
-    QFrame *gauge=card(right,QStringLiteral("actuatorGaugeTestCard"),I18n::text(2971801));
-    auto *gv=static_cast<QVBoxLayout*>(gauge->layout());
-    gv->setContentsMargins(10,6,10,6);gv->setSpacing(4);
-    if(auto *title=cardTitle(gauge)){title->setFixedHeight(20);title->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);}
-    // Expand into the actual dial area, using the Settings gauge renderer.
-    gv->addWidget(createActuatorTemperatureGauge(gauge),1);
-    QHBoxLayout *actions=new QHBoxLayout;actions->setSpacing(6);
-    for(int key:{2971802,2971803,2971804}){
-        QPushButton *button=new QPushButton(I18n::text(key),gauge);
-        button->setObjectName(key==2971802?QStringLiteral("gaugeTestMinimum"):
-            key==2971803?QStringLiteral("gaugeTestMaximum"):QStringLiteral("gaugeTestStop"));
-        button->setMinimumHeight(32);button->setMaximumHeight(36);
-        button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-        button->setMinimumWidth(0);
-        button->setProperty("helpBubbleNoIcon",true);
-        button->setEnabled(false);
-        // Deliberately no ECU signal: physical restoration not qualified.
-        actions->addWidget(button,1);
-    }
-    gv->addLayout(actions);
-    QLabel *reason=new QLabel(I18n::text(2971805),gauge);
-    reason->setObjectName(QStringLiteral("gaugeTestReason"));reason->setWordWrap(true);
-    reason->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
-    reason->setMinimumHeight(24);reason->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
-    reason->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Maximum);
-    reason->setStyleSheet(QStringLiteral("color:#ff9828;background:transparent;border:0;"));
-    gv->addWidget(reason);
-    QLabel *help=new QLabel(I18n::text(2971811),gauge);
-    help->setWordWrap(true);help->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
-    help->setMinimumHeight(24);help->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Maximum);gv->addWidget(help);
-    rv->addWidget(gauge,1);
+    auto *instruments=new QHBoxLayout;
+    instruments->setSpacing(6);
+    auto makeInstrument=[&](bool tachometer){
+        QFrame *panel=card(right,tachometer?QStringLiteral("actuatorRevCounterTestCard"):
+            QStringLiteral("actuatorGaugeTestCard"),I18n::text(tachometer?2972404:2972409));
+        auto *v=static_cast<QVBoxLayout*>(panel->layout());
+        v->setContentsMargins(6,5,6,5);v->setSpacing(3);
+        panel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+        if(auto *title=cardTitle(panel)){
+            title->setWordWrap(true);
+            title->setFixedHeight(2*QFontMetrics(title->font()).lineSpacing()+2);
+            title->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
+        }
+        QWidget *dial=tachometer?createActuatorRevCounterGauge(panel):createActuatorTemperatureGauge(panel);
+        v->addWidget(dial,1);
+        auto addButton=[&](int key,const char *name){
+            auto *button=new QPushButton(I18n::text(key),panel);
+            button->setObjectName(QString::fromLatin1(name));
+            button->setFixedHeight(28);button->setMinimumWidth(0);
+            button->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+            button->setProperty("helpBubbleNoIcon",true);
+            button->setEnabled(false);
+            v->addWidget(button);
+        };
+        if(tachometer){
+            addButton(2972406,"revCounterTestStart");
+            v->addSpacing(28);
+            addButton(2971804,"revCounterTestStop");
+        }else{
+            addButton(2971802,"gaugeTestMinimum");
+            addButton(2971803,"gaugeTestMaximum");
+            addButton(2971804,"gaugeTestStop");
+        }
+        auto addNote=[&](int key,const char *name,int lines,bool orange){
+            auto *label=new QLabel(I18n::text(key),panel);
+            label->setObjectName(QString::fromLatin1(name));
+            label->setWordWrap(true);
+            label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
+            label->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
+            label->setFixedHeight(lines*QFontMetrics(label->font()).lineSpacing()+2);
+            if(orange){
+                const bool dark=qApp&&qApp->property("ecuDarkTheme").toBool();
+                label->setStyleSheet(dark?QStringLiteral("color:#ff9828;background:transparent;border:0;"):
+                    QStringLiteral("color:#a04a00;background:transparent;border:0;"));
+            }
+            v->addWidget(label);
+        };
+        addNote(2972405,tachometer?"revCounterTestSafety":"gaugeTestSafety",2,true);
+        addNote(2971805,tachometer?"revCounterTestReason":"gaugeTestReason",3,true);
+        addNote(tachometer?2972408:2971811,tachometer?"revCounterTestHelp":"gaugeTestHelp",3,false);
+        instruments->addWidget(panel,1);
+    };
+    makeInstrument(false);
+    makeInstrument(true);
+    rv->addLayout(instruments,1);
     // Reuse the actual system status, with a shorter horizontal arrangement.
     QObject *systemSource=window->findChild<QObject*>(QStringLiteral("m_engine_error"));
     SystemStatePreview *state=new SystemStatePreview(
         qobject_cast<MainWindow*>(window),systemSource,right);
     state->setObjectName(QStringLiteral("actuatorSystemState"));
-    state->setMinimumSize(200,96);
-    state->setMaximumSize(QWIDGETSIZE_MAX,110);
+    state->setMinimumSize(200,76);
+    state->setMaximumSize(QWIDGETSIZE_MAX,90);
     state->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
     rv->addWidget(state);
 
-    body->addWidget(right,2);
+    body->addWidget(right,6);
     root->addLayout(body,1);
 }
 
@@ -868,6 +892,27 @@ void updateGaugeTestAvailability(QMainWindow *window,bool connected,const Mems16
     const QString style=dark?QStringLiteral("color:#ff9828;background:transparent;border:0;"):
                              QStringLiteral("color:#a04a00;background:transparent;border:0;");
     if(reason->styleSheet()!=style)reason->setStyleSheet(style);
+    int revKey=2971805;
+    if(connected){
+        revKey=2971806;
+        if(evidence&&!evidence->firmwareName().empty()){
+            const auto a=Mems217::frame80(*evidence);
+            revKey=!Mems217::present(a,2)?2971808:
+                Mems16Na::word(a,1)>0?2971809:2972407;
+        }
+    }
+    const QString revMessage=I18n::text(revKey);
+    if(auto *rev=window->findChild<QLabel*>(QStringLiteral("revCounterTestReason"))){
+        if(rev->text()!=revMessage)rev->setText(revMessage);
+        if(rev->styleSheet()!=style)rev->setStyleSheet(style);
+    }
+    for(const char *name:{"gaugeTestSafety","revCounterTestSafety"})
+        if(auto *safety=window->findChild<QLabel*>(QString::fromLatin1(name)))
+            if(safety->styleSheet()!=style)safety->setStyleSheet(style);
+    for(const char *name:{"revCounterTestStart","revCounterTestStop"})
+        if(auto *button=window->findChild<QPushButton*>(QString::fromLatin1(name))){
+            button->setEnabled(false);button->setToolTip(revMessage);
+        }
     for(const char *name:{"gaugeTestMinimum","gaugeTestMaximum","gaugeTestStop"})
         if(auto *button=window->findChild<QPushButton*>(QString::fromLatin1(name))){
             button->setEnabled(false);button->setToolTip(message);
