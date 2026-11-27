@@ -773,7 +773,7 @@ static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFr
     body->setVerticalSpacing(4);
 
     for(QFrame *side:{states,system}){
-        side->setMinimumWidth(165);
+        side->setMinimumWidth(145);
         side->setMaximumWidth(275);
         side->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
     }
@@ -884,8 +884,9 @@ static void buildSettingsScaffold(QMainWindow *window)
     body->addWidget(metrics,0,0,2,1);
 
     QFrame *states=settingsScaffoldCard(page,QStringLiteral("settingsStates"),I18n::text(7134));
-    QGridLayout *sg=new QGridLayout;sg->setHorizontalSpacing(12);sg->setVerticalSpacing(10);
+    QGridLayout *sg=new QGridLayout;sg->setHorizontalSpacing(8);sg->setVerticalSpacing(5);
     QLabel *idleTxt=new QLabel(I18n::text(2015),states);QLabel *loopTxt=new QLabel(I18n::text(2014),states);
+    for(QLabel *label:{idleTxt,loopTxt}){label->setWordWrap(true);label->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);}
     if(idleLed){idleLed->setParent(states);idleLed->setFixedSize(26,26);idleLed->show();sg->addWidget(idleLed,0,0);}sg->addWidget(idleTxt,0,1);
     if(loopLed){loopLed->setParent(states);loopLed->setFixedSize(26,26);loopLed->show();sg->addWidget(loopLed,1,0);}sg->addWidget(loopTxt,1,1);sg->setColumnStretch(2,1);
     for(int i=0;i<2;++i){
@@ -898,7 +899,7 @@ static void buildSettingsScaffold(QMainWindow *window)
         led->setOnColor1(i==0?QColor(255,0,0):QColor(102,255,102));led->setOnColor2(i==0?QColor(176,0,2):QColor(82,204,82));
         led->setOffColor1(i==0?QColor(20,0,0):QColor(0,102,0));led->setOffColor2(i==0?QColor(90,0,2):QColor(0,51,0));
         auto *label=new QLabel(I18n::text(2972410+i),states);
-        label->setWordWrap(true);label->setToolTip(I18n::text(2972412+i));
+        label->setWordWrap(true);label->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);label->setToolTip(I18n::text(2972412+i));
         sg->addWidget(led,2+i,0,Qt::AlignVCenter);
         sg->addWidget(label,2+i,1);
     }
