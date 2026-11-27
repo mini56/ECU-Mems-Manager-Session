@@ -23,6 +23,7 @@
 #include "i18n.h"
 #include "mems16na_presentation.h"
 #include "mems219_units.h"
+#include "mems220_presentation.h"
 #include "memsextendeddtc_presentation.h"
 #define tr I18n::text
 
@@ -360,6 +361,18 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     const int raw7d1415 = (static_cast<int>(d.idle_error2) << 8) | static_cast<int>(d.uk10);
     const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
     const int hotIdleErrorCorrected = (raw7d1415 - 32768) - hotIdleCorrection;
+    const auto extended=Mems220::decode(m_naEvidence);
+    if(extended.profile){
+        auto add=[&](int title,const QString &value,int help){
+            addCheck(I18n::text(title),value,I18n::text(6841),I18n::text(help));
+        };
+        add(29031,Mems220::idleError(extended),29043);
+        add(29026,Mems220::voltage(extended),29054);
+        add(29025,Mems16Na::steps(extended.hotPosition),29054);
+        add(29024,Mems16Na::numeric(extended.idleCorrection,0,QStringLiteral(" RPM")),29054);
+        add(2972001,Mems220::reference(extended),2972004);
+        add(29033,Mems220::count(extended),29054);
+    } else {
     const bool hotIdleErrorOk = qAbs(hotIdleErrorCorrected) <= 15;
     addCheck(I18n::text(6859) /* EN: Hot idle error */,
              I18n::text(6860) /* EN: %1 ECU | brut 7D14-15=%2 | correction=%3 */
@@ -367,6 +380,7 @@ void DiagnosticPanel::rebuild(const mems_data &d)
              stateFor(hotIdleErrorOk, true),
              I18n::text(6897) /* EN: Decoding: (raw 7D14-15 - 32768) + Hot idle position correction. The correction follows the value configured in the Settings tab; it is not hard-coded. The indicative value is consistent when it remains close to zero. */);
     if (!hotIdleErrorOk) ++warnings;
+    }
 
     const bool iacSuspicious = (d.iac_position == 0 && d.idle_error >= 50 && d.idle_switch == 0 && d.uk3 != 0);
     addCheck(I18n::text(6861) /* EN: IAC idle command */,
@@ -470,7 +484,17 @@ QString DiagnosticPanel::buildReport() const
     const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
     const int hotIdleErrorCorrected = (raw7d1415 - 32768) - hotIdleCorrection;
     text += I18n::text(6883) /* EN: Temps coil=%1 ms  */.arg(static_cast<double>(d.coil_time) * 0.002, 0, 'f', 2);
-    text += I18n::text(6884) /* EN: raw 7D14-15=%1 | hot-idle correction=%2 | corrected hot-idle error=%3 ECU  */
+    const auto extended=Mems220::decode(m_naEvidence);
+    if(extended.profile){
+        for(int key:{29031,29026,29025,29024,2972001,29033})
+            for(int row=0;row<m_checks->rowCount();++row){
+                if(m_checks->item(row,0)->text()!=I18n::text(key))continue;
+                QStringList fields;
+                for(int col=0;col<4;++col)fields<<m_checks->item(row,col)->text();
+                text+=QStringLiteral("\n")+fields.join(QStringLiteral(" | "));break;
+            }
+        text+=QStringLiteral("\n");
+    } else text += I18n::text(6884) /* EN: raw 7D14-15=%1 | hot-idle correction=%2 | corrected hot-idle error=%3 ECU  */
         .arg(raw7d1415).arg(hotIdleCorrection).arg(hotIdleErrorCorrected);
     text += I18n::text(6885) /* EN: RPM=%1 | MAP=%2 kPa | battery=%3 V | TPS=%4 | IAC=%5 | idle error=%6  */
         .arg(d.engine_rpm).arg(d.map_kpa).arg(d.battery_voltage / 10.0, 0, 'f', 1)

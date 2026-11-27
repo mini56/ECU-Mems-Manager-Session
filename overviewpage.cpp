@@ -45,6 +45,7 @@ public:
         if(!m_source) return;
         const QString unit=displayUnit();
         if(unit!=m_historyUnit){m_history.clear();m_historyUnit=unit;}
+        if(unavailable()){m_history.clear();update();return;}
         const QVariant v=m_source->property("value");
         if(!v.isValid()) return;
 
@@ -236,7 +237,7 @@ protected:
         needle.closeSubpath();
         p.setPen(Qt::NoPen);
         p.setBrush(QColor("#ff7417"));
-        p.drawPath(needle);
+        if(!unavailable())p.drawPath(needle);
 
         p.setPen(QPen(QColor("#77838a"),1.0));
         p.setBrush(QColor("#293239"));
@@ -254,7 +255,7 @@ protected:
         p.setPen(darkTheme?QColor("#ffffff"):QColor("#101820"));
         const bool oneDecimalValue=batteryGauge || advanceGauge ||
             (qAbs(value)<10.0 && qAbs(maxv-minv)<=40.0);
-        const QString val=QString::number(value,'f',oneDecimalValue?1:0);
+        const QString val=unavailable()?QStringLiteral("--"):QString::number(value,'f',oneDecimalValue?1:0);
         p.drawText(QRectF(51,124,86,25),Qt::AlignCenter,val);
 
         QFont unitFont=p.font();
@@ -278,7 +279,7 @@ protected:
             p.drawLine(x,tr.top()+3,x,tr.bottom()-3);
         }
 
-        if(displayUnit()==m_historyUnit&&m_history.size()>1) {
+        if(!unavailable()&&displayUnit()==m_historyUnit&&m_history.size()>1) {
             double hmin=m_history.first().second;
             double hmax=hmin;
             for(const auto &pt:m_history) {
@@ -316,6 +317,7 @@ private:
     QObject *m_source=nullptr;
     QString m_title;
     QString m_unit,m_historyUnit;
+    bool unavailable() const {return !m_source||m_source->property("session220Unavailable").toBool();}
     QString displayUnit() const {const QString u=m_source?m_source->property("session219Unit").toString():QString();return u.isEmpty()?m_unit:u;}
     qreal m_titleSize=8.0;
     QElapsedTimer m_clock;
@@ -489,7 +491,7 @@ static void buildOverviewCards(QMainWindow *w,QWidget *overview)
             {"m_mapGauge",1012,"kPa",0,2},
             {"m_throttle_pos",1003,"%",0,3},
             {"m_battery",1006,"V",0,4},
-            {"m_short_term_correction",7140,"%",0,5},
+            {"m_short_term_correction",2971703,"%",0,5},
             {"m_lambda_voltage",7142,"mV",1,0},
             {"m_injector_time",7147,"ms",1,1},
             {"m_airTempGauge",1018,"°C",1,2},

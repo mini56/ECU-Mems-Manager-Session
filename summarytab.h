@@ -49,6 +49,10 @@ private:
     int m_rowCount;
     bool m_showing2J = false;
     bool m_showingNa = false;
+    bool m_showing220=false;
+    QStringList m_220Labels,m_220Tips;
+    void clear220Presentation();
+    void apply220Presentation(const Mems16Na::SessionEvidence &s);
     QStringList m_naSavedLabels, m_naSavedTooltips;
     void applyNaPresentation(const Mems16Na::SessionEvidence &na,bool documentationOnly=false);
     QStringList m_savedRowLabels;

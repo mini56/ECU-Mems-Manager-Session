@@ -1,0 +1,6 @@
+{
+  "2972001": "Single throttle reference",
+  "2972002": "Throttle reference copy %1",
+  "2972003": "ADC counts",
+  "2972004": "This ECU transmits the same throttle reference four times. These are not four separate learnings. Inconsistent copies make interpretation unconfirmed."
+}

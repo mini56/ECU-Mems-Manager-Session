@@ -120,6 +120,21 @@ int main(int argc,char **argv) {
     start->click();auto stopped=coolantFrame(80,0,0);panel.updateData(&d,&stopped);
     CHECK(!start->isEnabled()&&!stop->isEnabled()&&status->text().contains(I18n::text(2971822)));
     panel.endNaSession();CHECK(!start->isEnabled()&&!stop->isEnabled());
+    auto extended=evidence("KBHBG009",0x90,0,9,0,0,false);
+    std::vector<std::uint8_t> a19(28),b19(33);
+    a19[0]=28;a19[16]=32;a19[17]=143;
+    b19[0]=33;b19[19]=126;b19[20]=0x7f;b19[21]=0xff;b19[31]=7;
+    for(unsigned j=0;j<4;++j){b19[23+2*j]=42;b19[24+2*j]=128;}
+    extended.setExtended80(a19);extended.setExtended7d(b19);
+    panel.updateData(&d,&extended);
+    CHECK(report->toPlainText().contains(QStringLiteral("14.3 V")));
+    CHECK(report->toPlainText().contains(QStringLiteral("-1 RPM")));
+    CHECK(report->toPlainText().contains(QStringLiteral("42.50 ")+I18n::text(2972003)));
+    extended.discardPair();panel.updateData(&d,&extended);
+    CHECK(!report->toPlainText().contains(QStringLiteral("14.3 V")));
+    CHECK(!report->toPlainText().contains(QStringLiteral("42.50 ")+I18n::text(2972003)));
+    extended.setExtended80(a19);extended.setExtended7d(b19);
+    panel.endNaSession();
     // Real SummaryTab widget: both themes, all six languages, target widths.
     for(const char *lang:{"fr","en","de","es","it","pt"}) {
         CHECK(I18n::load(QString::fromLatin1(lang)));
@@ -161,6 +176,14 @@ int main(int argc,char **argv) {
                 &&dtc->toolTip().contains(I18n::text(29013))&&dtc->toolTip().contains(I18n::text(29015));
         };
         CHECK(checkOffline());
+        summary.updateData(&d,&extended);
+        CHECK(value(29026,3)==QStringLiteral("14.3 V"));
+        CHECK(value(29031,3)==QStringLiteral("-1 RPM"));
+        CHECK(value(2972001,3)==QStringLiteral("42.50 ")+I18n::text(2972003));
+        CHECK(value(29033,3)==QStringLiteral("7"));
+        summary.updateData(&d,&good);
+        CHECK(!find(2972001));
+        summary.showNaDocumentation();CHECK(checkOffline());
         for(bool dark:{false,true}) {
             summary.applyVisualTheme(dark);
             for(int width:{1200,1366,1920}) {

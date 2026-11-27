@@ -36,6 +36,7 @@
 #include "ecucommunicationlog.h"
 #include "mems217_passive.h"
 #include "mems219_units.h"
+#include "mems220_presentation.h"
 #include "ecupages.h"
 #include "summarytab.h"
 #include <qapplication.h>
@@ -1129,6 +1130,9 @@ void MainWindow::onDataReady()
         ? QStringLiteral("MEMS 3") : QStringLiteral("MEMS 2J");
     const QVariantMap values=m_mems->mems2jValues();
     const QStringList faults=m_mems->mems2jFaults();
+    m_ui->m_short_term_correction->setProperty("session220Unavailable",true);
+    m_ui->m_waterTempGauge->setProperty("session220Unavailable",!values.contains(QStringLiteral("coolant_c")));
+    m_ui->m_airTempGauge->setProperty("session220Unavailable",!values.contains(QStringLiteral("intake_c")));
     restoreNaPages();
     clearNaIdentityStatus();
     updateGaugeTestAvailability(this,true,nullptr);
@@ -1170,6 +1174,9 @@ void MainWindow::onDataReady()
     m_naFaultHistoryIdentity=naIdentity;
   }
   const bool measurementValid=!naIdentified||naEvidence.ready();
+  m_ui->m_short_term_correction->setProperty("session220Unavailable",!Mems219::lambdaQualified(naEvidence));
+  m_ui->m_waterTempGauge->setProperty("session220Unavailable",!measurementValid||!Mems219::temperatureAvailable(data->coolant_temp));
+  m_ui->m_airTempGauge->setProperty("session220Unavailable",!measurementValid||!Mems219::temperatureAvailable(data->intake_air_temp));
   const auto naMeasurements=naEvidence.measurements();
   // The header explains the active decoding without sending a new command.
   if(m_mems->ecuFamily()==MemsEcuFamily::Rosco13_16) {
@@ -1597,6 +1604,43 @@ void MainWindow::onDataReady()
  m_ui->m_80_1B->setText(QString::number(data->uk5));
 
   if(naIdentified)showNaPages(naEvidence);
+  else if(Mems220::profile19(naEvidence)){
+    const auto m=Mems220::decode(naEvidence);
+    using namespace Mems16Na;
+    auto extra=[&](QLabel *raw,QGridLayout *grid)->QLabel*{
+      if(m_naExtraValues.contains(raw)){auto *label=m_naExtraValues.value(raw);label->show();return label;}
+      const int index=grid->indexOf(raw);if(index<0)return nullptr;
+      int row=0,col=0,rs=0,cs=0;grid->getItemPosition(index,&row,&col,&rs,&cs);
+      if(grid->itemAtPosition(row,3))return qobject_cast<QLabel*>(grid->itemAtPosition(row,3)->widget());
+      auto *label=new QLabel(raw->parentWidget());label->setObjectName(raw->objectName()+QStringLiteral("_naCalculated"));
+      label->setFont(raw->font());label->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
+      grid->addWidget(label,row,3);m_naExtraValues.insert(raw,label);label->show();return label;
+    };
+    auto field=[&](QLabel *name,QLabel *raw,QLabel *out,int title,const Value &v,const QString &value,int help){
+      rememberNaLabel(name);name->setText(I18n::text(title));name->setToolTip(I18n::text(help));
+      raw->setText(rawText(v));if(out)out->setText(value);
+    };
+    field(m_ui->label_80x10,m_ui->m_80_10,m_ui->r_80_10,29025,m.hotPosition,steps(m.hotPosition),29054);
+    field(m_ui->label_80x11,m_ui->m_80_11,extra(m_ui->m_80_11,m_ui->HF_table_2),29026,m.learnVoltage,Mems220::voltage(m),29054);
+    field(m_ui->label_0x13,m_ui->m_7D_13,m_ui->r_7D_13,29024,m.idleCorrection,numeric(m.idleCorrection,0,QStringLiteral(" RPM")),29054);
+    rememberNaLabel(m_ui->m_7D_15);m_ui->m_7D_15->setToolTip(QString());
+    field(m_ui->label_0x15,m_ui->m_7D_15,extra(m_ui->m_7D_15,m_ui->HF_table),29031,m.idleError,Mems220::idleError(m),29043);
+    QLabel *names[]={m_ui->label_0x17,m_ui->label_0x19,m_ui->label_0x1B,m_ui->label_0x1D};
+    QLabel *lowNames[]={m_ui->label_0x18,m_ui->label_0x1A,m_ui->label_0x1C,m_ui->label_0x1E};
+    QLabel *raws[]={m_ui->m_7D_17,m_ui->m_7D_19,m_ui->m_7D_1B,m_ui->m_7D_1D};
+    QLabel *lows[]={m_ui->m_7D_18,m_ui->m_7D_1A,m_ui->m_7D_1C,m_ui->m_7D_1E};
+    const auto b=Mems217::frame7d(naEvidence);
+    for(int i=0;i<4;++i){
+      rememberNaLabel(names[i]);rememberNaLabel(lowNames[i]);
+      names[i]->setText(i==0?I18n::text(2972001):I18n::text(2972002).arg(i+1));
+      lowNames[i]->setText(names[i]->text()+QStringLiteral(" (LSB)"));
+      names[i]->setToolTip(I18n::text(2972004));lowNames[i]->setToolTip(I18n::text(2972004));
+      raws[i]->setText(m.pair?QString::number(b.bytes[23+2*i]):QStringLiteral("--"));
+      lows[i]->setText(m.pair?QString::number(b.bytes[24+2*i]):QStringLiteral("--"));
+      if(auto *out=extra(raws[i],m_ui->HF_table))out->setText(i==0?Mems220::reference(m):QStringLiteral("--"));
+    }
+    field(m_ui->label_0x1F,m_ui->m_7D_1F,extra(m_ui->m_7D_1F,m_ui->HF_table),29033,m.learnCount,Mems220::count(m),29054);
+  }
   if(!m_logger->logData(data,naEvidence)) {
     onStopLogging();
     QMessageBox::warning(this,I18n::text(7054),I18n::text(7055).arg(m_logger->getLogPath()),QMessageBox::Ok);
@@ -1639,6 +1683,7 @@ void MainWindow::onEditOptionsClicked()
 
     m_ui->m_airTempGauge->setSuffix(tempUnitStr);
     m_ui->m_airTempGauge->setProperty("session219Unit",tempUnitStr);
+    m_ui->m_airTempGauge->setProperty("session220Unavailable",true);
     m_ui->m_airTempGauge->setValue(airtempMin);
     m_ui->m_airTempGauge->setMaximum(airtempMax);
     m_ui->m_airTempGauge->setMinimum(airtempMin);
@@ -1648,6 +1693,7 @@ void MainWindow::onEditOptionsClicked()
 
     m_ui->m_waterTempGauge->setSuffix(tempUnitStr);
     m_ui->m_waterTempGauge->setProperty("session219Unit",tempUnitStr);
+    m_ui->m_waterTempGauge->setProperty("session220Unavailable",true);
     m_ui->m_waterTempGauge->setValue(tempMin);
     m_ui->m_waterTempGauge->setMaximum(tempMax);
     m_ui->m_waterTempGauge->setMinimum(tempMin);
@@ -1781,6 +1827,9 @@ void MainWindow::refreshConnectionHeader()
   if (QLabel *statusPort = findChild<QLabel*>(QStringLiteral("statusPort")))
     statusPort->setText(QStringLiteral("%1 : %2").arg(I18n::text(7114), port));
 
+  if(!m_reconnectPolicy.connected()){
+    for(QObject *g:{static_cast<QObject*>(m_ui->m_short_term_correction),static_cast<QObject*>(m_ui->m_waterTempGauge),static_cast<QObject*>(m_ui->m_airTempGauge)})g->setProperty("session220Unavailable",true);
+  }
   const bool disconnected = isEcuDisconnected();
   if (disconnected)
   {

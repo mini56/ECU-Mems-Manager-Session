@@ -10,6 +10,7 @@
 #include "i18n.h"
 #include "mems16na_presentation.h"
 #include "mems219_units.h"
+#include "mems220_presentation.h"
 #include "memsextendeddtc_presentation.h"
 #include "tooltipbubblemanager.h"
 #define tr I18n::text
@@ -308,6 +309,7 @@ void SummaryTab::setValue(int globalRow, const QString &rawText, const QString &
 void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
 {
   if (!data) return;
+  if(!na||!Mems220::profile19(*na))clear220Presentation();
   if (!na || !na->identifiedProfile())clearNaPresentation();
   if (m_showing2J)
   {
@@ -518,11 +520,13 @@ void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
            data->dtc1 != 0 ? I18n::text(6685) /* EN: FAULTS */ : I18n::text(6686) /* EN: no fault */);
   if(na && na->identifiedProfile())applyNaPresentation(*na);
   else if(na&&MemsExtendedDtc::dtc2Known(na->firmwareName().c_str()))setValue(m_rowDtc2,MemsExtendedDtc::raw(na,2,data->dtc2),MemsExtendedDtc::text(na,2));
+  if(na&&Mems220::profile19(*na))apply220Presentation(*na);
 }
 
 
 void SummaryTab::update2JData(const QVariantMap &values, const QString &family)
 {
+  clear220Presentation();
   clearNaPresentation();
   // MEMS 2J sends 0x21/0x61 measurements, not ROSCO 0x80/0x7D.
   // Reuse the existing three measurement tables without mixing the units.
@@ -640,6 +644,54 @@ void SummaryTab::update2JData(const QVariantMap &values, const QString &family)
   if(refreshColumns)for(QTableWidget *table:{m_table0,m_table1,m_table2})sizeSummaryTable(table);
 }
 
+void SummaryTab::clear220Presentation()
+{
+  if(!m_showing220)return;
+  const int rows[]={m_rowIdleHot,m_rowUk2,m_rowIdleSpeedOffset,m_rowIdleErrorHotCorrected,
+      m_rowUk11,m_rowUk12,m_rowUk13,m_rowUk14,m_rowUk15,m_rowUk16,m_rowUk1A,m_rowUk1B,m_rowUk1C};
+  for(int j=0;j<13;++j){
+    const int i=rows[j];auto *t=i/m_rowsPerTable==0?m_table0:i/m_rowsPerTable==1?m_table1:m_table2;
+    t->item(i%m_rowsPerTable,0)->setText(m_220Labels.value(j));
+    setTooltip(i,m_220Tips.value(j));setValue(i,QStringLiteral("--"),QStringLiteral("--"));
+  }
+  m_showing220=false;
+  for(QTableWidget *t:{m_table0,m_table1,m_table2})sizeSummaryTable(t);
+}
+void SummaryTab::apply220Presentation(const Mems16Na::SessionEvidence &s)
+{
+  using namespace Mems16Na;
+  const auto m=Mems220::decode(s);
+  auto table=[&](int i){return i/m_rowsPerTable==0?m_table0:i/m_rowsPerTable==1?m_table1:m_table2;};
+  auto item=[&](int i,int col){return table(i)->item(i%m_rowsPerTable,col);};
+  const int rows[]={m_rowIdleHot,m_rowUk2,m_rowIdleSpeedOffset,m_rowIdleErrorHotCorrected,
+      m_rowUk11,m_rowUk12,m_rowUk13,m_rowUk14,m_rowUk15,m_rowUk16,m_rowUk1A,m_rowUk1B,m_rowUk1C};
+  const bool first=!m_showing220;
+  if(first){
+    m_220Labels.clear();m_220Tips.clear();
+    for(int i:rows){m_220Labels<<item(i,0)->text();m_220Tips<<item(i,0)->toolTip();}
+    m_showing220=true;
+  }
+  auto field=[&](int i,int title,const Value &v,const QString &value,int help){
+    item(i,0)->setText(I18n::text(title));setValue(i,rawText(v),value);setTooltip(i,I18n::text(help));
+  };
+  field(m_rowIdleHot,29025,m.hotPosition,steps(m.hotPosition),29054);
+  field(m_rowUk2,29026,m.learnVoltage,Mems220::voltage(m),29054);
+  field(m_rowIdleSpeedOffset,29024,m.idleCorrection,numeric(m.idleCorrection,0,QStringLiteral(" RPM")),29054);
+  field(m_rowIdleErrorHotCorrected,29031,m.idleError,Mems220::idleError(m),29043);
+  const int hi[]={m_rowUk11,m_rowUk13,m_rowUk15,m_rowUk1A};
+  const int lo[]={m_rowUk12,m_rowUk14,m_rowUk16,m_rowUk1B};
+  const auto b=Mems217::frame7d(s);
+  for(int j=0;j<4;++j){
+    const QString label=j==0?I18n::text(2972001):I18n::text(2972002).arg(j+1);
+    item(hi[j],0)->setText(label);item(lo[j],0)->setText(label+QStringLiteral(" (LSB)"));
+    setValue(hi[j],m.pair?QString::number(b.bytes[23+2*j]):QStringLiteral("--"),j==0?Mems220::reference(m):QStringLiteral("--"));
+    setValue(lo[j],m.pair?QString::number(b.bytes[24+2*j]):QStringLiteral("--"),QStringLiteral("--"));
+    setTooltip(hi[j],I18n::text(2972004));setTooltip(lo[j],I18n::text(2972004));
+  }
+  field(m_rowUk1C,29033,m.learnCount,Mems220::count(m),29054);
+  if(first)for(QTableWidget *t:{m_table0,m_table1,m_table2})sizeSummaryTable(t);
+}
+
 void SummaryTab::clearNaPresentation()
 {
   if(!m_showingNa)return;
@@ -659,6 +711,7 @@ void SummaryTab::clearNaPresentation()
 
 void SummaryTab::showNaDocumentation()
 {
+  clear220Presentation();
   if(m_showing2J) {
     for(int i=0;i<m_rowCount;++i) {
       QTableWidget *table=i/m_rowsPerTable==0?m_table0:i/m_rowsPerTable==1?m_table1:m_table2;
