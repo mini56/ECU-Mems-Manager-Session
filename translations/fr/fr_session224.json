@@ -7,5 +7,9 @@
   "2972406": "Tester",
   "2972407": "Test du compte-tours non validé pour ce firmware.",
   "2972408": "Observer le compte-tours du tableau de bord ; aucun régime mesuré par ce test.",
-  "2972409": "TEST DE LA JAUGE DE TEMPÉRATURE"
+  "2972409": "TEST DE LA JAUGE DE TEMPÉRATURE",
+  "2972410": "Moteur tournant",
+  "2972411": "Signal sonde Lambda valide",
+  "2972412": "Vert : régime moteur supérieur à zéro. Éteint : moteur arrêté ou régime indisponible.",
+  "2972413": "Vert : l’ECU indique un signal Lambda valide sur un profil qualifié. Éteint : signal non valide ou donnée indisponible. Ce voyant ne valide pas à lui seul la sonde."
 }
