@@ -12,5 +12,9 @@
   "2972411": "Sinal da sonda lambda válido",
   "2972412": "Vermelho: a ECU indica zero passos. Apagado: posição superior a zero ou indisponível. A posição mínima não comprova por si só uma avaria.",
   "2972413": "Verde: a ECU indica sinal lambda válido num perfil qualificado. Apagado: sinal inválido ou indisponível. Não comprova por si só o estado da sonda.",
-  "2972414": "Observe os instrumentos do painel; posição não medida."
+  "2972414": "Observe os instrumentos do painel; posição não medida.",
+  "2972415": "Escolha a posição em passos de 25% e prima Mover motor.",
+  "2972416": "Posição passo a passo:",
+  "2972417": "Mover motor",
+  "2972418": "Desativar / repor"
 }
