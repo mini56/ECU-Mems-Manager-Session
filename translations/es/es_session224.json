@@ -7,5 +7,9 @@
   "2972406": "Probar",
   "2972407": "Prueba del cuentarrevoluciones no validada para este firmware.",
   "2972408": "Observe el cuentarrevoluciones del cuadro; esta prueba no mide el régimen.",
-  "2972409": "PRUEBA DEL INDICADOR DE TEMPERATURA"
+  "2972409": "PRUEBA DEL INDICADOR DE TEMPERATURA",
+  "2972410": "Motor en marcha",
+  "2972411": "Señal de sonda lambda válida",
+  "2972412": "Verde: régimen superior a cero. Apagado: motor parado o régimen no disponible.",
+  "2972413": "Verde: la ECU indica una señal lambda válida en un perfil cualificado. Apagado: señal no válida o no disponible. No demuestra por sí solo el buen estado de la sonda."
 }
