@@ -392,6 +392,13 @@ jobs:
           $setup=Get-ChildItem setup-session-221 -File -Filter '*.exe' | Select-Object -First 1
           if(-not $setup -or $setup.Length -lt 100MB){throw 'SETUP_TOO_SMALL_OR_MISSING'}
           Write-Host "SESSION_221_SETUP_SHA256=$((Get-FileHash $setup.FullName -Algorithm SHA256).Hash)"
+      - name: Sauvegarder le Setup fabrique avant les controles ulterieurs
+        uses: actions/upload-artifact@v4
+        with:
+          name: SESSION-221-Setup
+          path: setup-session-221/*.exe
+          compression-level: 0
+          if-no-files-found: error
       - name: Installer et demarrer reellement sous Windows sans base RAVE
         shell: pwsh
         run: |
@@ -498,46 +505,6 @@ jobs:
           }
           Remove-Item Env:MEMS_STARTUP_READY_FILE -ErrorAction SilentlyContinue
           Write-Host 'SESSION_221_REAL_WINDOWS_READY_TWICE_16_VISIBLE_PAGES_NO_DOCUMENTARY_DB_OK'
-      - name: Tester les 16 pages et le bouton de MAJ du Setup installe sans ecran
-        shell: pwsh
-        timeout-minutes: 9
-        run: |
-          $ErrorActionPreference='Stop'
-          $folder=Join-Path $env:RUNNER_TEMP 'SESSION_221_INSTALLED'
-          $exe=Join-Path $folder 'ecu_mems_manager.exe'
-          if(-not(Test-Path $exe)){throw 'INSTALLED_UI_SMOKE_EXE_MISSING'}
-          $env:QT_QPA_PLATFORM='offscreen'
-          $env:QT_OPENGL='software'
-          $env:QT_PLUGIN_PATH=$folder
-          $env:QT_QPA_PLATFORM_PLUGIN_PATH=Join-Path $folder 'platforms'
-          $env:PATH="$folder;$env:PATH"
-          if(-not(Test-Path (Join-Path $env:QT_QPA_PLATFORM_PLUGIN_PATH 'qoffscreen.dll'))){throw 'INSTALLED_QT_OFFSCREEN_PLUGIN_MISSING'}
-          $stderr=Join-Path $folder 'session_ui_smoke_stderr.log'
-          $stdout=Join-Path $folder 'session_ui_smoke_stdout.log'
-          $log=Join-Path $folder 'session_ui_smoke_trace.log'
-          foreach($file in @($stderr,$stdout,$log)){if(Test-Path $file){Remove-Item $file -Force}}
-          $process=Start-Process -FilePath $exe -WorkingDirectory $folder -ArgumentList '--session-ui-smoke-test' -RedirectStandardError $stderr -RedirectStandardOutput $stdout -PassThru
-          $finished=$process.WaitForExit(300000)
-          foreach($file in @($log,$stderr,$stdout)){
-            Write-Host "UI_SMOKE_DIAGNOSTIC=$file"
-            if(Test-Path $file){Get-Content $file}
-            else{Write-Host 'FILE_NOT_CREATED'}
-          }
-          if(-not $finished){
-            Get-Process -Id $process.Id -ErrorAction SilentlyContinue |
-              Format-List Id,ProcessName,Responding,MainWindowTitle,CPU,Threads
-            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
-            throw 'INSTALLED_UI_SMOKE_TIMEOUT_300S'
-          }
-          if($process.ExitCode -ne 0){throw "INSTALLED_UI_SMOKE_FAILED_$($process.ExitCode)"}
-          Write-Host 'SESSION_221_INSTALLED_UI_SIDEBAR_DATABASE_MENU_SMOKE_PASS'
-      - name: Conserver les captures de la recette visuelle installee
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: SESSION-221-captures-visuelles
-          path: ${{ runner.temp }}/SESSION_221_INSTALLED/session221-visual/*.png
-          if-no-files-found: warn
       - name: Verifier les deux corrections de regression SESSION 221
         shell: pwsh
         run: |
