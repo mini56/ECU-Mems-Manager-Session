@@ -1,5 +1,11 @@
 {
   "2972401": "Fallo de tensión de alimentación del potenciómetro de mariposa",
   "2972402": "Entrada analógica fuera de rango",
-  "2972403": "Interpretación confirmada en tres perfiles MEMS 1.3 identificados; no atribuir este fallo a otro firmware."
+  "2972403": "Interpretación confirmada en tres perfiles MEMS 1.3 identificados; no atribuir este fallo a otro firmware.",
+  "2972404": "PRUEBA DEL CUENTARREVOLUCIONES",
+  "2972405": "Contacto puesto — motor obligatoriamente parado.",
+  "2972406": "Probar",
+  "2972407": "Prueba del cuentarrevoluciones no validada para este firmware.",
+  "2972408": "Observe el cuentarrevoluciones del cuadro; esta prueba no mide el régimen.",
+  "2972409": "PRUEBA DEL INDICADOR DE TEMPERATURA"
 }
