@@ -539,7 +539,7 @@ static void rebuildAdjustArea(QWidget *page,QFrame *adjust)
     QHBoxLayout *formCenter=new QHBoxLayout;
     formCenter->setContentsMargins(0,0,0,0);
     formCenter->addStretch(1);
-    formCenter->addWidget(form,0,Qt::AlignHCenter);
+    formCenter->addWidget(form,8);
     formCenter->addStretch(1);
     layout->addLayout(formCenter,1);
 
@@ -654,7 +654,7 @@ static void compactAdjustForm(QWidget *page,QFrame *adjust)
     QWidget *form=page->findChild<QWidget*>(QStringLiteral("darkSettingsAdjustForm"));
     if(form) {
         form->setMaximumWidth(760);
-        form->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+        form->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
         form->setStyleSheet(QStringLiteral("background:transparent;border:0;"));
 
         if(QGridLayout *grid=qobject_cast<QGridLayout*>(form->layout())) {
@@ -666,6 +666,7 @@ static void compactAdjustForm(QWidget *page,QFrame *adjust)
         for(QPushButton *button:buttons) {
             button->setMinimumWidth(108);
             button->setMaximumWidth(142);
+            button->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
             button->setMinimumHeight(36);
             button->setMaximumHeight(42);
         }
@@ -683,6 +684,7 @@ static void compactAdjustForm(QWidget *page,QFrame *adjust)
             if(label->minimumWidth()>=200) {
                 label->setMinimumWidth(185);
                 label->setMaximumWidth(215);
+                label->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
             }
         }
     }
@@ -691,6 +693,8 @@ static void compactAdjustForm(QWidget *page,QFrame *adjust)
     for(QPushButton *button:resetButtons) {
         button->setMinimumHeight(36);
         button->setMaximumHeight(42);
+        button->setMinimumWidth(button->fontMetrics().horizontalAdvance(button->text())+24);
+        button->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
     }
 
     if(QLineEdit *note=page->findChild<QLineEdit*>(QStringLiteral("lineEdit_3"))) {
@@ -766,7 +770,7 @@ static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFr
     body->addWidget(system,1,2);
     system->show();
     body->setColumnStretch(0,1);
-    body->setColumnStretch(1,0);
+    body->setColumnStretch(1,3);
     body->setColumnStretch(2,1);
     // The precision dial owns any spare vertical room; controls keep their
     // natural height rather than expanding into an oversized lower band.
@@ -776,15 +780,15 @@ static void arrangeBottomPanels(QWidget *page,QFrame *metrics,QFrame *states,QFr
     body->setVerticalSpacing(4);
 
     for(QFrame *side:{states,system}){
-        side->setMinimumWidth(0);
+        side->setMinimumWidth(150);
         side->setMaximumWidth(QWIDGETSIZE_MAX);
         side->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
     }
     // Preserve the existing control geometry. Equal stretch gives both
     // lateral panels the spare width of the actual content layout.
     adjust->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
-    body->setColumnMinimumWidth(0,0);
-    body->setColumnMinimumWidth(2,0);
+    body->setColumnMinimumWidth(0,150);
+    body->setColumnMinimumWidth(2,150);
 }
 
 static void shortenSettingsSeparator(QFrame *adjust)
