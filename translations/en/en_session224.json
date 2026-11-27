@@ -25,5 +25,12 @@
   "2972424": "Normal return unconfirmed. Switch ignition off.",
   "2972425": "Command not acknowledged; normal return acknowledged.",
   "2972426": "Another test or diagnostic mode is active.",
-  "2972427": "Reset other actuators first."
+  "2972427": "Reset other actuators first.",
+  "2972428": "ECU disconnected.",
+  "2972429": "Compatibility not confirmed.",
+  "2972430": "Waiting for ECU data.",
+  "2972431": "Stop engine, ignition on.",
+  "2972432": "Test available.",
+  "2972433": "Other test or mode active.",
+  "2972434": "Reset the actuators."
 }
