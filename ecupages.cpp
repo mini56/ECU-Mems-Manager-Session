@@ -26,6 +26,8 @@
 #include <QWidget>
 #include "i18n.h"
 #include "mainwindow.h"
+#include "memsinterface.h"
+#include <QScrollArea>
 #include "ecupages.h"
 #include "mems218_tests.h"
 #include "memsextendeddtc_presentation.h"
@@ -664,6 +666,8 @@ static void composeActuators(QMainWindow *window)
     }
     rv->addLayout(buttons);
 
+    auto *main=qobject_cast<MainWindow*>(window);
+    auto *worker=main?main->memsInterface():nullptr;
     auto *instruments=new QHBoxLayout;
     instruments->setSpacing(6);
     auto makeInstrument=[&](bool tachometer){
@@ -687,6 +691,20 @@ static void composeActuators(QMainWindow *window)
             button->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Fixed);
             button->setProperty("helpBubbleNoIcon",true);
             button->setEnabled(false);
+            if(worker){
+                const int action=key==2971802?1:key==2971803?2:key==2972406?3:0;
+                QObject::connect(button,&QPushButton::clicked,window,[window,worker,action](){
+                    if(action==0)worker->cancelInstrumentTest();
+                    else {
+                        const bool accepted=worker->requestInstrumentTest(action);
+                        if(auto *result=window->findChild<QLabel*>(QStringLiteral("instrumentTestResult")))
+                            result->setText(I18n::text(accepted?2972420:2972423));
+                    }
+                    Mems16Na::SessionEvidence snapshot;
+                    worker->getData(&snapshot);
+                    updateGaugeTestAvailability(window,worker->isConnected(),&snapshot);
+                });
+            }
             v->addWidget(button);
         };
         if(tachometer){
@@ -708,7 +726,9 @@ static void composeActuators(QMainWindow *window)
             // Let the text calculate its height for the actual column width.
             label->setMinimumHeight(lines==2?40:45);
             label->setMaximumHeight(QWIDGETSIZE_MAX);
-            label->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Minimum);
+            QSizePolicy notePolicy(QSizePolicy::Ignored,QSizePolicy::Minimum);
+            notePolicy.setHeightForWidth(true);
+            label->setSizePolicy(notePolicy);
             if(orange){
                 const bool dark=qApp&&qApp->property("ecuDarkTheme").toBool();
                 label->setStyleSheet(dark?QStringLiteral("color:#ff9828;background:transparent;border:0;"):
@@ -729,10 +749,31 @@ static void composeActuators(QMainWindow *window)
     rv->addLayout(instruments,1);
     // Both instruments share the same visible observation instruction.
     auto *observe=new QLabel(I18n::text(2972414),right);
+    observe->setObjectName(QStringLiteral("instrumentTestResult"));
     observe->setWordWrap(true);
     observe->setAlignment(Qt::AlignCenter);
-    observe->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);
+    QSizePolicy observePolicy(QSizePolicy::Ignored,QSizePolicy::Minimum);
+    observePolicy.setHeightForWidth(true);
+    observe->setSizePolicy(observePolicy);
     rv->addWidget(observe);
+    if(worker){
+        QObject::connect(worker,&MEMSInterface::instrumentTestResult,window,[window,worker](int,int result){
+            if(auto *label=window->findChild<QLabel*>(QStringLiteral("instrumentTestResult"))){
+                const int key=result==1?2972421:result==2?2972422:result==3?2972423:result==4?2972424:2972425;
+                label->setText(I18n::text(key));
+                label->setToolTip(label->text());
+            }
+            Mems16Na::SessionEvidence snapshot;
+            worker->getData(&snapshot);
+            updateGaugeTestAvailability(window,worker->isConnected(),&snapshot);
+        });
+        if(auto *tabs=window->findChild<QTabWidget*>(QStringLiteral("Tab_main")))
+            QObject::connect(tabs,&QTabWidget::currentChanged,window,[tabs,page,worker](int index){
+                QWidget *visible=tabs->widget(index);
+                if(auto *scroll=qobject_cast<QScrollArea*>(visible))visible=scroll->widget();
+                if(visible!=page)worker->cancelInstrumentTest();
+            });
+    }
     // Reuse the actual system status, with a shorter horizontal arrangement.
     QObject *systemSource=window->findChild<QObject*>(QStringLiteral("m_engine_error"));
     SystemStatePreview *state=new SystemStatePreview(
@@ -913,48 +954,46 @@ unsigned updateAdditionalErrors(QMainWindow *window,bool connected,const Mems16N
 void updateGaugeTestAvailability(QMainWindow *window,bool connected,const Mems16Na::SessionEvidence *evidence)
 {
     if(!window)return;
-    auto *reason=window->findChild<QLabel*>(QStringLiteral("gaugeTestReason"));
-    if(!reason)return;
-    int key=2971805;
-    switch(Mems218::gaugeState(connected,evidence)){
-        case Mems218::GaugeState::Disconnected:key=2971805;break;
-        case Mems218::GaugeState::Unidentified:key=2971806;break;
-        case Mems218::GaugeState::Unsupported:key=2971807;break;
-        case Mems218::GaugeState::AwaitData:key=2971808;break;
-        case Mems218::GaugeState::EngineRunning:key=2971809;break;
-        case Mems218::GaugeState::AwaitBench:key=2971810;break;
-    }
-    const QString message=I18n::text(key);
-    if(reason->text()!=message)reason->setText(message);
+    auto *main=qobject_cast<MainWindow*>(window);
+    auto *worker=main?main->memsInterface():nullptr;
+    const int request=connected&&worker?worker->instrumentRequest():0;
+    const bool normal=connected&&worker&&worker->instrumentNormalMode();
+    const bool dirty=connected&&worker&&worker->instrumentOtherForced();
     const bool dark=qApp&&qApp->property("ecuDarkTheme").toBool();
     const QString style=dark?QStringLiteral("color:#ff9828;background:transparent;border:0;"):
                              QStringLiteral("color:#a04a00;background:transparent;border:0;");
-    if(reason->styleSheet()!=style)reason->setStyleSheet(style);
-    int revKey=2971805;
-    if(connected){
-        revKey=2971806;
-        if(evidence&&!evidence->firmwareName().empty()){
-            const auto a=Mems217::frame80(*evidence);
-            revKey=!Mems217::present(a,2)?2971808:
-                Mems16Na::word(a,1)>0?2971809:2972407;
+    auto update=[&](bool tach){
+        const auto action=tach?Mems218::InstrumentAction::Tachometer:Mems218::InstrumentAction::GaugeMin;
+        const bool ownRequest=tach?request==3:request==1||request==2;
+        int key=2971805;
+        bool ready=false;
+        if(connected){
+            if(!evidence||evidence->firmwareName().empty())key=2971806;
+            else if(!Mems218::instrumentSupported(action,*evidence))key=tach?2972407:2971807;
+            else if(ownRequest)key=2972420;
+            else if(request!=0||!normal)key=2972426;
+            else if(dirty)key=2972427;
+            else if(!Mems217::present(Mems217::frame80(*evidence),25)||
+                    !Mems217::present(Mems217::frame7d(*evidence),1))key=2971808;
+            else if(!Mems218::instrumentSafeSample(action,*evidence))key=2971809;
+            else{ready=true;key=2972419;}
         }
-    }
-    const QString revMessage=I18n::text(revKey);
-    if(auto *rev=window->findChild<QLabel*>(QStringLiteral("revCounterTestReason"))){
-        if(rev->text()!=revMessage)rev->setText(revMessage);
-        if(rev->styleSheet()!=style)rev->setStyleSheet(style);
-    }
-    for(const char *name:{"gaugeTestSafety","revCounterTestSafety"})
-        if(auto *safety=window->findChild<QLabel*>(QString::fromLatin1(name)))
+        const QString message=I18n::text(key);
+        if(auto *reason=window->findChild<QLabel*>(tach?QStringLiteral("revCounterTestReason"):QStringLiteral("gaugeTestReason"))){
+            if(reason->text()!=message)reason->setText(message);
+            if(reason->styleSheet()!=style)reason->setStyleSheet(style);
+        }
+        if(auto *safety=window->findChild<QLabel*>(tach?QStringLiteral("revCounterTestSafety"):QStringLiteral("gaugeTestSafety")))
             if(safety->styleSheet()!=style)safety->setStyleSheet(style);
-    for(const char *name:{"revCounterTestStart","revCounterTestStop"})
-        if(auto *button=window->findChild<QPushButton*>(QString::fromLatin1(name))){
-            button->setEnabled(false);button->setToolTip(revMessage);
+        const QList<const char*> starts=tach?QList<const char*>{"revCounterTestStart"}:QList<const char*>{"gaugeTestMinimum","gaugeTestMaximum"};
+        for(const char *name:starts)if(auto *button=window->findChild<QPushButton*>(QString::fromLatin1(name))){
+            button->setEnabled(ready);button->setToolTip(message);
         }
-    for(const char *name:{"gaugeTestMinimum","gaugeTestMaximum","gaugeTestStop"})
-        if(auto *button=window->findChild<QPushButton*>(QString::fromLatin1(name))){
-            button->setEnabled(false);button->setToolTip(message);
+        if(auto *stop=window->findChild<QPushButton*>(tach?QStringLiteral("revCounterTestStop"):QStringLiteral("gaugeTestStop"))){
+            stop->setEnabled(connected&&ownRequest);stop->setToolTip(message);
         }
+    };
+    update(false);update(true);
 }
 
 void buildEcuControlPages(QMainWindow *window)
