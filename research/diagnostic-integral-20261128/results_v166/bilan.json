@@ -1,0 +1,59 @@
+{
+  "firmwares": 449,
+  "entries": 30837,
+  "reclassified": 22779,
+  "context_firmwares": 338,
+  "statuses": {
+    "STATIC_LINKED": 118,
+    "SELECTOR_CANDIDATE": 295,
+    "STATIC_TABLE_CONTEXT_LINKED": 19239,
+    "STATIC_TABLE_LINKED": 5075,
+    "INTERNAL_STATE_TABLE_LINKED": 3540,
+    "SERVICE_COMPARE_CANDIDATE": 2570
+  },
+  "families": {
+    "Rover MEMS 1.3": {
+      "firmwares": 3,
+      "four_contexts": 0,
+      "reclassified": 0,
+      "remaining_table_contexts": 0
+    },
+    "Rover MEMS 1.6/NA": {
+      "firmwares": 123,
+      "four_contexts": 123,
+      "reclassified": 7138,
+      "remaining_table_contexts": 0
+    },
+    "Rover MEMS 1.6 TURBO": {
+      "firmwares": 4,
+      "four_contexts": 0,
+      "reclassified": 0,
+      "remaining_table_contexts": 0
+    },
+    "Rover MEMS 1.9": {
+      "firmwares": 215,
+      "four_contexts": 215,
+      "reclassified": 15641,
+      "remaining_table_contexts": 0
+    },
+    "Rover MEMS 2J": {
+      "firmwares": 9,
+      "four_contexts": 0,
+      "reclassified": 0,
+      "remaining_table_contexts": 0
+    },
+    "Rover MEMS3/EU3": {
+      "firmwares": 83,
+      "four_contexts": 0,
+      "reclassified": 0,
+      "remaining_table_contexts": 0
+    },
+    "Rover MEMS3/EU4": {
+      "firmwares": 12,
+      "four_contexts": 0,
+      "reclassified": 0,
+      "remaining_table_contexts": 0
+    }
+  },
+  "complete": false
+}
