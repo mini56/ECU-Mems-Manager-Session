@@ -3,9 +3,16 @@
 #include <cstdint>
 #include "mems16na_session_evidence.h"
 namespace Mems217 {
+// SESSION 234: ROM/XF3 equivalence KBHBG009 / KBHBV002.
+// No inference from an identifier alone, nor from a similar firmware name.
+inline bool equivalent19(const Mems16Na::SessionEvidence &s) {
+    const auto &id=s.identity();
+    return id[1]==0 && ((s.firmwareName()=="KBHBG009"&&id[0]==0x90&&id[2]==9)||
+        (s.firmwareName()=="KBHBV002"&&id[0]==0xc2&&id[2]==2));
+}
 inline bool injectionProfile(const Mems16Na::SessionEvidence &s) {
     // NA decoder already establishes the wire mapping; 1.9 only proven wire profiles.
-    return s.identifiedProfile() || s.firmwareName()=="KBHBG009" || s.firmwareName()=="KBHBV001";
+    return s.identifiedProfile() || s.firmwareName()=="KBHBG009" || s.firmwareName()=="KBHBV001" || equivalent19(s);
 }
 inline Mems16Na::Frame frame80(const Mems16Na::SessionEvidence &s) {
     if(s.identifiedProfile())return s.frame80();
@@ -20,7 +27,7 @@ inline bool present(Mems16Na::Frame f,unsigned i) {
 }
 inline int injectionUs(unsigned raw){return (int(raw)-128)*8;}
 inline int idleRpm(unsigned raw){return (int(raw)-128)*25;}
-inline bool passiveProfile(const Mems16Na::SessionEvidence &s){return s.identifiedProfile()!=nullptr || s.firmwareName()=="KBHBG009";}
+inline bool passiveProfile(const Mems16Na::SessionEvidence &s){return s.identifiedProfile()!=nullptr || s.firmwareName()=="KBHBG009" || equivalent19(s);}
 struct Observation {
     bool valid=false, lambdaValid=false, coolantValid=false, lambdaFault=false, lambdaObserved=false, coolantFault=false, coolantObserved=false, closedLoop=false;
     unsigned mv=0, crossings=0, coolantRaw=0, low=0, high=0;

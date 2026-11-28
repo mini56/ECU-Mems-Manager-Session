@@ -32,5 +32,25 @@ int main(){
     b.pop_back();s.setExtended7d(b);assert(!Mems220::decode(s).pair);
     s.discardPair();m=Mems220::decode(s);assert(m.profile&&!m.pair&&m.idleError.availability==Availability::Missing);
     s.reset();assert(!Mems220::decode(s).profile);
+    // Exact independent identity of the equivalent firmware.
+    auto v=fixture();
+    v.tx({0xd0});v.rx({0xd0,0xc2,0,2,1});v.finish();
+    v.tx({0xd1});v.rx({0xd1,'K','B','H','B','V','0','0','2',0xc2,0,2,1});v.finish();
+    auto orig=fixture();
+    v.setExtended80(orig.extended80());v.setExtended7d(orig.extended7d());
+    m=Mems220::decode(v);
+    assert(m.profile&&m.pair&&m.hotPosition.calculated==32&&m.learnCount.calculated==7);
+    assert(m.idleCorrection.calculated==-50&&m.idleError.calculated==-1&&m.throttleReference.calculated==42.5);
+    assert(Mems217::passiveProfile(v)&&Mems217::injectionProfile(v));
+    auto va=v.extended80();auto vb=v.extended7d();
+    va[1]=3;va[2]=132;va[3]=100;va[5]=75;vb[6]=160;vb[9]=1;vb[10]=1;vb[11]=129;vb[12]=100;
+    v.setExtended80(va);v.setExtended7d(vb);
+    Mems217::Observation o;o.sample(v);
+    assert(o.valid&&o.mv==800&&Mems219::injectionAvailable(v)&&Mems219::lambdaQualified(v));
+    assert(Mems218::coolantSample(true,v).availability==Mems218::CoolantAvailability::Ready);
+    v.discardPair();assert(!Mems220::decode(v).pair&&!Mems219::injectionAvailable(v));
+    v.tx({0xd0});v.rx({0xd0,0x90,0,2,1});v.finish();
+    v.tx({0xd1});v.rx({0xd1,'K','B','H','B','V','0','0','2',0x90,0,2,1});v.finish();
+    assert(!Mems220::profile19(v)&&!Mems217::passiveProfile(v)&&!Mems217::injectionProfile(v));
     std::cout<<"SESSION_220_KBHBG009_ORDINARY_FRAMES_PASS\n";
 }

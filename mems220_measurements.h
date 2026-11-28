@@ -1,12 +1,12 @@
 #pragma once
 // Read-only decode of ordinary, coherent 80/7D frames. No serial I/O.
 // KBHBG009: XF3 ID 90 00 09; ROM table 3C54/58, 3CFE, 3D02,
-// 3D0A/0E/12/16 and 3D1A. Do not extrapolate to other 1.9 variants.
+// 3D0A/0E/12/16 and 3D1A. KBHBV002: identical code/data except ID/checksum.
+ // No extrapolation to other 1.9 variants.
 #include "mems219_units.h"
 namespace Mems220 {
 inline bool profile19(const Mems16Na::SessionEvidence &s){
-    const auto &id=s.identity();
-    return s.firmwareName()=="KBHBG009"&&id[0]==0x90&&id[1]==0&&id[2]==9;
+    return Mems217::equivalent19(s);
 }
 struct Measurements {
     bool profile=false, pair=false;

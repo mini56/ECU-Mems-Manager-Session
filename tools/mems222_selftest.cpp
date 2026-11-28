@@ -18,6 +18,16 @@ int main(){
     a[1]=3;s.setExtended80(a);o.observe(sample(s));assert(!o.switchKnown&&o.tps.count==0);
     a[5]=255;s.setExtended80(a);o.observe(sample(s));assert(o.air.count==0);
     s.discardPair();o.observe(sample(s));assert(!o.valid&&o.map.count==0);
+    Mems16Na::SessionEvidence v;
+    v.tx({0xd0});v.rx({0xd0,0xc2,0,2,1});v.finish();
+    v.tx({0xd1});v.rx({0xd1,'K','B','H','B','V','0','0','2',0xc2,0,2,1});v.finish();
+    a[1]=0;a[5]=75;a[9]=20;a[10]=0;a[14]=0;
+    v.setExtended80(a);v.setExtended7d(b);
+    Observation ov;ov.observe(sample(v));assert(ov.valid&&ov.air.count==1);
+    a[9]=120;a[10]=1;v.setExtended80(a);ov.observe(sample(v));
+    a[9]=20;a[10]=0;v.setExtended80(a);ov.observe(sample(v));
+    assert(ov.switchResponse());
+    v.discardPair();assert(!sample(v).valid);
     Mems16Na::SessionEvidence na;
     na.tx({0xd0});na.rx({0xd0,0x98,0,2,2});na.finish();
     na.tx({0xd1});na.rx({0xd1,'A','A','N','M','P','0','0','2',0x98,0,2,2});na.finish();

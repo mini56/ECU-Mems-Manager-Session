@@ -1,0 +1,12 @@
+# SESSION 234 — lot 3 : extension de la couverture MEMS 1.9 par équivalence ROM
+Base 233 : 3fd9cd06bc054c3f358a25f4595e167f2b54b626. Recherche figée : ef3a6a52844fa535f903e58dc3a177de55db6ac3.
+## Preuve indépendante avant modification
+Comparaison des 32768 octets des ROM chargées à 2000h :
+- KBHBG009 blob Git a59cb2a38f763d4434fa12a4a414001f2ef5afd1, identité XF3 90 00 09 (blob 018f487f102e4031b5914a3ec515d4c556a018e4).
+- KBHBV002 blob Git 461f0d4ed90f466945c0f5634ed670e7b9689630, identité XF3 C2 00 02 (blob 153efb00b37a3463500511a62f631dc06a7d3e33).
+- 12 octets différents : 3476,347F,3C0C,3C0F,3C10,3C12,5B0E,5B11,5B12,5B14,9FFE,9FFF. Les deux premiers changent les constantes d'identification 90→C2,09→02 ; les deux enregistrements ROM contiennent le nom et l'identifiant ; les deux derniers octets diffèrent. Toutes les autres données et instructions (y compris tables 80/7D et calibration) sont identiques. XF3 identiques ligne pour ligne sauf ligne 14 (identification).
+- KBHBG010 (blob da221c587b65fd6d781b1c196d4d4ec586029156) et KBHBV001 (5af5f50762aa23753dc398fd283954f88c03225b) diffèrent sur de nombreux octets : pas d'extension des mesures avancées par simple ressemblance.
+## Correction source
+Profil de mesures passives étendu à KBHBV002 avec identité C2 00 02 exacte, sans retirer les chemins historiques. Mesures étendues, observation eau/lambda/air/TPS/MAP/contact, test passif de réchauffement et corrections injection/ralenti accessibles sur ce profil ; DTC2/3/4/5/6 et libellés étendus par équivalence, conservant le mécanisme historique d'identification nominale des DTC (identification D0/D1 cohérente, non validation additionnelle du préfixe dans cette API). Aucun envoi supplémentaire, aucune mutation, aucun changement de DLL.
+## Couverture et validation
+Mesures avancées et observations 1.9 : 1→2/215 ; correction injection : 2→3/215 ; DTC2 spécifique : 1→2/215. Tests autonomes enrichis (identité valide et discordante, données absentes, égalité des 256 valeurs de chaque groupe DTC, conversions et observation). Il ne s'agit pas de validation physique. Le profil KBHBG009 conserve ses anciennes conditions sur les chemins 217 ; leur incohérence avec le contrôle strict 220 est à traiter séparément après vérification des identités historiques. Les autres 213 profils 1.9 restent à qualifier pour mesures avancées et observations ; pas de conclusion sur les autres générations. Setup cumulatif 1.2.34 demandé au workflow de test, non acquis à la rédaction. Aucune publication publique.

@@ -11,8 +11,8 @@ inline int labelKey(const char *f,int g,unsigned bit) {
     if(g==3&&turbo(f)&&bit==2)return 29241;
     if(g==4&&turbo(f)){if(bit==1)return 29242;if(bit==2)return 29243;}
     if(g==4&&da19(f)&&bit==0x40)return 29244;
-    if(g==5){if((eq(f,"KBHBG009")||eq(f,"REGI1224"))&&bit==2)return 29245;
-        if((eq(f,"KBHBG009")||eq(f,"REGI1224"))&&bit==4)return 29246;
+    if(g==5){if((equivalent009(f)||eq(f,"REGI1224"))&&bit==2)return 29245;
+        if((equivalent009(f)||eq(f,"REGI1224"))&&bit==4)return 29246;
         if(fan(f)&&bit==8)return 29247;if(fan(f)&&bit==0x10)return 29248;
         if(hdc(f)&&bit==0x20)return 29249;if(cruise(f)&&bit==0x40)return 29250;}
     return 29004;

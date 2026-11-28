@@ -33,6 +33,16 @@ int main(){
         require(decode("REGI1297",5,b,32).faults==(r==255?0:r&0x20));
         b[5]=static_cast<std::uint8_t>(r);require(decode("KBHBG009",2,b,32).faults==(r==255?0:r&0xB4));
     }
+    // Exhaustive raw-byte parity for the independently proven equivalent ROM.
+    require(dtc2Known("KBHBV002")&&sync19("KBHBV002")&&extraFaultMask("KBHBV002")==6);
+    for(int group=2;group<=6;++group){
+        const unsigned pos=offset(group);
+        for(unsigned raw=0;raw<256;++raw){
+            b[pos]=static_cast<std::uint8_t>(raw);
+            const auto x=decode("KBHBG009",group,b,32), y=decode("KBHBV002",group,b,32);
+            require(x.status==y.status&&x.raw==y.raw&&x.faults==y.faults&&x.states==y.states&&x.indicators==y.indicators);
+        }
+    }
     std::uint8_t shortFrame[14]={14};
     for(const char *f:{"ABEMR002","KBE6R003","MGE7R002"}){
         for(unsigned value=0;value<256;++value){
