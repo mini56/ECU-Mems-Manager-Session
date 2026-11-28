@@ -1,0 +1,588 @@
+{
+  "profiles": 342,
+  "identity_records_found": 336,
+  "identity_missing": [
+    "EKDMF004",
+    "KAE6P000",
+    "KBP8P000",
+    "KBP8P002",
+    "TAP8P000",
+    "TAP8P002"
+  ],
+  "nominal_d0_collision_groups": {
+    "Rover MEMS 1.6 90000014": [
+      "EKDMF000",
+      "KBACF000",
+      "KCE8F000"
+    ],
+    "Rover MEMS 1.6 90000514": [
+      "EKDMF005",
+      "KCE8F005"
+    ],
+    "Rover MEMS 1.6 90000614": [
+      "EKDMF006",
+      "KCE8F006"
+    ],
+    "Rover MEMS 1.6 90000714": [
+      "EKDMF007",
+      "KCE8F007",
+      "KGM6F007"
+    ],
+    "Rover MEMS 1.6 90000814": [
+      "EKDMF008",
+      "KCE8F008",
+      "KGM6F008",
+      "TAPDF008"
+    ],
+    "Rover MEMS 1.6 90000914": [
+      "EKDMF009",
+      "KCE8F009"
+    ],
+    "Rover MEMS 1.6 90000114": [
+      "KBACF001",
+      "KGM6F001"
+    ],
+    "Rover MEMS 1.6 9F000014": [
+      "KCD8P000",
+      "KCE8P000"
+    ],
+    "Rover MEMS 1.6 90002214": [
+      "KDE6F022",
+      "TAP8F022"
+    ],
+    "Rover MEMS 1.6 AA000014": [
+      "TAEDP000",
+      "TAPDP000"
+    ],
+    "Rover MEMS 1.6 AA000114": [
+      "TAEDP001",
+      "TAPDP001"
+    ],
+    "Rover MEMS 1.9 90000914": [
+      "KBHBG009",
+      "KFHBG009",
+      "KJH6G009"
+    ],
+    "Rover MEMS 1.9 90001014": [
+      "KBHBG010",
+      "KFHBG010",
+      "KIH6G010",
+      "KTHBG010"
+    ],
+    "Rover MEMS 1.9 90000814": [
+      "KBHHG008",
+      "KFHBG008",
+      "KJH6G008",
+      "KTH6G008",
+      "SELFG008"
+    ],
+    "Rover MEMS 1.9 90000114": [
+      "KFACG001",
+      "KLHBG001",
+      "KLHCG001",
+      "KLQ4G001",
+      "KUH3G001",
+      "KUHHG001"
+    ],
+    "Rover MEMS 1.9 90000214": [
+      "KFACG002",
+      "KLHBG002",
+      "KLHCG002",
+      "KLQ4G002",
+      "KUH3G002"
+    ],
+    "Rover MEMS 1.9 C3000114": [
+      "KFACV001",
+      "KFHBV001"
+    ],
+    "Rover MEMS 1.9 90000714": [
+      "KFHBG007",
+      "KLQ4G007",
+      "SELFG007"
+    ],
+    "Rover MEMS 1.9 90001114": [
+      "KIH6G011",
+      "KJH6G011",
+      "KTH6G011",
+      "TFHSG011"
+    ],
+    "Rover MEMS 1.9 90001214": [
+      "KIH6G012",
+      "KJH6G012",
+      "KTH6G012",
+      "KTHBG012",
+      "TFHSG012"
+    ],
+    "Rover MEMS 1.9 90000014": [
+      "KIHBG000",
+      "KLHBG000",
+      "KLHCG000",
+      "KLQ4G000",
+      "KTHHG000",
+      "KUH3G000",
+      "KUHHG000"
+    ],
+    "Rover MEMS 1.9 90001514": [
+      "KLH3G015",
+      "KRHBG015",
+      "KTHBG015",
+      "TBP7F015"
+    ],
+    "Rover MEMS 1.9 90001714": [
+      "KLH3G017",
+      "KLH4G017",
+      "KRHBG017",
+      "TBH7G017"
+    ],
+    "Rover MEMS 1.9 90001814": [
+      "KLH3G018",
+      "KLH4G018",
+      "KRHBG018",
+      "TAH7G018"
+    ],
+    "Rover MEMS 1.9 90001914": [
+      "KLH3G019",
+      "KLH4G019",
+      "TAHHG019",
+      "TBH7G019"
+    ],
+    "Rover MEMS 1.9 90002014": [
+      "KLH3G020",
+      "KLH4G020"
+    ],
+    "Rover MEMS 1.9 D1000014": [
+      "KLHBV000",
+      "KLHCV000"
+    ],
+    "Rover MEMS 1.9 D1000114": [
+      "KLHBV001",
+      "KLHCV001"
+    ],
+    "Rover MEMS 1.9 90000314": [
+      "KLQ4G003",
+      "KUH3G003"
+    ],
+    "Rover MEMS 1.9 90000414": [
+      "KLQ4G004",
+      "SELFG004"
+    ],
+    "Rover MEMS 1.9 90001614": [
+      "KRHBG016",
+      "TBH7G016"
+    ],
+    "Rover MEMS 1.9 90001314": [
+      "KTHBG013",
+      "TAHHG013",
+      "TFHSG013"
+    ],
+    "Rover MEMS 1.9 90001414": [
+      "KTHBG014",
+      "TFHSG014"
+    ]
+  },
+  "outside_lot16": 242,
+  "outside_with_alternative_signal_leads": 242,
+  "alternative_lead_types": {
+    "DYNAMIC_HSO_WITH_TIME": 244,
+    "HSO_OPPOSITE_LEVELS_TIMED": 391,
+    "PORT_SET_CLEAR_WITH_TIMER": 428
+  },
+  "candidate_identity_collisions": {
+    "ABNMP000": [],
+    "ABNMP003": [],
+    "KLH3G015": [
+      "KLH3G015",
+      "KRHBG015",
+      "KTHBG015",
+      "TBP7F015"
+    ],
+    "KLH3G017": [
+      "KLH3G017",
+      "KLH4G017",
+      "KRHBG017",
+      "TBH7G017"
+    ],
+    "KLH3G018": [
+      "KLH3G018",
+      "KLH4G018",
+      "KRHBG018",
+      "TAH7G018"
+    ],
+    "KLH3G019": [
+      "KLH3G019",
+      "KLH4G019",
+      "TAHHG019",
+      "TBH7G019"
+    ],
+    "KLH3G020": [
+      "KLH3G020",
+      "KLH4G020"
+    ],
+    "KLH3V004": [],
+    "KLH3V005": [],
+    "KLH3V006": [],
+    "KLHCG000": [
+      "KIHBG000",
+      "KLHBG000",
+      "KLHCG000",
+      "KLQ4G000",
+      "KTHHG000",
+      "KUH3G000",
+      "KUHHG000"
+    ],
+    "KLHCG001": [
+      "KFACG001",
+      "KLHBG001",
+      "KLHCG001",
+      "KLQ4G001",
+      "KUH3G001",
+      "KUHHG001"
+    ],
+    "KLHCG002": [
+      "KFACG002",
+      "KLHBG002",
+      "KLHCG002",
+      "KLQ4G002",
+      "KUH3G002"
+    ],
+    "KLHCV000": [
+      "KLHBV000",
+      "KLHCV000"
+    ],
+    "KLHCV001": [
+      "KLHBV001",
+      "KLHCV001"
+    ],
+    "KUH3G000": [
+      "KIHBG000",
+      "KLHBG000",
+      "KLHCG000",
+      "KLQ4G000",
+      "KTHHG000",
+      "KUH3G000",
+      "KUHHG000"
+    ],
+    "KUH3G001": [
+      "KFACG001",
+      "KLHBG001",
+      "KLHCG001",
+      "KLQ4G001",
+      "KUH3G001",
+      "KUHHG001"
+    ],
+    "KUH3G002": [
+      "KFACG002",
+      "KLHBG002",
+      "KLHCG002",
+      "KLQ4G002",
+      "KUH3G002"
+    ],
+    "KUH3G003": [
+      "KLQ4G003",
+      "KUH3G003"
+    ],
+    "REGI0872": [],
+    "REGI1224": [],
+    "REGI1345": [],
+    "REGI1346": [],
+    "REGI1350": [],
+    "REGI1355": [],
+    "REGI1356": [],
+    "REGI1359": [],
+    "REGI1360": [],
+    "REGI1361": [],
+    "REGI1362": [],
+    "REGI1363": [],
+    "REGI1364": [],
+    "REGI1365": [],
+    "REGI1366": [],
+    "REGI1367": [],
+    "REGI1368": [],
+    "REGI1374": [],
+    "REGI1376": [],
+    "REGI1383": [],
+    "REGI1384": [],
+    "REGI1386": [],
+    "REGI1387": [],
+    "SELFG008": [
+      "KBHHG008",
+      "KFHBG008",
+      "KJH6G008",
+      "KTH6G008",
+      "SELFG008"
+    ],
+    "TFH7G031": []
+  },
+  "orphans": {
+    "ABNMP000": [
+      {
+        "d0_entry": "3924",
+        "d1_entry": "3AF1",
+        "d0_load": "3924",
+        "d1_load": "3AF4",
+        "record_address": "346C",
+        "name": "ABNMP000",
+        "d0_nominal": "99000014",
+        "record": "41424E4D5030303099000014",
+        "asm_db_complete": true,
+        "asm_db_matches": true,
+        "rom_present": false,
+        "d0_code": [
+          [
+            "3924",
+            "ld      INTMEM_3E, #3474h"
+          ],
+          [
+            "3928",
+            "ldb     INTMEM_1C, [INTMEM_3E]"
+          ],
+          [
+            "392B",
+            "ldb     INTMEM_3B, 1[INTMEM_3E]"
+          ],
+          [
+            "392F",
+            "orb     INTMEM_AC, #8"
+          ],
+          [
+            "3932",
+            "ldb     INTMEM_98, #3"
+          ],
+          [
+            "3935",
+            "ljmp    ROM_335B"
+          ]
+        ],
+        "d1_code": [
+          [
+            "3AF1",
+            "ldb     INTMEM_98, #7"
+          ],
+          [
+            "3AF4",
+            "ld      INTMEM_36+2, #346Ch"
+          ],
+          [
+            "3AF8",
+            "clrb    INTMEM_36"
+          ],
+          [
+            "3AFA",
+            "ldb     INTMEM_3E, #0Bh"
+          ],
+          [
+            "3AFD",
+            "ret"
+          ],
+          [
+            "3AFE",
+            "cmp     INTMEM_5E, ZERO_REG"
+          ]
+        ]
+      }
+    ],
+    "ABNMP003": [
+      {
+        "d0_entry": "3AF0",
+        "d1_entry": "3CBD",
+        "d0_load": "3AF0",
+        "d1_load": "3CC0",
+        "record_address": "35B2",
+        "name": "ABNMP003",
+        "d0_nominal": "99000314",
+        "record": "41424E4D5030303399000314",
+        "asm_db_complete": true,
+        "asm_db_matches": true,
+        "rom_present": false,
+        "d0_code": [
+          [
+            "3AF0",
+            "ld      INTMEM_3E, #35BAh"
+          ],
+          [
+            "3AF4",
+            "ldb     INTMEM_1C, [INTMEM_3E]"
+          ],
+          [
+            "3AF7",
+            "ldb     INTMEM_3B, 1[INTMEM_3E]"
+          ],
+          [
+            "3AFB",
+            "orb     INTMEM_AC, #8"
+          ],
+          [
+            "3AFE",
+            "ldb     INTMEM_98, #3"
+          ],
+          [
+            "3B01",
+            "ljmp    ROM_34A2"
+          ]
+        ],
+        "d1_code": [
+          [
+            "3CBD",
+            "ldb     INTMEM_98, #7"
+          ],
+          [
+            "3CC0",
+            "ld      INTMEM_36+2, #35B2h"
+          ],
+          [
+            "3CC4",
+            "clrb    INTMEM_36"
+          ],
+          [
+            "3CC6",
+            "ldb     INTMEM_3E, #0Bh"
+          ],
+          [
+            "3CC9",
+            "ret"
+          ],
+          [
+            "3CCA",
+            "cmp     INTMEM_5E, ZERO_REG"
+          ]
+        ]
+      }
+    ],
+    "KLH3V004": [
+      {
+        "d0_entry": "4D38",
+        "d1_entry": "4F47",
+        "d0_load": "4D38",
+        "d1_load": "4F4A",
+        "record_address": "3C6C",
+        "name": "KLH3V004",
+        "d0_nominal": "C7000414",
+        "record": "4B4C483356303034C7000414",
+        "asm_db_complete": true,
+        "asm_db_matches": true,
+        "rom_present": false,
+        "d0_code": [
+          [
+            "4D38",
+            "ld      INTMEM_EA, #3C74h"
+          ],
+          [
+            "4D3C",
+            "ldb     INTMEM_F8, [INTMEM_EA]"
+          ],
+          [
+            "4D3F",
+            "ldb     INTMEM_E7, 1[INTMEM_EA]"
+          ],
+          [
+            "4D43",
+            "orb     INTMEM_7A, #10h"
+          ],
+          [
+            "4D46",
+            "ldb     INTMEM_65, #3"
+          ],
+          [
+            "4D49",
+            "ljmp    ROM_3AAB"
+          ]
+        ],
+        "d1_code": [
+          [
+            "4F47",
+            "ldb     INTMEM_65, #7"
+          ],
+          [
+            "4F4A",
+            "ld      INTMEM_E0+4, #3C6Ch"
+          ],
+          [
+            "4F4E",
+            "clrb    INTMEM_E0+2"
+          ],
+          [
+            "4F50",
+            "ldb     INTMEM_EA, #0Bh"
+          ],
+          [
+            "4F53",
+            "ret"
+          ],
+          [
+            "4F54",
+            "ldb     INTMEM_FC, #-11h"
+          ]
+        ]
+      }
+    ],
+    "TFH7G031": [
+      {
+        "d0_entry": "51AE",
+        "d1_entry": "53BD",
+        "d0_load": "51AE",
+        "d1_load": "53C0",
+        "record_address": "3EAC",
+        "name": "TFH7G031",
+        "d0_nominal": "90003114",
+        "record": "544648374730333190003114",
+        "asm_db_complete": true,
+        "asm_db_matches": true,
+        "rom_present": false,
+        "d0_code": [
+          [
+            "51AE",
+            "ld      INTMEM_EA, #3EB4h"
+          ],
+          [
+            "51B2",
+            "ldb     INTMEM_F8, [INTMEM_EA]"
+          ],
+          [
+            "51B5",
+            "ldb     INTMEM_E7, 1[INTMEM_EA]"
+          ],
+          [
+            "51B9",
+            "orb     INTMEM_7A, #10h"
+          ],
+          [
+            "51BC",
+            "ldb     INTMEM_65, #3"
+          ],
+          [
+            "51BF",
+            "ljmp    ROM_3CEB"
+          ]
+        ],
+        "d1_code": [
+          [
+            "53BD",
+            "ldb     INTMEM_65, #7"
+          ],
+          [
+            "53C0",
+            "ld      INTMEM_DF+5, #3EACh"
+          ],
+          [
+            "53C4",
+            "clrb    INTMEM_DF+3"
+          ],
+          [
+            "53C6",
+            "ldb     INTMEM_EA, #0Bh"
+          ],
+          [
+            "53C9",
+            "ret"
+          ],
+          [
+            "53CA",
+            "ldb     INTMEM_FC, #-11h"
+          ]
+        ]
+      }
+    ]
+  },
+  "authorized": 0,
+  "note": "D0/D1 records are static; runtime fourth byte may differ. Alternatives are scheduling leads, not qualified instruments; no proof of absence."
+}
