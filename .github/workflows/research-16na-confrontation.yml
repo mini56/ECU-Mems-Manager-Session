@@ -1,0 +1,44 @@
+name: MEMS 1.6 NA - confrontation des 104 pistes et sorties lot 05
+on:
+  push:
+    branches: [research/mems-firmwares-20261126]
+    paths: ['.github/workflows/research-16na-confrontation.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: research-16na-confrontation
+  cancel-in-progress: false
+jobs:
+  analyse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reconstituer les preuves du lot 04 non sauvegardées
+        run: python3 research/instruments-integral-20261127/audit_16na_producers.py
+      - name: Confronter les 104 pistes V2 et les quatre autres profils
+        run: python3 research/instruments-integral-20261127/audit_16na_confrontation.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: preuves-16na-confrontation-lot05
+          path: |
+            research/instruments-integral-20261127/results/*16na_producteurs_lot04*
+            research/instruments-integral-20261127/results/*16na_confrontation_lot05*
+      - name: Sauvegarder les preuves sans écraser les commits concurrents
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/instruments-integral-20261127/results/
+          if ! git diff --cached --quiet; then
+            git commit -m "MEMS 1.6 NA : confrontation des 123 profils lots 04 et 05 [skip ci]"
+            for attempt in 1 2 3; do
+              git fetch origin research/mems-firmwares-20261126
+              git rebase FETCH_HEAD
+              if git push origin HEAD:research/mems-firmwares-20261126; then exit 0; fi
+            done
+            exit 1
+          fi
