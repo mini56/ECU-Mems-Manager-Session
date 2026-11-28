@@ -1,0 +1,53 @@
+{
+  "source_run": 46137446623,
+  "source_version": "V1.67",
+  "findings": [
+    {
+      "firmware": "kmj7v001",
+      "binary_blob": "1a990e2fdb1fd1f068baca3bf5e2869e69f0e49c",
+      "asm_blob": "05a41053a58e30f97688b89819dbd7186d181080",
+      "base": "100000",
+      "site": "10D14E",
+      "bytes": "0C 30 00 33 01 A0 06 23",
+      "branch_site": "10D156",
+      "branch_bytes": "66 FF 00 00 03 46",
+      "equal": "10D15C",
+      "not_equal": "10D49E",
+      "status": "PRIMARY_SERVICE_FIELD_LINKED"
+    },
+    {
+      "firmware": "kmj7v001",
+      "site": "10D4A2",
+      "bytes": "0C 30 00 27 01 A0 06 23",
+      "chunk": "10D49E–10D540",
+      "status": "PRIMARY_SERVICE_FIELD_LINKED_NEW_SITE"
+    },
+    {
+      "firmware": "ABEMR002",
+      "binary_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "asm_blob": "25cf14744fc9cce209081904abe98f6d04d6f25f",
+      "mode": "1E",
+      "pointer_start": "557C",
+      "pointer_end_exclusive": "55A0",
+      "dispatcher": "2E12",
+      "sites": {
+        "equality": [
+          "2EE2:DC",
+          "331C:C1",
+          "3321:C2",
+          "3326:C3",
+          "332B:D8",
+          "3330:D9"
+        ],
+        "range": [
+          "3335:C0",
+          "333C:80",
+          "3345:A0"
+        ]
+      },
+      "status": "DIRECT_PARTIAL_REVIEW"
+    }
+  ],
+  "physical": "NOT_TESTED",
+  "complete": false
+}
