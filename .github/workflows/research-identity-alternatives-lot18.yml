@@ -1,0 +1,31 @@
+name: MEMS 1.6 NA et 1.9 - identites et sorties alternatives lot 18
+on:
+  push:
+    branches: [research/mems-firmwares-20261126]
+    paths: ['.github/workflows/research-identity-alternatives-lot18.yml','research/instruments-integral-20261127/audit_identity_alternatives_lot18.py']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  analyse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verifier 342 identites et 242 profils hors lot 16
+        run: python3 research/instruments-integral-20261127/audit_identity_alternatives_lot18.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: identites-sorties-lot18
+          path: research/instruments-integral-20261127/results/*identites_sorties_lot18.json
+      - name: Enregistrer les preuves
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/instruments-integral-20261127/results/*identites_sorties_lot18.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Recherche instruments : identites et sorties alternatives lot 18 [skip ci]"
+            git pull --rebase origin research/mems-firmwares-20261126
+            git push origin HEAD:research/mems-firmwares-20261126
+          fi
