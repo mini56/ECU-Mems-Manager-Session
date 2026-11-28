@@ -1,0 +1,6500 @@
+{
+  "version": "V1.69",
+  "scope": "seven petrol ROMs 80196; 3 MEMS 1.3 and 4 MEMS 1.6 TURBO",
+  "source": "results_v168/repertoire_signatures.csv",
+  "source_blob": "5b8d68d729c159d820a093dbe0e4503b92bd9339",
+  "totals": {
+    "occurrences": 295,
+    "unique_sites": 272,
+    "duplicate_windows": 23,
+    "equality": 209,
+    "order": 63
+  },
+  "by_firmware": [
+    {
+      "firmware": "ABEMR002",
+      "occurrences": 43,
+      "unique_sites": 40,
+      "duplicate_windows": 3,
+      "equality": 31,
+      "order": 9
+    },
+    {
+      "firmware": "KBE6R003",
+      "occurrences": 43,
+      "unique_sites": 40,
+      "duplicate_windows": 3,
+      "equality": 31,
+      "order": 9
+    },
+    {
+      "firmware": "MGE7R002",
+      "occurrences": 43,
+      "unique_sites": 40,
+      "duplicate_windows": 3,
+      "equality": 31,
+      "order": 9
+    },
+    {
+      "firmware": "TCF7X005",
+      "occurrences": 42,
+      "unique_sites": 38,
+      "duplicate_windows": 4,
+      "equality": 29,
+      "order": 9
+    },
+    {
+      "firmware": "TCF8X005",
+      "occurrences": 42,
+      "unique_sites": 38,
+      "duplicate_windows": 4,
+      "equality": 29,
+      "order": 9
+    },
+    {
+      "firmware": "TFF8X000",
+      "occurrences": 41,
+      "unique_sites": 38,
+      "duplicate_windows": 3,
+      "equality": 29,
+      "order": 9
+    },
+    {
+      "firmware": "TFFSX000",
+      "occurrences": 41,
+      "unique_sites": 38,
+      "duplicate_windows": 3,
+      "equality": 29,
+      "order": 9
+    }
+  ],
+  "controls": [
+    {
+      "firmware": "ABEMR002",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "mode": "5560",
+      "start": "557C",
+      "end_exclusive": "55A0",
+      "load": "556E",
+      "dispatcher": "2E12",
+      "dispatcher_bytes": "88 48 3C DF 08 A2 3D 3A C9 12 2E E3 3A 51",
+      "mode_bytes": "99 1E 46 DF 01 F0 3B 9A 05 A1 34 55 26 F0 A1 7C 55 3C A1 A0 55 48 E7 99 D8",
+      "pointers": [
+        {
+          "slot": "557C",
+          "handler": "2FB5"
+        },
+        {
+          "slot": "557E",
+          "handler": "2EDC"
+        },
+        {
+          "slot": "5580",
+          "handler": "2FED"
+        },
+        {
+          "slot": "5582",
+          "handler": "56B8"
+        },
+        {
+          "slot": "5584",
+          "handler": "5688"
+        },
+        {
+          "slot": "5586",
+          "handler": "3314"
+        },
+        {
+          "slot": "5588",
+          "handler": "399B"
+        },
+        {
+          "slot": "558A",
+          "handler": "39EE"
+        },
+        {
+          "slot": "558C",
+          "handler": "3A93"
+        },
+        {
+          "slot": "558E",
+          "handler": "3A5E"
+        },
+        {
+          "slot": "5590",
+          "handler": "5914"
+        },
+        {
+          "slot": "5592",
+          "handler": "307E"
+        },
+        {
+          "slot": "5594",
+          "handler": "6268"
+        },
+        {
+          "slot": "5596",
+          "handler": "31CE"
+        },
+        {
+          "slot": "5598",
+          "handler": "571D"
+        },
+        {
+          "slot": "559A",
+          "handler": "3298"
+        },
+        {
+          "slot": "559C",
+          "handler": "33D5"
+        },
+        {
+          "slot": "559E",
+          "handler": "579E"
+        }
+      ]
+    },
+    {
+      "firmware": "KBE6R003",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "mode": "5600",
+      "start": "561E",
+      "end_exclusive": "5642",
+      "load": "5611",
+      "dispatcher": "2E12",
+      "dispatcher_bytes": "88 48 3C DF 08 A2 3D 3A C9 12 2E E3 3A 51",
+      "mode_bytes": "99 1E 46 DF 01 F0 51 08 9A 00 D7 05 A1 D2 55 26 F0 A1 1E 56 3C A1 42 56 48 E7 F6 D7",
+      "pointers": [
+        {
+          "slot": "561E",
+          "handler": "2FB5"
+        },
+        {
+          "slot": "5620",
+          "handler": "2EDC"
+        },
+        {
+          "slot": "5622",
+          "handler": "2FED"
+        },
+        {
+          "slot": "5624",
+          "handler": "5760"
+        },
+        {
+          "slot": "5626",
+          "handler": "572D"
+        },
+        {
+          "slot": "5628",
+          "handler": "3314"
+        },
+        {
+          "slot": "562A",
+          "handler": "399B"
+        },
+        {
+          "slot": "562C",
+          "handler": "39EE"
+        },
+        {
+          "slot": "562E",
+          "handler": "3A93"
+        },
+        {
+          "slot": "5630",
+          "handler": "3A5E"
+        },
+        {
+          "slot": "5632",
+          "handler": "59CA"
+        },
+        {
+          "slot": "5634",
+          "handler": "307E"
+        },
+        {
+          "slot": "5636",
+          "handler": "6340"
+        },
+        {
+          "slot": "5638",
+          "handler": "31CE"
+        },
+        {
+          "slot": "563A",
+          "handler": "57C7"
+        },
+        {
+          "slot": "563C",
+          "handler": "3298"
+        },
+        {
+          "slot": "563E",
+          "handler": "33D5"
+        },
+        {
+          "slot": "5640",
+          "handler": "584E"
+        }
+      ]
+    },
+    {
+      "firmware": "MGE7R002",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "mode": "5690",
+      "start": "56AC",
+      "end_exclusive": "56D0",
+      "load": "569E",
+      "dispatcher": "2E12",
+      "dispatcher_bytes": "88 48 3C DF 08 A2 3D 3A C9 12 2E E3 3A 51",
+      "mode_bytes": "99 1E 46 DF 01 F0 3B 9A 05 A1 64 56 26 F0 A1 AC 56 3C A1 D0 56 48 E7 69 D7",
+      "pointers": [
+        {
+          "slot": "56AC",
+          "handler": "2FB5"
+        },
+        {
+          "slot": "56AE",
+          "handler": "2EDC"
+        },
+        {
+          "slot": "56B0",
+          "handler": "2FED"
+        },
+        {
+          "slot": "56B2",
+          "handler": "57E8"
+        },
+        {
+          "slot": "56B4",
+          "handler": "57B8"
+        },
+        {
+          "slot": "56B6",
+          "handler": "3314"
+        },
+        {
+          "slot": "56B8",
+          "handler": "399B"
+        },
+        {
+          "slot": "56BA",
+          "handler": "39EE"
+        },
+        {
+          "slot": "56BC",
+          "handler": "3A93"
+        },
+        {
+          "slot": "56BE",
+          "handler": "3A5E"
+        },
+        {
+          "slot": "56C0",
+          "handler": "5A44"
+        },
+        {
+          "slot": "56C2",
+          "handler": "307E"
+        },
+        {
+          "slot": "56C4",
+          "handler": "63CE"
+        },
+        {
+          "slot": "56C6",
+          "handler": "31CE"
+        },
+        {
+          "slot": "56C8",
+          "handler": "584D"
+        },
+        {
+          "slot": "56CA",
+          "handler": "3298"
+        },
+        {
+          "slot": "56CC",
+          "handler": "33D5"
+        },
+        {
+          "slot": "56CE",
+          "handler": "58CE"
+        }
+      ]
+    },
+    {
+      "firmware": "TCF7X005",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "mode": "76E6",
+      "start": "7702",
+      "end_exclusive": "7726",
+      "load": "76F4",
+      "dispatcher": "374B",
+      "dispatcher_bytes": "88 48 3C DF 08 A2 3D 3A C9 4B 37 E3 3A 38",
+      "mode_bytes": "99 1E 46 DF 01 F0 3A B7 05 A1 E6 76 24 F0 A1 02 77 3C A1 26 77 48 E7 4C C0",
+      "pointers": [
+        {
+          "slot": "7702",
+          "handler": "4EC6"
+        },
+        {
+          "slot": "7704",
+          "handler": "7090"
+        },
+        {
+          "slot": "7706",
+          "handler": "3B03"
+        },
+        {
+          "slot": "7708",
+          "handler": "6E4C"
+        },
+        {
+          "slot": "770A",
+          "handler": "701C"
+        },
+        {
+          "slot": "770C",
+          "handler": "5030"
+        },
+        {
+          "slot": "770E",
+          "handler": "53D0"
+        },
+        {
+          "slot": "7710",
+          "handler": "34F5"
+        },
+        {
+          "slot": "7712",
+          "handler": "70A6"
+        },
+        {
+          "slot": "7714",
+          "handler": "34C3"
+        },
+        {
+          "slot": "7716",
+          "handler": "6EB3"
+        },
+        {
+          "slot": "7718",
+          "handler": "3B73"
+        },
+        {
+          "slot": "771A",
+          "handler": "5688"
+        },
+        {
+          "slot": "771C",
+          "handler": "4EFC"
+        },
+        {
+          "slot": "771E",
+          "handler": "704C"
+        },
+        {
+          "slot": "7720",
+          "handler": "4FB8"
+        },
+        {
+          "slot": "7722",
+          "handler": "511A"
+        },
+        {
+          "slot": "7724",
+          "handler": "4D31"
+        }
+      ]
+    },
+    {
+      "firmware": "TCF8X005",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "mode": "76E6",
+      "start": "7702",
+      "end_exclusive": "7726",
+      "load": "76F4",
+      "dispatcher": "374B",
+      "dispatcher_bytes": "88 48 3C DF 08 A2 3D 3A C9 4B 37 E3 3A 38",
+      "mode_bytes": "99 1E 46 DF 01 F0 3A B7 05 A1 E6 76 24 F0 A1 02 77 3C A1 26 77 48 E7 4C C0",
+      "pointers": [
+        {
+          "slot": "7702",
+          "handler": "4EC6"
+        },
+        {
+          "slot": "7704",
+          "handler": "7090"
+        },
+        {
+          "slot": "7706",
+          "handler": "3B03"
+        },
+        {
+          "slot": "7708",
+          "handler": "6E4C"
+        },
+        {
+          "slot": "770A",
+          "handler": "701C"
+        },
+        {
+          "slot": "770C",
+          "handler": "5030"
+        },
+        {
+          "slot": "770E",
+          "handler": "53D0"
+        },
+        {
+          "slot": "7710",
+          "handler": "34F5"
+        },
+        {
+          "slot": "7712",
+          "handler": "70A6"
+        },
+        {
+          "slot": "7714",
+          "handler": "34C3"
+        },
+        {
+          "slot": "7716",
+          "handler": "6EB3"
+        },
+        {
+          "slot": "7718",
+          "handler": "3B73"
+        },
+        {
+          "slot": "771A",
+          "handler": "5688"
+        },
+        {
+          "slot": "771C",
+          "handler": "4EFC"
+        },
+        {
+          "slot": "771E",
+          "handler": "704C"
+        },
+        {
+          "slot": "7720",
+          "handler": "4FB8"
+        },
+        {
+          "slot": "7722",
+          "handler": "511A"
+        },
+        {
+          "slot": "7724",
+          "handler": "4D31"
+        }
+      ]
+    },
+    {
+      "firmware": "TFF8X000",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "mode": "7A5A",
+      "start": "8922",
+      "end_exclusive": "8946",
+      "load": "7A68",
+      "dispatcher": "374D",
+      "dispatcher_bytes": "88 48 3C DF 08 A2 3D 3A C9 4D 37 E3 3A 38",
+      "mode_bytes": "99 1E 46 DF 01 F0 3A B7 05 A1 5A 7A 24 F0 A1 22 89 3C A1 46 89 48 E7 DA BC",
+      "pointers": [
+        {
+          "slot": "8922",
+          "handler": "4EC2"
+        },
+        {
+          "slot": "8924",
+          "handler": "73D0"
+        },
+        {
+          "slot": "8926",
+          "handler": "3B05"
+        },
+        {
+          "slot": "8928",
+          "handler": "7194"
+        },
+        {
+          "slot": "892A",
+          "handler": "735B"
+        },
+        {
+          "slot": "892C",
+          "handler": "502C"
+        },
+        {
+          "slot": "892E",
+          "handler": "53CC"
+        },
+        {
+          "slot": "8930",
+          "handler": "34F7"
+        },
+        {
+          "slot": "8932",
+          "handler": "73E6"
+        },
+        {
+          "slot": "8934",
+          "handler": "34C5"
+        },
+        {
+          "slot": "8936",
+          "handler": "71FB"
+        },
+        {
+          "slot": "8938",
+          "handler": "3B75"
+        },
+        {
+          "slot": "893A",
+          "handler": "5684"
+        },
+        {
+          "slot": "893C",
+          "handler": "4EF8"
+        },
+        {
+          "slot": "893E",
+          "handler": "738B"
+        },
+        {
+          "slot": "8940",
+          "handler": "4FB4"
+        },
+        {
+          "slot": "8942",
+          "handler": "5116"
+        },
+        {
+          "slot": "8944",
+          "handler": "4D2D"
+        }
+      ]
+    },
+    {
+      "firmware": "TFFSX000",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "mode": "7A5E",
+      "start": "8922",
+      "end_exclusive": "8946",
+      "load": "7A6C",
+      "dispatcher": "374D",
+      "dispatcher_bytes": "88 48 3C DF 08 A2 3D 3A C9 4D 37 E3 3A 38",
+      "mode_bytes": "99 1E 46 DF 01 F0 3A B7 05 A1 5E 7A 24 F0 A1 22 89 3C A1 46 89 48 E7 D6 BC",
+      "pointers": [
+        {
+          "slot": "8922",
+          "handler": "4EC2"
+        },
+        {
+          "slot": "8924",
+          "handler": "73D0"
+        },
+        {
+          "slot": "8926",
+          "handler": "3B05"
+        },
+        {
+          "slot": "8928",
+          "handler": "7194"
+        },
+        {
+          "slot": "892A",
+          "handler": "735B"
+        },
+        {
+          "slot": "892C",
+          "handler": "502C"
+        },
+        {
+          "slot": "892E",
+          "handler": "53CC"
+        },
+        {
+          "slot": "8930",
+          "handler": "34F7"
+        },
+        {
+          "slot": "8932",
+          "handler": "73E6"
+        },
+        {
+          "slot": "8934",
+          "handler": "34C5"
+        },
+        {
+          "slot": "8936",
+          "handler": "71FB"
+        },
+        {
+          "slot": "8938",
+          "handler": "3B75"
+        },
+        {
+          "slot": "893A",
+          "handler": "5684"
+        },
+        {
+          "slot": "893C",
+          "handler": "4EF8"
+        },
+        {
+          "slot": "893E",
+          "handler": "738B"
+        },
+        {
+          "slot": "8940",
+          "handler": "4FB4"
+        },
+        {
+          "slot": "8942",
+          "handler": "5116"
+        },
+        {
+          "slot": "8944",
+          "handler": "4D2D"
+        }
+      ]
+    }
+  ],
+  "sites": [
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "2EE2",
+      "selector": "DC",
+      "bytes": "99 DC 47 D7 0C",
+      "branch": "jne",
+      "taken": "2EF3",
+      "fallthrough": "2EE7",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "557E",
+          "handler": "2EDC",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "2EDC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "2FF3",
+      "selector": "F7",
+      "bytes": "99 F7 47 D7 2A",
+      "branch": "jne",
+      "taken": "3022",
+      "fallthrough": "2FF8",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5580",
+          "handler": "2FED",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "2FED",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "56BB",
+      "selector": "D0",
+      "bytes": "99 D0 47 D7 49",
+      "branch": "jne",
+      "taken": "5709",
+      "fallthrough": "56C0",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5582",
+          "handler": "56B8",
+          "distance": 3
+        },
+        {
+          "slot": "5584",
+          "handler": "5688",
+          "distance": 51
+        }
+      ],
+      "nearest_preceding_pointer": "56B8",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "568B",
+      "selector": "F5",
+      "bytes": "99 F5 47 D7 27",
+      "branch": "jne",
+      "taken": "56B7",
+      "fallthrough": "5690",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5584",
+          "handler": "5688",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "331C",
+      "selector": "C1",
+      "bytes": "99 C1 47 DF 4E",
+      "branch": "je",
+      "taken": "336F",
+      "fallthrough": "3321",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5586",
+          "handler": "3314",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "3321",
+      "selector": "C2",
+      "bytes": "99 C2 47 DF 50",
+      "branch": "je",
+      "taken": "3376",
+      "fallthrough": "3326",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5586",
+          "handler": "3314",
+          "distance": 13
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "3326",
+      "selector": "C3",
+      "bytes": "99 C3 47 DF 52",
+      "branch": "je",
+      "taken": "337D",
+      "fallthrough": "332B",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5586",
+          "handler": "3314",
+          "distance": 18
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "332B",
+      "selector": "D8",
+      "bytes": "99 D8 47 DF 54",
+      "branch": "je",
+      "taken": "3384",
+      "fallthrough": "3330",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5586",
+          "handler": "3314",
+          "distance": 23
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "3330",
+      "selector": "D9",
+      "bytes": "99 D9 47 DF 61",
+      "branch": "je",
+      "taken": "3396",
+      "fallthrough": "3335",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5586",
+          "handler": "3314",
+          "distance": 28
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "3335",
+      "selector": "C0",
+      "bytes": "99 C0 47 D1 02",
+      "branch": "jnh",
+      "taken": "333C",
+      "fallthrough": "333A",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "5586",
+          "handler": "3314",
+          "distance": 33
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "333C",
+      "selector": "80",
+      "bytes": "99 80 47 DB 02",
+      "branch": "jc",
+      "taken": "3343",
+      "fallthrough": "3341",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "5586",
+          "handler": "3314",
+          "distance": 40
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "3345",
+      "selector": "A0",
+      "bytes": "99 A0 47 D3 07",
+      "branch": "jnc",
+      "taken": "3351",
+      "fallthrough": "334A",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "5586",
+          "handler": "3314",
+          "distance": 49
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "39A1",
+      "selector": "D5",
+      "bytes": "99 D5 47 DF 07",
+      "branch": "je",
+      "taken": "39AD",
+      "fallthrough": "39A6",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5588",
+          "handler": "399B",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "399B",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "39A6",
+      "selector": "D6",
+      "bytes": "99 D6 47 DF 32",
+      "branch": "je",
+      "taken": "39DD",
+      "fallthrough": "39AB",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5588",
+          "handler": "399B",
+          "distance": 11
+        }
+      ],
+      "nearest_preceding_pointer": "399B",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "39F4",
+      "selector": "D7",
+      "bytes": "99 D7 47 D7 39",
+      "branch": "jne",
+      "taken": "3A32",
+      "fallthrough": "39F9",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5588",
+          "handler": "399B",
+          "distance": 89
+        },
+        {
+          "slot": "558A",
+          "handler": "39EE",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "39EE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "3A99",
+      "selector": "DA",
+      "bytes": "99 DA 47 D7 0E",
+      "branch": "jne",
+      "taken": "3AAC",
+      "fallthrough": "3A9E",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "558C",
+          "handler": "3A93",
+          "distance": 6
+        },
+        {
+          "slot": "558E",
+          "handler": "3A5E",
+          "distance": 59
+        }
+      ],
+      "nearest_preceding_pointer": "3A93",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "3A64",
+      "selector": "E7",
+      "bytes": "99 E7 47 D9 29",
+      "branch": "jh",
+      "taken": "3A92",
+      "fallthrough": "3A69",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "558E",
+          "handler": "3A5E",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "3A5E",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "3A69",
+      "selector": "E0",
+      "bytes": "99 E0 47 D3 24",
+      "branch": "jnc",
+      "taken": "3A92",
+      "fallthrough": "3A6E",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "558E",
+          "handler": "3A5E",
+          "distance": 11
+        }
+      ],
+      "nearest_preceding_pointer": "3A5E",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "5917",
+      "selector": "F6",
+      "bytes": "99 F6 47 D7 1B",
+      "branch": "jne",
+      "taken": "5937",
+      "fallthrough": "591C",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5590",
+          "handler": "5914",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "5914",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "3084",
+      "selector": "F0",
+      "bytes": "99 F0 47 D7 0C",
+      "branch": "jne",
+      "taken": "3095",
+      "fallthrough": "3089",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5592",
+          "handler": "307E",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "307E",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "30CA",
+      "selector": "C4",
+      "bytes": "99 C4 47 DF 03",
+      "branch": "je",
+      "taken": "30D2",
+      "fallthrough": "30CF",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5592",
+          "handler": "307E",
+          "distance": 76
+        }
+      ],
+      "nearest_preceding_pointer": "307E",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "626B",
+      "selector": "F4",
+      "bytes": "99 F4 47 DF 05",
+      "branch": "je",
+      "taken": "6275",
+      "fallthrough": "6270",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5594",
+          "handler": "6268",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "6268",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "6270",
+      "selector": "F2",
+      "bytes": "99 F2 47 D7 14",
+      "branch": "jne",
+      "taken": "6289",
+      "fallthrough": "6275",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5594",
+          "handler": "6268",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "6268",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "628F",
+      "selector": "79",
+      "bytes": "99 79 47 D3 13",
+      "branch": "jnc",
+      "taken": "62A7",
+      "fallthrough": "6294",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "5594",
+          "handler": "6268",
+          "distance": 39
+        }
+      ],
+      "nearest_preceding_pointer": "6268",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "6294",
+      "selector": "7C",
+      "bytes": "99 7C 47 D9 02",
+      "branch": "jh",
+      "taken": "629B",
+      "fallthrough": "6299",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "5594",
+          "handler": "6268",
+          "distance": 44
+        }
+      ],
+      "nearest_preceding_pointer": "6268",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "629B",
+      "selector": "89",
+      "bytes": "99 89 47 D3 07",
+      "branch": "jnc",
+      "taken": "62A7",
+      "fallthrough": "62A0",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "5594",
+          "handler": "6268",
+          "distance": 51
+        }
+      ],
+      "nearest_preceding_pointer": "6268",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "62A0",
+      "selector": "94",
+      "bytes": "99 94 47 D2 02",
+      "branch": "jgt",
+      "taken": "62A7",
+      "fallthrough": "62A5",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "5594",
+          "handler": "6268",
+          "distance": 56
+        }
+      ],
+      "nearest_preceding_pointer": "6268",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "62A7",
+      "selector": "7E",
+      "bytes": "99 7E 47 D7 02",
+      "branch": "jne",
+      "taken": "62AE",
+      "fallthrough": "62AC",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5594",
+          "handler": "6268",
+          "distance": 63
+        }
+      ],
+      "nearest_preceding_pointer": "6268",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "62AE",
+      "selector": "7F",
+      "bytes": "99 7F 47 D7 02",
+      "branch": "jne",
+      "taken": "62B5",
+      "fallthrough": "62B3",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5594",
+          "handler": "6268",
+          "distance": 70
+        }
+      ],
+      "nearest_preceding_pointer": "6268",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "62B5",
+      "selector": "CB",
+      "bytes": "99 CB 47 D7 28",
+      "branch": "jne",
+      "taken": "62E2",
+      "fallthrough": "62BA",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5594",
+          "handler": "6268",
+          "distance": 77
+        }
+      ],
+      "nearest_preceding_pointer": "6268",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "31D6",
+      "selector": "C5",
+      "bytes": "99 C5 47 DF 16",
+      "branch": "je",
+      "taken": "31F1",
+      "fallthrough": "31DB",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5596",
+          "handler": "31CE",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "31CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "31DB",
+      "selector": "C6",
+      "bytes": "99 C6 47 DF 25",
+      "branch": "je",
+      "taken": "3205",
+      "fallthrough": "31E0",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5596",
+          "handler": "31CE",
+          "distance": 13
+        }
+      ],
+      "nearest_preceding_pointer": "31CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "31E0",
+      "selector": "C7",
+      "bytes": "99 C7 47 DF 34",
+      "branch": "je",
+      "taken": "3219",
+      "fallthrough": "31E5",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5596",
+          "handler": "31CE",
+          "distance": 18
+        }
+      ],
+      "nearest_preceding_pointer": "31CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "31E5",
+      "selector": "C8",
+      "bytes": "99 C8 47 DF 4F",
+      "branch": "je",
+      "taken": "3239",
+      "fallthrough": "31EA",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5596",
+          "handler": "31CE",
+          "distance": 23
+        }
+      ],
+      "nearest_preceding_pointer": "31CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "31EA",
+      "selector": "C9",
+      "bytes": "99 C9 47 DF 70",
+      "branch": "je",
+      "taken": "325F",
+      "fallthrough": "31EF",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5596",
+          "handler": "31CE",
+          "distance": 28
+        }
+      ],
+      "nearest_preceding_pointer": "31CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "572A",
+      "selector": "F5",
+      "bytes": "99 F5 47 D7 0F",
+      "branch": "jne",
+      "taken": "573E",
+      "fallthrough": "572F",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5598",
+          "handler": "571D",
+          "distance": 13
+        }
+      ],
+      "nearest_preceding_pointer": "571D",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "329E",
+      "selector": "F8",
+      "bytes": "99 F8 47 D7 18",
+      "branch": "jne",
+      "taken": "32BB",
+      "fallthrough": "32A3",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "559A",
+          "handler": "3298",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "3298",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "33DB",
+      "selector": "D4",
+      "bytes": "99 D4 47 D7 48",
+      "branch": "jne",
+      "taken": "3428",
+      "fallthrough": "33E0",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "559C",
+          "handler": "33D5",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "33D5",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "57A4",
+      "selector": "D1",
+      "bytes": "99 D1 47 DF 08",
+      "branch": "je",
+      "taken": "57B1",
+      "fallthrough": "57A9",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "559E",
+          "handler": "579E",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "579E",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "site": "57A9",
+      "selector": "D3",
+      "bytes": "99 D3 47 DF 03",
+      "branch": "je",
+      "taken": "57B1",
+      "fallthrough": "57AE",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "559E",
+          "handler": "579E",
+          "distance": 11
+        }
+      ],
+      "nearest_preceding_pointer": "579E",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "2EE2",
+      "selector": "DC",
+      "bytes": "99 DC 47 D7 0C",
+      "branch": "jne",
+      "taken": "2EF3",
+      "fallthrough": "2EE7",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5620",
+          "handler": "2EDC",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "2EDC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "2FF3",
+      "selector": "F7",
+      "bytes": "99 F7 47 D7 2A",
+      "branch": "jne",
+      "taken": "3022",
+      "fallthrough": "2FF8",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5622",
+          "handler": "2FED",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "2FED",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "5766",
+      "selector": "D0",
+      "bytes": "99 D0 47 D7 49",
+      "branch": "jne",
+      "taken": "57B4",
+      "fallthrough": "576B",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5624",
+          "handler": "5760",
+          "distance": 6
+        },
+        {
+          "slot": "5626",
+          "handler": "572D",
+          "distance": 57
+        }
+      ],
+      "nearest_preceding_pointer": "5760",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "5733",
+      "selector": "F5",
+      "bytes": "99 F5 47 D7 27",
+      "branch": "jne",
+      "taken": "575F",
+      "fallthrough": "5738",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5626",
+          "handler": "572D",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "572D",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "331C",
+      "selector": "C1",
+      "bytes": "99 C1 47 DF 4E",
+      "branch": "je",
+      "taken": "336F",
+      "fallthrough": "3321",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5628",
+          "handler": "3314",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "3321",
+      "selector": "C2",
+      "bytes": "99 C2 47 DF 50",
+      "branch": "je",
+      "taken": "3376",
+      "fallthrough": "3326",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5628",
+          "handler": "3314",
+          "distance": 13
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "3326",
+      "selector": "C3",
+      "bytes": "99 C3 47 DF 52",
+      "branch": "je",
+      "taken": "337D",
+      "fallthrough": "332B",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5628",
+          "handler": "3314",
+          "distance": 18
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "332B",
+      "selector": "D8",
+      "bytes": "99 D8 47 DF 54",
+      "branch": "je",
+      "taken": "3384",
+      "fallthrough": "3330",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5628",
+          "handler": "3314",
+          "distance": 23
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "3330",
+      "selector": "D9",
+      "bytes": "99 D9 47 DF 61",
+      "branch": "je",
+      "taken": "3396",
+      "fallthrough": "3335",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5628",
+          "handler": "3314",
+          "distance": 28
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "3335",
+      "selector": "C0",
+      "bytes": "99 C0 47 D1 02",
+      "branch": "jnh",
+      "taken": "333C",
+      "fallthrough": "333A",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "5628",
+          "handler": "3314",
+          "distance": 33
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "333C",
+      "selector": "80",
+      "bytes": "99 80 47 DB 02",
+      "branch": "jc",
+      "taken": "3343",
+      "fallthrough": "3341",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "5628",
+          "handler": "3314",
+          "distance": 40
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "3345",
+      "selector": "A0",
+      "bytes": "99 A0 47 D3 07",
+      "branch": "jnc",
+      "taken": "3351",
+      "fallthrough": "334A",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "5628",
+          "handler": "3314",
+          "distance": 49
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "39A1",
+      "selector": "D5",
+      "bytes": "99 D5 47 DF 07",
+      "branch": "je",
+      "taken": "39AD",
+      "fallthrough": "39A6",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "562A",
+          "handler": "399B",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "399B",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "39A6",
+      "selector": "D6",
+      "bytes": "99 D6 47 DF 32",
+      "branch": "je",
+      "taken": "39DD",
+      "fallthrough": "39AB",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "562A",
+          "handler": "399B",
+          "distance": 11
+        }
+      ],
+      "nearest_preceding_pointer": "399B",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "39F4",
+      "selector": "D7",
+      "bytes": "99 D7 47 D7 39",
+      "branch": "jne",
+      "taken": "3A32",
+      "fallthrough": "39F9",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "562A",
+          "handler": "399B",
+          "distance": 89
+        },
+        {
+          "slot": "562C",
+          "handler": "39EE",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "39EE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "3A99",
+      "selector": "DA",
+      "bytes": "99 DA 47 D7 0E",
+      "branch": "jne",
+      "taken": "3AAC",
+      "fallthrough": "3A9E",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "562E",
+          "handler": "3A93",
+          "distance": 6
+        },
+        {
+          "slot": "5630",
+          "handler": "3A5E",
+          "distance": 59
+        }
+      ],
+      "nearest_preceding_pointer": "3A93",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "3A64",
+      "selector": "E7",
+      "bytes": "99 E7 47 D9 29",
+      "branch": "jh",
+      "taken": "3A92",
+      "fallthrough": "3A69",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "5630",
+          "handler": "3A5E",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "3A5E",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "3A69",
+      "selector": "E0",
+      "bytes": "99 E0 47 D3 24",
+      "branch": "jnc",
+      "taken": "3A92",
+      "fallthrough": "3A6E",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "5630",
+          "handler": "3A5E",
+          "distance": 11
+        }
+      ],
+      "nearest_preceding_pointer": "3A5E",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "59D0",
+      "selector": "F6",
+      "bytes": "99 F6 47 D7 1B",
+      "branch": "jne",
+      "taken": "59F0",
+      "fallthrough": "59D5",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5632",
+          "handler": "59CA",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "59CA",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "3084",
+      "selector": "F0",
+      "bytes": "99 F0 47 D7 0C",
+      "branch": "jne",
+      "taken": "3095",
+      "fallthrough": "3089",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5634",
+          "handler": "307E",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "307E",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "30CA",
+      "selector": "C4",
+      "bytes": "99 C4 47 DF 03",
+      "branch": "je",
+      "taken": "30D2",
+      "fallthrough": "30CF",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5634",
+          "handler": "307E",
+          "distance": 76
+        }
+      ],
+      "nearest_preceding_pointer": "307E",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "6346",
+      "selector": "F4",
+      "bytes": "99 F4 47 DF 05",
+      "branch": "je",
+      "taken": "6350",
+      "fallthrough": "634B",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5636",
+          "handler": "6340",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "6340",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "634B",
+      "selector": "F2",
+      "bytes": "99 F2 47 D7 14",
+      "branch": "jne",
+      "taken": "6364",
+      "fallthrough": "6350",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5636",
+          "handler": "6340",
+          "distance": 11
+        }
+      ],
+      "nearest_preceding_pointer": "6340",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "636E",
+      "selector": "79",
+      "bytes": "99 79 47 D3 13",
+      "branch": "jnc",
+      "taken": "6386",
+      "fallthrough": "6373",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "5636",
+          "handler": "6340",
+          "distance": 46
+        }
+      ],
+      "nearest_preceding_pointer": "6340",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "6373",
+      "selector": "7C",
+      "bytes": "99 7C 47 D9 02",
+      "branch": "jh",
+      "taken": "637A",
+      "fallthrough": "6378",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "5636",
+          "handler": "6340",
+          "distance": 51
+        }
+      ],
+      "nearest_preceding_pointer": "6340",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "637A",
+      "selector": "89",
+      "bytes": "99 89 47 D3 07",
+      "branch": "jnc",
+      "taken": "6386",
+      "fallthrough": "637F",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "5636",
+          "handler": "6340",
+          "distance": 58
+        }
+      ],
+      "nearest_preceding_pointer": "6340",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "637F",
+      "selector": "94",
+      "bytes": "99 94 47 D2 02",
+      "branch": "jgt",
+      "taken": "6386",
+      "fallthrough": "6384",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "5636",
+          "handler": "6340",
+          "distance": 63
+        }
+      ],
+      "nearest_preceding_pointer": "6340",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "6386",
+      "selector": "7E",
+      "bytes": "99 7E 47 D7 02",
+      "branch": "jne",
+      "taken": "638D",
+      "fallthrough": "638B",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5636",
+          "handler": "6340",
+          "distance": 70
+        }
+      ],
+      "nearest_preceding_pointer": "6340",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "638D",
+      "selector": "7F",
+      "bytes": "99 7F 47 D7 02",
+      "branch": "jne",
+      "taken": "6394",
+      "fallthrough": "6392",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5636",
+          "handler": "6340",
+          "distance": 77
+        }
+      ],
+      "nearest_preceding_pointer": "6340",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "6394",
+      "selector": "CB",
+      "bytes": "99 CB 47 D7 28",
+      "branch": "jne",
+      "taken": "63C1",
+      "fallthrough": "6399",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5636",
+          "handler": "6340",
+          "distance": 84
+        }
+      ],
+      "nearest_preceding_pointer": "6340",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "31D6",
+      "selector": "C5",
+      "bytes": "99 C5 47 DF 16",
+      "branch": "je",
+      "taken": "31F1",
+      "fallthrough": "31DB",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5638",
+          "handler": "31CE",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "31CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "31DB",
+      "selector": "C6",
+      "bytes": "99 C6 47 DF 25",
+      "branch": "je",
+      "taken": "3205",
+      "fallthrough": "31E0",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5638",
+          "handler": "31CE",
+          "distance": 13
+        }
+      ],
+      "nearest_preceding_pointer": "31CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "31E0",
+      "selector": "C7",
+      "bytes": "99 C7 47 DF 34",
+      "branch": "je",
+      "taken": "3219",
+      "fallthrough": "31E5",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5638",
+          "handler": "31CE",
+          "distance": 18
+        }
+      ],
+      "nearest_preceding_pointer": "31CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "31E5",
+      "selector": "C8",
+      "bytes": "99 C8 47 DF 4F",
+      "branch": "je",
+      "taken": "3239",
+      "fallthrough": "31EA",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5638",
+          "handler": "31CE",
+          "distance": 23
+        }
+      ],
+      "nearest_preceding_pointer": "31CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "31EA",
+      "selector": "C9",
+      "bytes": "99 C9 47 DF 70",
+      "branch": "je",
+      "taken": "325F",
+      "fallthrough": "31EF",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5638",
+          "handler": "31CE",
+          "distance": 28
+        }
+      ],
+      "nearest_preceding_pointer": "31CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "57DA",
+      "selector": "F5",
+      "bytes": "99 F5 47 D7 0F",
+      "branch": "jne",
+      "taken": "57EE",
+      "fallthrough": "57DF",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "563A",
+          "handler": "57C7",
+          "distance": 19
+        }
+      ],
+      "nearest_preceding_pointer": "57C7",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "329E",
+      "selector": "F8",
+      "bytes": "99 F8 47 D7 18",
+      "branch": "jne",
+      "taken": "32BB",
+      "fallthrough": "32A3",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "563C",
+          "handler": "3298",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "3298",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "33DB",
+      "selector": "D4",
+      "bytes": "99 D4 47 D7 48",
+      "branch": "jne",
+      "taken": "3428",
+      "fallthrough": "33E0",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "563E",
+          "handler": "33D5",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "33D5",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "5857",
+      "selector": "D1",
+      "bytes": "99 D1 47 DF 08",
+      "branch": "je",
+      "taken": "5864",
+      "fallthrough": "585C",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5640",
+          "handler": "584E",
+          "distance": 9
+        }
+      ],
+      "nearest_preceding_pointer": "584E",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "site": "585C",
+      "selector": "D3",
+      "bytes": "99 D3 47 DF 03",
+      "branch": "je",
+      "taken": "5864",
+      "fallthrough": "5861",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "5640",
+          "handler": "584E",
+          "distance": 14
+        }
+      ],
+      "nearest_preceding_pointer": "584E",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "2EE2",
+      "selector": "DC",
+      "bytes": "99 DC 47 D7 0C",
+      "branch": "jne",
+      "taken": "2EF3",
+      "fallthrough": "2EE7",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56AE",
+          "handler": "2EDC",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "2EDC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "2FF3",
+      "selector": "F7",
+      "bytes": "99 F7 47 D7 2A",
+      "branch": "jne",
+      "taken": "3022",
+      "fallthrough": "2FF8",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56B0",
+          "handler": "2FED",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "2FED",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "57EB",
+      "selector": "D0",
+      "bytes": "99 D0 47 D7 49",
+      "branch": "jne",
+      "taken": "5839",
+      "fallthrough": "57F0",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56B2",
+          "handler": "57E8",
+          "distance": 3
+        },
+        {
+          "slot": "56B4",
+          "handler": "57B8",
+          "distance": 51
+        }
+      ],
+      "nearest_preceding_pointer": "57E8",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "57BB",
+      "selector": "F5",
+      "bytes": "99 F5 47 D7 27",
+      "branch": "jne",
+      "taken": "57E7",
+      "fallthrough": "57C0",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56B4",
+          "handler": "57B8",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "57B8",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "331C",
+      "selector": "C1",
+      "bytes": "99 C1 47 DF 4E",
+      "branch": "je",
+      "taken": "336F",
+      "fallthrough": "3321",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56B6",
+          "handler": "3314",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "3321",
+      "selector": "C2",
+      "bytes": "99 C2 47 DF 50",
+      "branch": "je",
+      "taken": "3376",
+      "fallthrough": "3326",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56B6",
+          "handler": "3314",
+          "distance": 13
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "3326",
+      "selector": "C3",
+      "bytes": "99 C3 47 DF 52",
+      "branch": "je",
+      "taken": "337D",
+      "fallthrough": "332B",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56B6",
+          "handler": "3314",
+          "distance": 18
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "332B",
+      "selector": "D8",
+      "bytes": "99 D8 47 DF 54",
+      "branch": "je",
+      "taken": "3384",
+      "fallthrough": "3330",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56B6",
+          "handler": "3314",
+          "distance": 23
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "3330",
+      "selector": "D9",
+      "bytes": "99 D9 47 DF 61",
+      "branch": "je",
+      "taken": "3396",
+      "fallthrough": "3335",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56B6",
+          "handler": "3314",
+          "distance": 28
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "3335",
+      "selector": "C0",
+      "bytes": "99 C0 47 D1 02",
+      "branch": "jnh",
+      "taken": "333C",
+      "fallthrough": "333A",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "56B6",
+          "handler": "3314",
+          "distance": 33
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "333C",
+      "selector": "80",
+      "bytes": "99 80 47 DB 02",
+      "branch": "jc",
+      "taken": "3343",
+      "fallthrough": "3341",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "56B6",
+          "handler": "3314",
+          "distance": 40
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "3345",
+      "selector": "A0",
+      "bytes": "99 A0 47 D3 07",
+      "branch": "jnc",
+      "taken": "3351",
+      "fallthrough": "334A",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "56B6",
+          "handler": "3314",
+          "distance": 49
+        }
+      ],
+      "nearest_preceding_pointer": "3314",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "39A1",
+      "selector": "D5",
+      "bytes": "99 D5 47 DF 07",
+      "branch": "je",
+      "taken": "39AD",
+      "fallthrough": "39A6",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56B8",
+          "handler": "399B",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "399B",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "39A6",
+      "selector": "D6",
+      "bytes": "99 D6 47 DF 32",
+      "branch": "je",
+      "taken": "39DD",
+      "fallthrough": "39AB",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56B8",
+          "handler": "399B",
+          "distance": 11
+        }
+      ],
+      "nearest_preceding_pointer": "399B",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "39F4",
+      "selector": "D7",
+      "bytes": "99 D7 47 D7 39",
+      "branch": "jne",
+      "taken": "3A32",
+      "fallthrough": "39F9",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56B8",
+          "handler": "399B",
+          "distance": 89
+        },
+        {
+          "slot": "56BA",
+          "handler": "39EE",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "39EE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "3A99",
+      "selector": "DA",
+      "bytes": "99 DA 47 D7 0E",
+      "branch": "jne",
+      "taken": "3AAC",
+      "fallthrough": "3A9E",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56BC",
+          "handler": "3A93",
+          "distance": 6
+        },
+        {
+          "slot": "56BE",
+          "handler": "3A5E",
+          "distance": 59
+        }
+      ],
+      "nearest_preceding_pointer": "3A93",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "3A64",
+      "selector": "E7",
+      "bytes": "99 E7 47 D9 29",
+      "branch": "jh",
+      "taken": "3A92",
+      "fallthrough": "3A69",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "56BE",
+          "handler": "3A5E",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "3A5E",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "3A69",
+      "selector": "E0",
+      "bytes": "99 E0 47 D3 24",
+      "branch": "jnc",
+      "taken": "3A92",
+      "fallthrough": "3A6E",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "56BE",
+          "handler": "3A5E",
+          "distance": 11
+        }
+      ],
+      "nearest_preceding_pointer": "3A5E",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "5A47",
+      "selector": "F6",
+      "bytes": "99 F6 47 D7 1B",
+      "branch": "jne",
+      "taken": "5A67",
+      "fallthrough": "5A4C",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C0",
+          "handler": "5A44",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "5A44",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "3084",
+      "selector": "F0",
+      "bytes": "99 F0 47 D7 0C",
+      "branch": "jne",
+      "taken": "3095",
+      "fallthrough": "3089",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C2",
+          "handler": "307E",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "307E",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "30CA",
+      "selector": "C4",
+      "bytes": "99 C4 47 DF 03",
+      "branch": "je",
+      "taken": "30D2",
+      "fallthrough": "30CF",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C2",
+          "handler": "307E",
+          "distance": 76
+        }
+      ],
+      "nearest_preceding_pointer": "307E",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "63D1",
+      "selector": "F4",
+      "bytes": "99 F4 47 DF 05",
+      "branch": "je",
+      "taken": "63DB",
+      "fallthrough": "63D6",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C4",
+          "handler": "63CE",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "63CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "63D6",
+      "selector": "F2",
+      "bytes": "99 F2 47 D7 14",
+      "branch": "jne",
+      "taken": "63EF",
+      "fallthrough": "63DB",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C4",
+          "handler": "63CE",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "63CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "63F5",
+      "selector": "79",
+      "bytes": "99 79 47 D3 13",
+      "branch": "jnc",
+      "taken": "640D",
+      "fallthrough": "63FA",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C4",
+          "handler": "63CE",
+          "distance": 39
+        }
+      ],
+      "nearest_preceding_pointer": "63CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "63FA",
+      "selector": "7C",
+      "bytes": "99 7C 47 D9 02",
+      "branch": "jh",
+      "taken": "6401",
+      "fallthrough": "63FF",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C4",
+          "handler": "63CE",
+          "distance": 44
+        }
+      ],
+      "nearest_preceding_pointer": "63CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "6401",
+      "selector": "89",
+      "bytes": "99 89 47 D3 07",
+      "branch": "jnc",
+      "taken": "640D",
+      "fallthrough": "6406",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C4",
+          "handler": "63CE",
+          "distance": 51
+        }
+      ],
+      "nearest_preceding_pointer": "63CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "6406",
+      "selector": "94",
+      "bytes": "99 94 47 D2 02",
+      "branch": "jgt",
+      "taken": "640D",
+      "fallthrough": "640B",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C4",
+          "handler": "63CE",
+          "distance": 56
+        }
+      ],
+      "nearest_preceding_pointer": "63CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "640D",
+      "selector": "7E",
+      "bytes": "99 7E 47 D7 02",
+      "branch": "jne",
+      "taken": "6414",
+      "fallthrough": "6412",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C4",
+          "handler": "63CE",
+          "distance": 63
+        }
+      ],
+      "nearest_preceding_pointer": "63CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "6414",
+      "selector": "7F",
+      "bytes": "99 7F 47 D7 02",
+      "branch": "jne",
+      "taken": "641B",
+      "fallthrough": "6419",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C4",
+          "handler": "63CE",
+          "distance": 70
+        }
+      ],
+      "nearest_preceding_pointer": "63CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "641B",
+      "selector": "CB",
+      "bytes": "99 CB 47 D7 28",
+      "branch": "jne",
+      "taken": "6448",
+      "fallthrough": "6420",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C4",
+          "handler": "63CE",
+          "distance": 77
+        }
+      ],
+      "nearest_preceding_pointer": "63CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "31D6",
+      "selector": "C5",
+      "bytes": "99 C5 47 DF 16",
+      "branch": "je",
+      "taken": "31F1",
+      "fallthrough": "31DB",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C6",
+          "handler": "31CE",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "31CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "31DB",
+      "selector": "C6",
+      "bytes": "99 C6 47 DF 25",
+      "branch": "je",
+      "taken": "3205",
+      "fallthrough": "31E0",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C6",
+          "handler": "31CE",
+          "distance": 13
+        }
+      ],
+      "nearest_preceding_pointer": "31CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "31E0",
+      "selector": "C7",
+      "bytes": "99 C7 47 DF 34",
+      "branch": "je",
+      "taken": "3219",
+      "fallthrough": "31E5",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C6",
+          "handler": "31CE",
+          "distance": 18
+        }
+      ],
+      "nearest_preceding_pointer": "31CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "31E5",
+      "selector": "C8",
+      "bytes": "99 C8 47 DF 4F",
+      "branch": "je",
+      "taken": "3239",
+      "fallthrough": "31EA",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C6",
+          "handler": "31CE",
+          "distance": 23
+        }
+      ],
+      "nearest_preceding_pointer": "31CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "31EA",
+      "selector": "C9",
+      "bytes": "99 C9 47 DF 70",
+      "branch": "je",
+      "taken": "325F",
+      "fallthrough": "31EF",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C6",
+          "handler": "31CE",
+          "distance": 28
+        }
+      ],
+      "nearest_preceding_pointer": "31CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "585A",
+      "selector": "F5",
+      "bytes": "99 F5 47 D7 0F",
+      "branch": "jne",
+      "taken": "586E",
+      "fallthrough": "585F",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56C8",
+          "handler": "584D",
+          "distance": 13
+        }
+      ],
+      "nearest_preceding_pointer": "584D",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "329E",
+      "selector": "F8",
+      "bytes": "99 F8 47 D7 18",
+      "branch": "jne",
+      "taken": "32BB",
+      "fallthrough": "32A3",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56CA",
+          "handler": "3298",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "3298",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "33DB",
+      "selector": "D4",
+      "bytes": "99 D4 47 D7 48",
+      "branch": "jne",
+      "taken": "3428",
+      "fallthrough": "33E0",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56CC",
+          "handler": "33D5",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "33D5",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "58D4",
+      "selector": "D1",
+      "bytes": "99 D1 47 DF 08",
+      "branch": "je",
+      "taken": "58E1",
+      "fallthrough": "58D9",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56CE",
+          "handler": "58CE",
+          "distance": 6
+        }
+      ],
+      "nearest_preceding_pointer": "58CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "rom_blob": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "site": "58D9",
+      "selector": "D3",
+      "bytes": "99 D3 47 DF 03",
+      "branch": "je",
+      "taken": "58E1",
+      "fallthrough": "58DE",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "56CE",
+          "handler": "58CE",
+          "distance": 11
+        }
+      ],
+      "nearest_preceding_pointer": "58CE",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "7093",
+      "selector": "DC",
+      "bytes": "99 DC 47 D7 0C",
+      "branch": "jne",
+      "taken": "70A4",
+      "fallthrough": "7098",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7704",
+          "handler": "7090",
+          "distance": 3
+        },
+        {
+          "slot": "771E",
+          "handler": "704C",
+          "distance": 71
+        }
+      ],
+      "nearest_preceding_pointer": "7090",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "70A9",
+      "selector": "DA",
+      "bytes": "99 DA 47 D7 0C",
+      "branch": "jne",
+      "taken": "70BA",
+      "fallthrough": "70AE",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7704",
+          "handler": "7090",
+          "distance": 25
+        },
+        {
+          "slot": "7712",
+          "handler": "70A6",
+          "distance": 3
+        },
+        {
+          "slot": "771E",
+          "handler": "704C",
+          "distance": 93
+        }
+      ],
+      "nearest_preceding_pointer": "70A6",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "3B06",
+      "selector": "F7",
+      "bytes": "99 F7 47 D7 2A",
+      "branch": "jne",
+      "taken": "3B35",
+      "fallthrough": "3B0B",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7706",
+          "handler": "3B03",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "3B03",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "6E4F",
+      "selector": "D0",
+      "bytes": "99 D0 47 D7 4B",
+      "branch": "jne",
+      "taken": "6E9F",
+      "fallthrough": "6E54",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7708",
+          "handler": "6E4C",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "6E4C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "701F",
+      "selector": "F5",
+      "bytes": "99 F5 47 D7 27",
+      "branch": "jne",
+      "taken": "704B",
+      "fallthrough": "7024",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "770A",
+          "handler": "701C",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "701C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "5035",
+      "selector": "C1",
+      "bytes": "99 C1 47 DF 4E",
+      "branch": "je",
+      "taken": "5088",
+      "fallthrough": "503A",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "770C",
+          "handler": "5030",
+          "distance": 5
+        }
+      ],
+      "nearest_preceding_pointer": "5030",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "503A",
+      "selector": "C2",
+      "bytes": "99 C2 47 DF 50",
+      "branch": "je",
+      "taken": "508F",
+      "fallthrough": "503F",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "770C",
+          "handler": "5030",
+          "distance": 10
+        }
+      ],
+      "nearest_preceding_pointer": "5030",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "503F",
+      "selector": "C3",
+      "bytes": "99 C3 47 DF 52",
+      "branch": "je",
+      "taken": "5096",
+      "fallthrough": "5044",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "770C",
+          "handler": "5030",
+          "distance": 15
+        }
+      ],
+      "nearest_preceding_pointer": "5030",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "5044",
+      "selector": "D8",
+      "bytes": "99 D8 47 DF 54",
+      "branch": "je",
+      "taken": "509D",
+      "fallthrough": "5049",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "770C",
+          "handler": "5030",
+          "distance": 20
+        }
+      ],
+      "nearest_preceding_pointer": "5030",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "5049",
+      "selector": "D9",
+      "bytes": "99 D9 47 DF 61",
+      "branch": "je",
+      "taken": "50AF",
+      "fallthrough": "504E",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "770C",
+          "handler": "5030",
+          "distance": 25
+        }
+      ],
+      "nearest_preceding_pointer": "5030",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "504E",
+      "selector": "C0",
+      "bytes": "99 C0 47 D1 02",
+      "branch": "jnh",
+      "taken": "5055",
+      "fallthrough": "5053",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "770C",
+          "handler": "5030",
+          "distance": 30
+        }
+      ],
+      "nearest_preceding_pointer": "5030",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "5055",
+      "selector": "80",
+      "bytes": "99 80 47 DB 02",
+      "branch": "jc",
+      "taken": "505C",
+      "fallthrough": "505A",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "770C",
+          "handler": "5030",
+          "distance": 37
+        }
+      ],
+      "nearest_preceding_pointer": "5030",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "505E",
+      "selector": "A0",
+      "bytes": "99 A0 47 D3 07",
+      "branch": "jnc",
+      "taken": "506A",
+      "fallthrough": "5063",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "770C",
+          "handler": "5030",
+          "distance": 46
+        }
+      ],
+      "nearest_preceding_pointer": "5030",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "53D3",
+      "selector": "D5",
+      "bytes": "99 D5 47 DF 07",
+      "branch": "je",
+      "taken": "53DF",
+      "fallthrough": "53D8",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "770E",
+          "handler": "53D0",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "53D0",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "53D8",
+      "selector": "D6",
+      "bytes": "99 D6 47 DF 2C",
+      "branch": "je",
+      "taken": "5409",
+      "fallthrough": "53DD",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "770E",
+          "handler": "53D0",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "53D0",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "34F8",
+      "selector": "D7",
+      "bytes": "99 D7 47 D7 39",
+      "branch": "jne",
+      "taken": "3536",
+      "fallthrough": "34FD",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7710",
+          "handler": "34F5",
+          "distance": 3
+        },
+        {
+          "slot": "7714",
+          "handler": "34C3",
+          "distance": 53
+        }
+      ],
+      "nearest_preceding_pointer": "34F5",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "34C6",
+      "selector": "E7",
+      "bytes": "99 E7 47 D9 29",
+      "branch": "jh",
+      "taken": "34F4",
+      "fallthrough": "34CB",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "7714",
+          "handler": "34C3",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "34C3",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "34CB",
+      "selector": "E0",
+      "bytes": "99 E0 47 D3 24",
+      "branch": "jnc",
+      "taken": "34F4",
+      "fallthrough": "34D0",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "7714",
+          "handler": "34C3",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "34C3",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "6EB6",
+      "selector": "F6",
+      "bytes": "99 F6 47 D7 1B",
+      "branch": "jne",
+      "taken": "6ED6",
+      "fallthrough": "6EBB",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7716",
+          "handler": "6EB3",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "6EB3",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "3B76",
+      "selector": "F0",
+      "bytes": "99 F0 47 D7 0C",
+      "branch": "jne",
+      "taken": "3B87",
+      "fallthrough": "3B7B",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7718",
+          "handler": "3B73",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "3B73",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "568B",
+      "selector": "F4",
+      "bytes": "99 F4 47 DF 05",
+      "branch": "je",
+      "taken": "5695",
+      "fallthrough": "5690",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "5690",
+      "selector": "F2",
+      "bytes": "99 F2 47 D7 14",
+      "branch": "jne",
+      "taken": "56A9",
+      "fallthrough": "5695",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "56AF",
+      "selector": "79",
+      "bytes": "99 79 47 D3 13",
+      "branch": "jnc",
+      "taken": "56C7",
+      "fallthrough": "56B4",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 39
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "56B4",
+      "selector": "7C",
+      "bytes": "99 7C 47 D9 02",
+      "branch": "jh",
+      "taken": "56BB",
+      "fallthrough": "56B9",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 44
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "56BB",
+      "selector": "89",
+      "bytes": "99 89 47 D3 07",
+      "branch": "jnc",
+      "taken": "56C7",
+      "fallthrough": "56C0",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 51
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "56C0",
+      "selector": "94",
+      "bytes": "99 94 47 D2 02",
+      "branch": "jgt",
+      "taken": "56C7",
+      "fallthrough": "56C5",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 56
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "56C7",
+      "selector": "7E",
+      "bytes": "99 7E 47 D7 02",
+      "branch": "jne",
+      "taken": "56CE",
+      "fallthrough": "56CC",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 63
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "56CE",
+      "selector": "7F",
+      "bytes": "99 7F 47 D7 02",
+      "branch": "jne",
+      "taken": "56D5",
+      "fallthrough": "56D3",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 70
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "56D5",
+      "selector": "CB",
+      "bytes": "99 CB 47 D7 28",
+      "branch": "jne",
+      "taken": "5702",
+      "fallthrough": "56DA",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 77
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "4F01",
+      "selector": "C5",
+      "bytes": "99 C5 47 DF 16",
+      "branch": "je",
+      "taken": "4F1C",
+      "fallthrough": "4F06",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771C",
+          "handler": "4EFC",
+          "distance": 5
+        }
+      ],
+      "nearest_preceding_pointer": "4EFC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "4F06",
+      "selector": "C6",
+      "bytes": "99 C6 47 DF 22",
+      "branch": "je",
+      "taken": "4F2D",
+      "fallthrough": "4F0B",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771C",
+          "handler": "4EFC",
+          "distance": 10
+        }
+      ],
+      "nearest_preceding_pointer": "4EFC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "4F0B",
+      "selector": "C7",
+      "bytes": "99 C7 47 DF 2E",
+      "branch": "je",
+      "taken": "4F3E",
+      "fallthrough": "4F10",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771C",
+          "handler": "4EFC",
+          "distance": 15
+        }
+      ],
+      "nearest_preceding_pointer": "4EFC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "4F10",
+      "selector": "C8",
+      "bytes": "99 C8 47 DF 49",
+      "branch": "je",
+      "taken": "4F5E",
+      "fallthrough": "4F15",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771C",
+          "handler": "4EFC",
+          "distance": 20
+        }
+      ],
+      "nearest_preceding_pointer": "4EFC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "4F15",
+      "selector": "C9",
+      "bytes": "99 C9 47 DF 67",
+      "branch": "je",
+      "taken": "4F81",
+      "fallthrough": "4F1A",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771C",
+          "handler": "4EFC",
+          "distance": 25
+        }
+      ],
+      "nearest_preceding_pointer": "4EFC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "4FBB",
+      "selector": "F8",
+      "bytes": "99 F8 47 D7 18",
+      "branch": "jne",
+      "taken": "4FD8",
+      "fallthrough": "4FC0",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7720",
+          "handler": "4FB8",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "4FB8",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "511D",
+      "selector": "D4",
+      "bytes": "99 D4 47 D7 50",
+      "branch": "jne",
+      "taken": "5172",
+      "fallthrough": "5122",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7722",
+          "handler": "511A",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "511A",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "4D36",
+      "selector": "D1",
+      "bytes": "99 D1 47 DF 07",
+      "branch": "je",
+      "taken": "4D42",
+      "fallthrough": "4D3B",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7724",
+          "handler": "4D31",
+          "distance": 5
+        }
+      ],
+      "nearest_preceding_pointer": "4D31",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "site": "4D3B",
+      "selector": "D3",
+      "bytes": "99 D3 47 DF 02",
+      "branch": "je",
+      "taken": "4D42",
+      "fallthrough": "4D40",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7724",
+          "handler": "4D31",
+          "distance": 10
+        }
+      ],
+      "nearest_preceding_pointer": "4D31",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "7093",
+      "selector": "DC",
+      "bytes": "99 DC 47 D7 0C",
+      "branch": "jne",
+      "taken": "70A4",
+      "fallthrough": "7098",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7704",
+          "handler": "7090",
+          "distance": 3
+        },
+        {
+          "slot": "771E",
+          "handler": "704C",
+          "distance": 71
+        }
+      ],
+      "nearest_preceding_pointer": "7090",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "70A9",
+      "selector": "DA",
+      "bytes": "99 DA 47 D7 0C",
+      "branch": "jne",
+      "taken": "70BA",
+      "fallthrough": "70AE",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7704",
+          "handler": "7090",
+          "distance": 25
+        },
+        {
+          "slot": "7712",
+          "handler": "70A6",
+          "distance": 3
+        },
+        {
+          "slot": "771E",
+          "handler": "704C",
+          "distance": 93
+        }
+      ],
+      "nearest_preceding_pointer": "70A6",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "3B06",
+      "selector": "F7",
+      "bytes": "99 F7 47 D7 2A",
+      "branch": "jne",
+      "taken": "3B35",
+      "fallthrough": "3B0B",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7706",
+          "handler": "3B03",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "3B03",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "6E4F",
+      "selector": "D0",
+      "bytes": "99 D0 47 D7 4B",
+      "branch": "jne",
+      "taken": "6E9F",
+      "fallthrough": "6E54",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7708",
+          "handler": "6E4C",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "6E4C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "701F",
+      "selector": "F5",
+      "bytes": "99 F5 47 D7 27",
+      "branch": "jne",
+      "taken": "704B",
+      "fallthrough": "7024",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "770A",
+          "handler": "701C",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "701C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "5035",
+      "selector": "C1",
+      "bytes": "99 C1 47 DF 4E",
+      "branch": "je",
+      "taken": "5088",
+      "fallthrough": "503A",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "770C",
+          "handler": "5030",
+          "distance": 5
+        }
+      ],
+      "nearest_preceding_pointer": "5030",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "503A",
+      "selector": "C2",
+      "bytes": "99 C2 47 DF 50",
+      "branch": "je",
+      "taken": "508F",
+      "fallthrough": "503F",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "770C",
+          "handler": "5030",
+          "distance": 10
+        }
+      ],
+      "nearest_preceding_pointer": "5030",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "503F",
+      "selector": "C3",
+      "bytes": "99 C3 47 DF 52",
+      "branch": "je",
+      "taken": "5096",
+      "fallthrough": "5044",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "770C",
+          "handler": "5030",
+          "distance": 15
+        }
+      ],
+      "nearest_preceding_pointer": "5030",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "5044",
+      "selector": "D8",
+      "bytes": "99 D8 47 DF 54",
+      "branch": "je",
+      "taken": "509D",
+      "fallthrough": "5049",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "770C",
+          "handler": "5030",
+          "distance": 20
+        }
+      ],
+      "nearest_preceding_pointer": "5030",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "5049",
+      "selector": "D9",
+      "bytes": "99 D9 47 DF 61",
+      "branch": "je",
+      "taken": "50AF",
+      "fallthrough": "504E",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "770C",
+          "handler": "5030",
+          "distance": 25
+        }
+      ],
+      "nearest_preceding_pointer": "5030",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "504E",
+      "selector": "C0",
+      "bytes": "99 C0 47 D1 02",
+      "branch": "jnh",
+      "taken": "5055",
+      "fallthrough": "5053",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "770C",
+          "handler": "5030",
+          "distance": 30
+        }
+      ],
+      "nearest_preceding_pointer": "5030",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "5055",
+      "selector": "80",
+      "bytes": "99 80 47 DB 02",
+      "branch": "jc",
+      "taken": "505C",
+      "fallthrough": "505A",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "770C",
+          "handler": "5030",
+          "distance": 37
+        }
+      ],
+      "nearest_preceding_pointer": "5030",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "505E",
+      "selector": "A0",
+      "bytes": "99 A0 47 D3 07",
+      "branch": "jnc",
+      "taken": "506A",
+      "fallthrough": "5063",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "770C",
+          "handler": "5030",
+          "distance": 46
+        }
+      ],
+      "nearest_preceding_pointer": "5030",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "53D3",
+      "selector": "D5",
+      "bytes": "99 D5 47 DF 07",
+      "branch": "je",
+      "taken": "53DF",
+      "fallthrough": "53D8",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "770E",
+          "handler": "53D0",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "53D0",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "53D8",
+      "selector": "D6",
+      "bytes": "99 D6 47 DF 2C",
+      "branch": "je",
+      "taken": "5409",
+      "fallthrough": "53DD",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "770E",
+          "handler": "53D0",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "53D0",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "34F8",
+      "selector": "D7",
+      "bytes": "99 D7 47 D7 39",
+      "branch": "jne",
+      "taken": "3536",
+      "fallthrough": "34FD",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7710",
+          "handler": "34F5",
+          "distance": 3
+        },
+        {
+          "slot": "7714",
+          "handler": "34C3",
+          "distance": 53
+        }
+      ],
+      "nearest_preceding_pointer": "34F5",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "34C6",
+      "selector": "E7",
+      "bytes": "99 E7 47 D9 29",
+      "branch": "jh",
+      "taken": "34F4",
+      "fallthrough": "34CB",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "7714",
+          "handler": "34C3",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "34C3",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "34CB",
+      "selector": "E0",
+      "bytes": "99 E0 47 D3 24",
+      "branch": "jnc",
+      "taken": "34F4",
+      "fallthrough": "34D0",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "7714",
+          "handler": "34C3",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "34C3",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "6EB6",
+      "selector": "F6",
+      "bytes": "99 F6 47 D7 1B",
+      "branch": "jne",
+      "taken": "6ED6",
+      "fallthrough": "6EBB",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7716",
+          "handler": "6EB3",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "6EB3",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "3B76",
+      "selector": "F0",
+      "bytes": "99 F0 47 D7 0C",
+      "branch": "jne",
+      "taken": "3B87",
+      "fallthrough": "3B7B",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7718",
+          "handler": "3B73",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "3B73",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "568B",
+      "selector": "F4",
+      "bytes": "99 F4 47 DF 05",
+      "branch": "je",
+      "taken": "5695",
+      "fallthrough": "5690",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "5690",
+      "selector": "F2",
+      "bytes": "99 F2 47 D7 14",
+      "branch": "jne",
+      "taken": "56A9",
+      "fallthrough": "5695",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "56AF",
+      "selector": "79",
+      "bytes": "99 79 47 D3 13",
+      "branch": "jnc",
+      "taken": "56C7",
+      "fallthrough": "56B4",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 39
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "56B4",
+      "selector": "7C",
+      "bytes": "99 7C 47 D9 02",
+      "branch": "jh",
+      "taken": "56BB",
+      "fallthrough": "56B9",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 44
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "56BB",
+      "selector": "89",
+      "bytes": "99 89 47 D3 07",
+      "branch": "jnc",
+      "taken": "56C7",
+      "fallthrough": "56C0",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 51
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "56C0",
+      "selector": "94",
+      "bytes": "99 94 47 D2 02",
+      "branch": "jgt",
+      "taken": "56C7",
+      "fallthrough": "56C5",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 56
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "56C7",
+      "selector": "7E",
+      "bytes": "99 7E 47 D7 02",
+      "branch": "jne",
+      "taken": "56CE",
+      "fallthrough": "56CC",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 63
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "56CE",
+      "selector": "7F",
+      "bytes": "99 7F 47 D7 02",
+      "branch": "jne",
+      "taken": "56D5",
+      "fallthrough": "56D3",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 70
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "56D5",
+      "selector": "CB",
+      "bytes": "99 CB 47 D7 28",
+      "branch": "jne",
+      "taken": "5702",
+      "fallthrough": "56DA",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771A",
+          "handler": "5688",
+          "distance": 77
+        }
+      ],
+      "nearest_preceding_pointer": "5688",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "4F01",
+      "selector": "C5",
+      "bytes": "99 C5 47 DF 16",
+      "branch": "je",
+      "taken": "4F1C",
+      "fallthrough": "4F06",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771C",
+          "handler": "4EFC",
+          "distance": 5
+        }
+      ],
+      "nearest_preceding_pointer": "4EFC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "4F06",
+      "selector": "C6",
+      "bytes": "99 C6 47 DF 22",
+      "branch": "je",
+      "taken": "4F2D",
+      "fallthrough": "4F0B",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771C",
+          "handler": "4EFC",
+          "distance": 10
+        }
+      ],
+      "nearest_preceding_pointer": "4EFC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "4F0B",
+      "selector": "C7",
+      "bytes": "99 C7 47 DF 2E",
+      "branch": "je",
+      "taken": "4F3E",
+      "fallthrough": "4F10",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771C",
+          "handler": "4EFC",
+          "distance": 15
+        }
+      ],
+      "nearest_preceding_pointer": "4EFC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "4F10",
+      "selector": "C8",
+      "bytes": "99 C8 47 DF 49",
+      "branch": "je",
+      "taken": "4F5E",
+      "fallthrough": "4F15",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771C",
+          "handler": "4EFC",
+          "distance": 20
+        }
+      ],
+      "nearest_preceding_pointer": "4EFC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "4F15",
+      "selector": "C9",
+      "bytes": "99 C9 47 DF 67",
+      "branch": "je",
+      "taken": "4F81",
+      "fallthrough": "4F1A",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "771C",
+          "handler": "4EFC",
+          "distance": 25
+        }
+      ],
+      "nearest_preceding_pointer": "4EFC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "4FBB",
+      "selector": "F8",
+      "bytes": "99 F8 47 D7 18",
+      "branch": "jne",
+      "taken": "4FD8",
+      "fallthrough": "4FC0",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7720",
+          "handler": "4FB8",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "4FB8",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "511D",
+      "selector": "D4",
+      "bytes": "99 D4 47 D7 50",
+      "branch": "jne",
+      "taken": "5172",
+      "fallthrough": "5122",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7722",
+          "handler": "511A",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "511A",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "4D36",
+      "selector": "D1",
+      "bytes": "99 D1 47 DF 07",
+      "branch": "je",
+      "taken": "4D42",
+      "fallthrough": "4D3B",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7724",
+          "handler": "4D31",
+          "distance": 5
+        }
+      ],
+      "nearest_preceding_pointer": "4D31",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "site": "4D3B",
+      "selector": "D3",
+      "bytes": "99 D3 47 DF 02",
+      "branch": "je",
+      "taken": "4D42",
+      "fallthrough": "4D40",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "7724",
+          "handler": "4D31",
+          "distance": 10
+        }
+      ],
+      "nearest_preceding_pointer": "4D31",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "73D3",
+      "selector": "DC",
+      "bytes": "99 DC 47 D7 0C",
+      "branch": "jne",
+      "taken": "73E4",
+      "fallthrough": "73D8",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8924",
+          "handler": "73D0",
+          "distance": 3
+        },
+        {
+          "slot": "893E",
+          "handler": "738B",
+          "distance": 72
+        }
+      ],
+      "nearest_preceding_pointer": "73D0",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "73E9",
+      "selector": "DA",
+      "bytes": "99 DA 47 D7 0C",
+      "branch": "jne",
+      "taken": "73FA",
+      "fallthrough": "73EE",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8924",
+          "handler": "73D0",
+          "distance": 25
+        },
+        {
+          "slot": "8932",
+          "handler": "73E6",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "73E6",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "3B08",
+      "selector": "F7",
+      "bytes": "99 F7 47 D7 2A",
+      "branch": "jne",
+      "taken": "3B37",
+      "fallthrough": "3B0D",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8926",
+          "handler": "3B05",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "3B05",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "7197",
+      "selector": "D0",
+      "bytes": "99 D0 47 D7 4B",
+      "branch": "jne",
+      "taken": "71E7",
+      "fallthrough": "719C",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8928",
+          "handler": "7194",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "7194",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "735E",
+      "selector": "F5",
+      "bytes": "99 F5 47 D7 27",
+      "branch": "jne",
+      "taken": "738A",
+      "fallthrough": "7363",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "892A",
+          "handler": "735B",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "735B",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "5031",
+      "selector": "C1",
+      "bytes": "99 C1 47 DF 4E",
+      "branch": "je",
+      "taken": "5084",
+      "fallthrough": "5036",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "892C",
+          "handler": "502C",
+          "distance": 5
+        }
+      ],
+      "nearest_preceding_pointer": "502C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "5036",
+      "selector": "C2",
+      "bytes": "99 C2 47 DF 50",
+      "branch": "je",
+      "taken": "508B",
+      "fallthrough": "503B",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "892C",
+          "handler": "502C",
+          "distance": 10
+        }
+      ],
+      "nearest_preceding_pointer": "502C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "503B",
+      "selector": "C3",
+      "bytes": "99 C3 47 DF 52",
+      "branch": "je",
+      "taken": "5092",
+      "fallthrough": "5040",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "892C",
+          "handler": "502C",
+          "distance": 15
+        }
+      ],
+      "nearest_preceding_pointer": "502C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "5040",
+      "selector": "D8",
+      "bytes": "99 D8 47 DF 54",
+      "branch": "je",
+      "taken": "5099",
+      "fallthrough": "5045",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "892C",
+          "handler": "502C",
+          "distance": 20
+        }
+      ],
+      "nearest_preceding_pointer": "502C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "5045",
+      "selector": "D9",
+      "bytes": "99 D9 47 DF 61",
+      "branch": "je",
+      "taken": "50AB",
+      "fallthrough": "504A",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "892C",
+          "handler": "502C",
+          "distance": 25
+        }
+      ],
+      "nearest_preceding_pointer": "502C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "504A",
+      "selector": "C0",
+      "bytes": "99 C0 47 D1 02",
+      "branch": "jnh",
+      "taken": "5051",
+      "fallthrough": "504F",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "892C",
+          "handler": "502C",
+          "distance": 30
+        }
+      ],
+      "nearest_preceding_pointer": "502C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "5051",
+      "selector": "80",
+      "bytes": "99 80 47 DB 02",
+      "branch": "jc",
+      "taken": "5058",
+      "fallthrough": "5056",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "892C",
+          "handler": "502C",
+          "distance": 37
+        }
+      ],
+      "nearest_preceding_pointer": "502C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "505A",
+      "selector": "A0",
+      "bytes": "99 A0 47 D3 07",
+      "branch": "jnc",
+      "taken": "5066",
+      "fallthrough": "505F",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "892C",
+          "handler": "502C",
+          "distance": 46
+        }
+      ],
+      "nearest_preceding_pointer": "502C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "53CF",
+      "selector": "D5",
+      "bytes": "99 D5 47 DF 07",
+      "branch": "je",
+      "taken": "53DB",
+      "fallthrough": "53D4",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "892E",
+          "handler": "53CC",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "53CC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "53D4",
+      "selector": "D6",
+      "bytes": "99 D6 47 DF 2C",
+      "branch": "je",
+      "taken": "5405",
+      "fallthrough": "53D9",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "892E",
+          "handler": "53CC",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "53CC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "34FA",
+      "selector": "D7",
+      "bytes": "99 D7 47 D7 39",
+      "branch": "jne",
+      "taken": "3538",
+      "fallthrough": "34FF",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8930",
+          "handler": "34F7",
+          "distance": 3
+        },
+        {
+          "slot": "8934",
+          "handler": "34C5",
+          "distance": 53
+        }
+      ],
+      "nearest_preceding_pointer": "34F7",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "34C8",
+      "selector": "E7",
+      "bytes": "99 E7 47 D9 29",
+      "branch": "jh",
+      "taken": "34F6",
+      "fallthrough": "34CD",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "8934",
+          "handler": "34C5",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "34C5",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "34CD",
+      "selector": "E0",
+      "bytes": "99 E0 47 D3 24",
+      "branch": "jnc",
+      "taken": "34F6",
+      "fallthrough": "34D2",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "8934",
+          "handler": "34C5",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "34C5",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "71FE",
+      "selector": "F6",
+      "bytes": "99 F6 47 D7 1B",
+      "branch": "jne",
+      "taken": "721E",
+      "fallthrough": "7203",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8936",
+          "handler": "71FB",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "71FB",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "3B78",
+      "selector": "F0",
+      "bytes": "99 F0 47 D7 0C",
+      "branch": "jne",
+      "taken": "3B89",
+      "fallthrough": "3B7D",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8938",
+          "handler": "3B75",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "3B75",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "5687",
+      "selector": "F4",
+      "bytes": "99 F4 47 DF 05",
+      "branch": "je",
+      "taken": "5691",
+      "fallthrough": "568C",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "568C",
+      "selector": "F2",
+      "bytes": "99 F2 47 D7 14",
+      "branch": "jne",
+      "taken": "56A5",
+      "fallthrough": "5691",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "56AB",
+      "selector": "79",
+      "bytes": "99 79 47 D3 13",
+      "branch": "jnc",
+      "taken": "56C3",
+      "fallthrough": "56B0",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 39
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "56B0",
+      "selector": "7C",
+      "bytes": "99 7C 47 D9 02",
+      "branch": "jh",
+      "taken": "56B7",
+      "fallthrough": "56B5",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 44
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "56B7",
+      "selector": "89",
+      "bytes": "99 89 47 D3 07",
+      "branch": "jnc",
+      "taken": "56C3",
+      "fallthrough": "56BC",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 51
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "56BC",
+      "selector": "94",
+      "bytes": "99 94 47 D2 02",
+      "branch": "jgt",
+      "taken": "56C3",
+      "fallthrough": "56C1",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 56
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "56C3",
+      "selector": "7E",
+      "bytes": "99 7E 47 D7 02",
+      "branch": "jne",
+      "taken": "56CA",
+      "fallthrough": "56C8",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 63
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "56CA",
+      "selector": "7F",
+      "bytes": "99 7F 47 D7 02",
+      "branch": "jne",
+      "taken": "56D1",
+      "fallthrough": "56CF",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 70
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "56D1",
+      "selector": "CB",
+      "bytes": "99 CB 47 D7 28",
+      "branch": "jne",
+      "taken": "56FE",
+      "fallthrough": "56D6",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 77
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "4EFD",
+      "selector": "C5",
+      "bytes": "99 C5 47 DF 16",
+      "branch": "je",
+      "taken": "4F18",
+      "fallthrough": "4F02",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893C",
+          "handler": "4EF8",
+          "distance": 5
+        }
+      ],
+      "nearest_preceding_pointer": "4EF8",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "4F02",
+      "selector": "C6",
+      "bytes": "99 C6 47 DF 22",
+      "branch": "je",
+      "taken": "4F29",
+      "fallthrough": "4F07",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893C",
+          "handler": "4EF8",
+          "distance": 10
+        }
+      ],
+      "nearest_preceding_pointer": "4EF8",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "4F07",
+      "selector": "C7",
+      "bytes": "99 C7 47 DF 2E",
+      "branch": "je",
+      "taken": "4F3A",
+      "fallthrough": "4F0C",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893C",
+          "handler": "4EF8",
+          "distance": 15
+        }
+      ],
+      "nearest_preceding_pointer": "4EF8",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "4F0C",
+      "selector": "C8",
+      "bytes": "99 C8 47 DF 49",
+      "branch": "je",
+      "taken": "4F5A",
+      "fallthrough": "4F11",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893C",
+          "handler": "4EF8",
+          "distance": 20
+        }
+      ],
+      "nearest_preceding_pointer": "4EF8",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "4F11",
+      "selector": "C9",
+      "bytes": "99 C9 47 DF 67",
+      "branch": "je",
+      "taken": "4F7D",
+      "fallthrough": "4F16",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893C",
+          "handler": "4EF8",
+          "distance": 25
+        }
+      ],
+      "nearest_preceding_pointer": "4EF8",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "4FB7",
+      "selector": "F8",
+      "bytes": "99 F8 47 D7 18",
+      "branch": "jne",
+      "taken": "4FD4",
+      "fallthrough": "4FBC",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8940",
+          "handler": "4FB4",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "4FB4",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "5119",
+      "selector": "D4",
+      "bytes": "99 D4 47 D7 50",
+      "branch": "jne",
+      "taken": "516E",
+      "fallthrough": "511E",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8942",
+          "handler": "5116",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "5116",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "4D32",
+      "selector": "D1",
+      "bytes": "99 D1 47 DF 07",
+      "branch": "je",
+      "taken": "4D3E",
+      "fallthrough": "4D37",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8944",
+          "handler": "4D2D",
+          "distance": 5
+        }
+      ],
+      "nearest_preceding_pointer": "4D2D",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "site": "4D37",
+      "selector": "D3",
+      "bytes": "99 D3 47 DF 02",
+      "branch": "je",
+      "taken": "4D3E",
+      "fallthrough": "4D3C",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8944",
+          "handler": "4D2D",
+          "distance": 10
+        }
+      ],
+      "nearest_preceding_pointer": "4D2D",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "73D3",
+      "selector": "DC",
+      "bytes": "99 DC 47 D7 0C",
+      "branch": "jne",
+      "taken": "73E4",
+      "fallthrough": "73D8",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8924",
+          "handler": "73D0",
+          "distance": 3
+        },
+        {
+          "slot": "893E",
+          "handler": "738B",
+          "distance": 72
+        }
+      ],
+      "nearest_preceding_pointer": "73D0",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "73E9",
+      "selector": "DA",
+      "bytes": "99 DA 47 D7 0C",
+      "branch": "jne",
+      "taken": "73FA",
+      "fallthrough": "73EE",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8924",
+          "handler": "73D0",
+          "distance": 25
+        },
+        {
+          "slot": "8932",
+          "handler": "73E6",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "73E6",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "3B08",
+      "selector": "F7",
+      "bytes": "99 F7 47 D7 2A",
+      "branch": "jne",
+      "taken": "3B37",
+      "fallthrough": "3B0D",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8926",
+          "handler": "3B05",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "3B05",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "7197",
+      "selector": "D0",
+      "bytes": "99 D0 47 D7 4B",
+      "branch": "jne",
+      "taken": "71E7",
+      "fallthrough": "719C",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8928",
+          "handler": "7194",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "7194",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "735E",
+      "selector": "F5",
+      "bytes": "99 F5 47 D7 27",
+      "branch": "jne",
+      "taken": "738A",
+      "fallthrough": "7363",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "892A",
+          "handler": "735B",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "735B",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "5031",
+      "selector": "C1",
+      "bytes": "99 C1 47 DF 4E",
+      "branch": "je",
+      "taken": "5084",
+      "fallthrough": "5036",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "892C",
+          "handler": "502C",
+          "distance": 5
+        }
+      ],
+      "nearest_preceding_pointer": "502C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "5036",
+      "selector": "C2",
+      "bytes": "99 C2 47 DF 50",
+      "branch": "je",
+      "taken": "508B",
+      "fallthrough": "503B",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "892C",
+          "handler": "502C",
+          "distance": 10
+        }
+      ],
+      "nearest_preceding_pointer": "502C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "503B",
+      "selector": "C3",
+      "bytes": "99 C3 47 DF 52",
+      "branch": "je",
+      "taken": "5092",
+      "fallthrough": "5040",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "892C",
+          "handler": "502C",
+          "distance": 15
+        }
+      ],
+      "nearest_preceding_pointer": "502C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "5040",
+      "selector": "D8",
+      "bytes": "99 D8 47 DF 54",
+      "branch": "je",
+      "taken": "5099",
+      "fallthrough": "5045",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "892C",
+          "handler": "502C",
+          "distance": 20
+        }
+      ],
+      "nearest_preceding_pointer": "502C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "5045",
+      "selector": "D9",
+      "bytes": "99 D9 47 DF 61",
+      "branch": "je",
+      "taken": "50AB",
+      "fallthrough": "504A",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "892C",
+          "handler": "502C",
+          "distance": 25
+        }
+      ],
+      "nearest_preceding_pointer": "502C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "504A",
+      "selector": "C0",
+      "bytes": "99 C0 47 D1 02",
+      "branch": "jnh",
+      "taken": "5051",
+      "fallthrough": "504F",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "892C",
+          "handler": "502C",
+          "distance": 30
+        }
+      ],
+      "nearest_preceding_pointer": "502C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "5051",
+      "selector": "80",
+      "bytes": "99 80 47 DB 02",
+      "branch": "jc",
+      "taken": "5058",
+      "fallthrough": "5056",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "892C",
+          "handler": "502C",
+          "distance": 37
+        }
+      ],
+      "nearest_preceding_pointer": "502C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "505A",
+      "selector": "A0",
+      "bytes": "99 A0 47 D3 07",
+      "branch": "jnc",
+      "taken": "5066",
+      "fallthrough": "505F",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "892C",
+          "handler": "502C",
+          "distance": 46
+        }
+      ],
+      "nearest_preceding_pointer": "502C",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "53CF",
+      "selector": "D5",
+      "bytes": "99 D5 47 DF 07",
+      "branch": "je",
+      "taken": "53DB",
+      "fallthrough": "53D4",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "892E",
+          "handler": "53CC",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "53CC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "53D4",
+      "selector": "D6",
+      "bytes": "99 D6 47 DF 2C",
+      "branch": "je",
+      "taken": "5405",
+      "fallthrough": "53D9",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "892E",
+          "handler": "53CC",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "53CC",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "34FA",
+      "selector": "D7",
+      "bytes": "99 D7 47 D7 39",
+      "branch": "jne",
+      "taken": "3538",
+      "fallthrough": "34FF",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8930",
+          "handler": "34F7",
+          "distance": 3
+        },
+        {
+          "slot": "8934",
+          "handler": "34C5",
+          "distance": 53
+        }
+      ],
+      "nearest_preceding_pointer": "34F7",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "34C8",
+      "selector": "E7",
+      "bytes": "99 E7 47 D9 29",
+      "branch": "jh",
+      "taken": "34F6",
+      "fallthrough": "34CD",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "8934",
+          "handler": "34C5",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "34C5",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "34CD",
+      "selector": "E0",
+      "bytes": "99 E0 47 D3 24",
+      "branch": "jnc",
+      "taken": "34F6",
+      "fallthrough": "34D2",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "8934",
+          "handler": "34C5",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "34C5",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "71FE",
+      "selector": "F6",
+      "bytes": "99 F6 47 D7 1B",
+      "branch": "jne",
+      "taken": "721E",
+      "fallthrough": "7203",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8936",
+          "handler": "71FB",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "71FB",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "3B78",
+      "selector": "F0",
+      "bytes": "99 F0 47 D7 0C",
+      "branch": "jne",
+      "taken": "3B89",
+      "fallthrough": "3B7D",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8938",
+          "handler": "3B75",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "3B75",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "5687",
+      "selector": "F4",
+      "bytes": "99 F4 47 DF 05",
+      "branch": "je",
+      "taken": "5691",
+      "fallthrough": "568C",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "568C",
+      "selector": "F2",
+      "bytes": "99 F2 47 D7 14",
+      "branch": "jne",
+      "taken": "56A5",
+      "fallthrough": "5691",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 8
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "56AB",
+      "selector": "79",
+      "bytes": "99 79 47 D3 13",
+      "branch": "jnc",
+      "taken": "56C3",
+      "fallthrough": "56B0",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 39
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "56B0",
+      "selector": "7C",
+      "bytes": "99 7C 47 D9 02",
+      "branch": "jh",
+      "taken": "56B7",
+      "fallthrough": "56B5",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 44
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "56B7",
+      "selector": "89",
+      "bytes": "99 89 47 D3 07",
+      "branch": "jnc",
+      "taken": "56C3",
+      "fallthrough": "56BC",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 51
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "56BC",
+      "selector": "94",
+      "bytes": "99 94 47 D2 02",
+      "branch": "jgt",
+      "taken": "56C3",
+      "fallthrough": "56C1",
+      "kind": "ORDER_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 56
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "56C3",
+      "selector": "7E",
+      "bytes": "99 7E 47 D7 02",
+      "branch": "jne",
+      "taken": "56CA",
+      "fallthrough": "56C8",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 63
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "56CA",
+      "selector": "7F",
+      "bytes": "99 7F 47 D7 02",
+      "branch": "jne",
+      "taken": "56D1",
+      "fallthrough": "56CF",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 70
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "56D1",
+      "selector": "CB",
+      "bytes": "99 CB 47 D7 28",
+      "branch": "jne",
+      "taken": "56FE",
+      "fallthrough": "56D6",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893A",
+          "handler": "5684",
+          "distance": 77
+        }
+      ],
+      "nearest_preceding_pointer": "5684",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "4EFD",
+      "selector": "C5",
+      "bytes": "99 C5 47 DF 16",
+      "branch": "je",
+      "taken": "4F18",
+      "fallthrough": "4F02",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893C",
+          "handler": "4EF8",
+          "distance": 5
+        }
+      ],
+      "nearest_preceding_pointer": "4EF8",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "4F02",
+      "selector": "C6",
+      "bytes": "99 C6 47 DF 22",
+      "branch": "je",
+      "taken": "4F29",
+      "fallthrough": "4F07",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893C",
+          "handler": "4EF8",
+          "distance": 10
+        }
+      ],
+      "nearest_preceding_pointer": "4EF8",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "4F07",
+      "selector": "C7",
+      "bytes": "99 C7 47 DF 2E",
+      "branch": "je",
+      "taken": "4F3A",
+      "fallthrough": "4F0C",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893C",
+          "handler": "4EF8",
+          "distance": 15
+        }
+      ],
+      "nearest_preceding_pointer": "4EF8",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "4F0C",
+      "selector": "C8",
+      "bytes": "99 C8 47 DF 49",
+      "branch": "je",
+      "taken": "4F5A",
+      "fallthrough": "4F11",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893C",
+          "handler": "4EF8",
+          "distance": 20
+        }
+      ],
+      "nearest_preceding_pointer": "4EF8",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "4F11",
+      "selector": "C9",
+      "bytes": "99 C9 47 DF 67",
+      "branch": "je",
+      "taken": "4F7D",
+      "fallthrough": "4F16",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "893C",
+          "handler": "4EF8",
+          "distance": 25
+        }
+      ],
+      "nearest_preceding_pointer": "4EF8",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "4FB7",
+      "selector": "F8",
+      "bytes": "99 F8 47 D7 18",
+      "branch": "jne",
+      "taken": "4FD4",
+      "fallthrough": "4FBC",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8940",
+          "handler": "4FB4",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "4FB4",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "5119",
+      "selector": "D4",
+      "bytes": "99 D4 47 D7 50",
+      "branch": "jne",
+      "taken": "516E",
+      "fallthrough": "511E",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8942",
+          "handler": "5116",
+          "distance": 3
+        }
+      ],
+      "nearest_preceding_pointer": "5116",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "4D32",
+      "selector": "D1",
+      "bytes": "99 D1 47 DF 07",
+      "branch": "je",
+      "taken": "4D3E",
+      "fallthrough": "4D37",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8944",
+          "handler": "4D2D",
+          "distance": 5
+        }
+      ],
+      "nearest_preceding_pointer": "4D2D",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    },
+    {
+      "firmware": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "rom_blob": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "site": "4D37",
+      "selector": "D3",
+      "bytes": "99 D3 47 DF 02",
+      "branch": "je",
+      "taken": "4D3E",
+      "fallthrough": "4D3C",
+      "kind": "EQUALITY_COMPARE",
+      "pointers": [
+        {
+          "slot": "8944",
+          "handler": "4D2D",
+          "distance": 10
+        }
+      ],
+      "nearest_preceding_pointer": "4D2D",
+      "reachability": "NOT_PROVEN_BY_WINDOW"
+    }
+  ],
+  "limitation": "Opcode and relative branch targets verified from ROM; comparison type is not proof of external command or reachable handler. Window overlap is deduplicated by ROM/site only. No physical test.",
+  "physical": "NOT_TESTED",
+  "complete": false
+}
