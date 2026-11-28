@@ -15,14 +15,14 @@ jobs:
         run: python3 research/instruments-integral-20261127/audit_16na_outputs.py
       - uses: actions/upload-artifact@v4
         with:
-          name: preuves-16na-sorties-lot02
-          path: research/instruments-integral-20261127/results/*16na_sorties_lot02*
+          name: preuves-16na-sorties-lot03
+          path: research/instruments-integral-20261127/results/*16na_sorties_lot03*
       - name: Enregistrer le registre et les preuves sur la branche de recherche
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add research/instruments-integral-20261127/results/*16na_sorties_lot02*
+          git add research/instruments-integral-20261127/results/*16na_sorties_lot03*
           if ! git diff --cached --quiet; then
-            git commit -m "MEMS 1.6 NA : registre sorties et preuves individuelles lot 02 [skip ci]"
+            git commit -m "MEMS 1.6 NA : registre sorties et preuves individuelles lot 03 [skip ci]"
             git push origin HEAD:research/mems-firmwares-20261126
           fi
