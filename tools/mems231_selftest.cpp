@@ -21,6 +21,14 @@ int main(){
         b[0]=0x7d;b[1]=32;b[7]=20;b[10]=1;b[11]=4;
         auto send=[&](){tx(s,0x80,a);tx(s,0x7d,b);};
         send();assert(s.ready()&&Mems217::passiveProfile(s));
+        a[15]=4;b[6]=4;send();
+        assert(s.dtc(Group::Dtc1).faultBits==4&&s.dtc(Group::Dtc2).faultBits==4);
+        const bool h1=circuit(&p,Group::Dtc1,4)==Circuit::LambdaHeater;
+        const bool h2=circuit(&p,Group::Dtc2,4)==Circuit::LambdaHeater;
+        assert(h1!=h2);
+        assert(h1==(name=="OCLIP000"));
+        if(h1)assert(circuit(&p,Group::Dtc2,4)==Circuit::CoolingFans);
+        a[15]=0;b[6]=0;send();
         const auto m=s.measurements();
         assert(m.pn.availability==Availability::Available&&m.pn.calculated==0);
         assert(m.ac.availability==Availability::Available&&m.ac.calculated==1);

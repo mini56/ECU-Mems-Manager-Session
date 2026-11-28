@@ -8,7 +8,7 @@ on:
       - '.github/workflows/session-231-test-setup.yml'
 concurrency:
   group: session-231-private-test
-  cancel-in-progress: false
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:

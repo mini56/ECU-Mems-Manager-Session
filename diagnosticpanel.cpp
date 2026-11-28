@@ -684,7 +684,8 @@ void DiagnosticPanel::rebuildNa(const mems_data &d)
     if(m.lambdaFault.availability==Availability::Available)
         lambda+=QStringLiteral(" ; ")+I18n::text(29053).arg(I18n::text(m.lambdaFault.calculated?29038:29039));
     else lambda+=QStringLiteral(" ; ")+I18n::text(29002);
-    if((dtc2.faultBits&4)&&circuit(p,Group::Dtc2,4)==Circuit::LambdaHeater)
+    if(((dtc2.faultBits&4)&&circuit(p,Group::Dtc2,4)==Circuit::LambdaHeater)||
+       ((dtc1.faultBits&4)&&circuit(p,Group::Dtc1,4)==Circuit::LambdaHeater))
         lambda+=QStringLiteral(" ; ")+describe(Circuit::LambdaHeater,4);
     add(I18n::text(6838),numeric(m.lambdaMv,0,QStringLiteral(" mV")),info,lambda);
     add(I18n::text(29029),numeric(m.injectionTime,0,QStringLiteral(" µs")),notEvaluated,

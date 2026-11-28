@@ -23,6 +23,7 @@ struct Profile {
     Circuit dtc1Bit04;
     Circuit dtc1Bit08;
     bool alternateTransmission;
+    Circuit dtc2Bit04;
 };
 inline const Profile *catalog(std::size_t &size) {
     static const Profile rows[] = {
@@ -169,8 +170,7 @@ inline Circuit circuit(const Profile *p, Group g, unsigned mask) {
         }
         break;
     case Group::Dtc2:
-        if(mask==4) return std::strcmp(p->firmware,"AANMP002")==0
-            ? Circuit::LambdaHeater : Circuit::UnidentifiedFault;
+        if(mask==4) return p->dtc2Bit04;
         if(mask==0x10) return Circuit::EngineSync;
         if(mask==0x40) return Circuit::ThrottleSwitch;
         break;

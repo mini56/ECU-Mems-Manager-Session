@@ -9,13 +9,16 @@ using namespace Mems16Na;
 int main() {
     std::size_t n=0; const auto rows=catalog(n);
     std::set<std::string> names; std::set<unsigned> ids;
-    unsigned fuel=0,repeat=0,ptc=0,vent=0,aux4=0,aux8=0,swap=0,alt=0;
+    unsigned fuel=0,repeat=0,ptc=0,vent=0,aux4=0,aux8=0,swap=0,alt=0,heater1=0,heater2=0;
     for(std::size_t i=0;i<n;++i) {
         const auto &p=rows[i];
         names.insert(p.firmware); ids.insert(p.petaId);
         fuel+=p.fuelTemperature; repeat+=p.repeatedThrottleReference;
         ptc+=p.dtc1Bit04==Circuit::PtcHeater;
         vent+=p.dtc1Bit04==Circuit::CoolingFans;
+        heater1+=circuit(&p,Group::Dtc1,4)==Circuit::LambdaHeater;
+        heater2+=circuit(&p,Group::Dtc2,4)==Circuit::LambdaHeater;
+        CHECK((circuit(&p,Group::Dtc1,4)==Circuit::LambdaHeater)!=(circuit(&p,Group::Dtc2,4)==Circuit::LambdaHeater));
         aux4+=p.dtc1Bit04==Circuit::AuxiliaryPtc;
         aux8+=p.dtc1Bit08==Circuit::AuxiliaryPtc;
         swap+=p.dtc1Bit08==Circuit::PtcHeater; alt+=p.alternateTransmission;
@@ -27,7 +30,7 @@ int main() {
         CHECK(p.dtc0Mask==(p.fuelTemperature?0x23:0x03));
     }
     CHECK(n==123 && names.size()==123 && ids.size()==107);
-    CHECK(fuel==36 && repeat==16 && ptc==51 && vent==13 && aux4==56 && aux8==2 && swap==1 && alt==3);
+    CHECK(fuel==36 && repeat==16 && ptc==51 && vent==12 && heater1==1 && heater2==122 && aux4==56 && aux8==2 && swap==1 && alt==3);
     CHECK(candidateCount(0x900000)>=3);
     CHECK(!select(true,nullptr,true,0x900000));
     CHECK(!select(true,nullptr,true,0x980002));
@@ -84,6 +87,8 @@ int main() {
     CHECK(circuit(byFirmware("EKDMF008"),Group::Dtc1,4)==Circuit::CoolingFans);
     CHECK(circuit(byFirmware("EKDMF000"),Group::Dtc1,8)==Circuit::AuxiliaryPtc);
     CHECK(circuit(byFirmware("KBP8P005"),Group::Dtc1,4)==Circuit::AuxiliaryPtc);
+    CHECK(circuit(byFirmware("OCLIP000"),Group::Dtc1,4)==Circuit::LambdaHeater);
+    CHECK(circuit(byFirmware("OCLIP000"),Group::Dtc2,4)==Circuit::CoolingFans);
     b[5]=0x40; auto d=decodeDtc(p,Group::Dtc2,A,B);
     CHECK(d.noFault() && d.faultBits==0 && d.stateBits==0x40);
     b[5]=0x54; d=decodeDtc(p,Group::Dtc2,A,B);
