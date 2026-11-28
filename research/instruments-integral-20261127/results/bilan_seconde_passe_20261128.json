@@ -1,0 +1,95 @@
+{
+  "Land Rover Td5": {
+    "firmwares": 30,
+    "gauge": {
+      "OTHER_ARCHITECTURE_REQUIRES_PROTOCOL_TRACE": 30
+    },
+    "tachometer": {
+      "OTHER_ARCHITECTURE_REQUIRES_PROTOCOL_TRACE": 30
+    },
+    "gauge_historical": 0,
+    "tach_historical": 0
+  },
+  "Rover L-Series Di": {
+    "firmwares": 4,
+    "gauge": {
+      "OTHER_ARCHITECTURE_REQUIRES_PROTOCOL_TRACE": 4
+    },
+    "tachometer": {
+      "OTHER_ARCHITECTURE_REQUIRES_PROTOCOL_TRACE": 4
+    },
+    "gauge_historical": 0,
+    "tach_historical": 0
+  },
+  "Rover MEMS 1.3": {
+    "firmwares": 3,
+    "gauge": {
+      "NO_KNOWN_COMMAND_PAIR": 3
+    },
+    "tachometer": {
+      "NO_KNOWN_COMMAND_PAIR": 3
+    },
+    "gauge_historical": 0,
+    "tach_historical": 0
+  },
+  "Rover MEMS 1.6": {
+    "firmwares": 123,
+    "gauge": {
+      "CONSUMER_AND_OUTPUT_CANDIDATE": 15,
+      "HANDLER_WITHOUT_KNOWN_CONSUMER": 107,
+      "NO_KNOWN_COMMAND_PAIR": 1
+    },
+    "tachometer": {
+      "NO_KNOWN_COMMAND_PAIR": 123
+    },
+    "gauge_historical": 15,
+    "tach_historical": 0
+  },
+  "Rover MEMS 1.6 TURBO": {
+    "firmwares": 4,
+    "gauge": {
+      "NO_KNOWN_COMMAND_PAIR": 4
+    },
+    "tachometer": {
+      "NO_KNOWN_COMMAND_PAIR": 4
+    },
+    "gauge_historical": 0,
+    "tach_historical": 0
+  },
+  "Rover MEMS 1.9": {
+    "firmwares": 215,
+    "gauge": {
+      "NO_KNOWN_COMMAND_PAIR": 214,
+      "HANDLER_WITHOUT_KNOWN_CONSUMER": 1
+    },
+    "tachometer": {
+      "NO_KNOWN_COMMAND_PAIR": 134,
+      "COMMAND_PAIR_DIFFERENT_OR_LOGICAL_ONLY": 40,
+      "SPEED_LOADS_AND_VARIABLE_CANDIDATE": 41
+    },
+    "gauge_historical": 0,
+    "tach_historical": 41
+  },
+  "Rover MEMS 2J": {
+    "firmwares": 9,
+    "gauge": {
+      "OTHER_ARCHITECTURE_REQUIRES_PROTOCOL_TRACE": 9
+    },
+    "tachometer": {
+      "OTHER_ARCHITECTURE_REQUIRES_PROTOCOL_TRACE": 9
+    },
+    "gauge_historical": 0,
+    "tach_historical": 0
+  },
+  "Rover MEMS3": {
+    "firmwares": 95,
+    "gauge": {
+      "OTHER_ARCHITECTURE_REQUIRES_PROTOCOL_TRACE": 95
+    },
+    "tachometer": {
+      "OTHER_ARCHITECTURE_REQUIRES_PROTOCOL_TRACE": 95
+    },
+    "gauge_historical": 0,
+    "tach_historical": 0
+  }
+}
