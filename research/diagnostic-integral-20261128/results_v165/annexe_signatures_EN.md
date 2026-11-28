@@ -1,0 +1,3 @@
+# V1.65 — Command signature directory (report appendix)
+
+Scope: 449 petrol images; 34 diesel images permanently excluded. First pass: bounded 80196 selector tables, 1.3/Turbo pointer lists and 68K dispatch comparisons. Signatures are exact ROM bytes, not serial frames. Unknown commands remain listed with evidence status. Candidate comparisons do not establish execution. Other modes, subfunctions, indirect paths, complete wire frames and semantics remain to be qualified. Include signatures/repertoire_signatures.csv, index_commandes.csv, couverture_449.csv and bilan.json in the cumulative FR/EN reports and archive. No hardware testing or Manager/DLL changes.
