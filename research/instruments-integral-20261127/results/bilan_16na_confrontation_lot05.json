@@ -1,0 +1,241 @@
+{
+  "firmwares": 123,
+  "known_refound": 15,
+  "prior_104_candidates_preserved": [
+    "EKDMF000",
+    "EKDMF002",
+    "EKDMF003",
+    "EKDMF004",
+    "EKDMF005",
+    "EKDMF006",
+    "EKDMF007",
+    "KAE6P000",
+    "KBACF000",
+    "KBACP000",
+    "KBACP001",
+    "KBM6P005",
+    "KBM6P006",
+    "KBP8F053",
+    "KBP8F062",
+    "KBP8F063",
+    "KBP8F064",
+    "KBP8F065",
+    "KBP8F066",
+    "KBP8P000",
+    "KBP8P001",
+    "KBP8P002",
+    "KBP8P003",
+    "KBP8P004",
+    "KBP8P005",
+    "KBP8P007",
+    "KBP8P008",
+    "KBP8P009",
+    "KBP8P010",
+    "KBP8P011",
+    "KBP8P012",
+    "KBP8P013",
+    "KBP8P014",
+    "KBP8P015",
+    "KBP8P016",
+    "KBP8P017",
+    "KCD8P000",
+    "KCE6F014",
+    "KCE6F018",
+    "KCE6P000",
+    "KCE6P001",
+    "KCE6P002",
+    "KCE6P003",
+    "KCE6P004",
+    "KCE8F005",
+    "KCE8F006",
+    "KCE8F007",
+    "KCE8F008",
+    "KCE8F009",
+    "KCE8P000",
+    "KCE8P001",
+    "KCE8P003",
+    "KCE8P004",
+    "KDE6F022",
+    "KDE6P001",
+    "KDE6P002",
+    "KDE6P004",
+    "KDE6P005",
+    "KGE6F021",
+    "KGM6F001",
+    "KGM6F004",
+    "KGM6F007",
+    "KGM6F008",
+    "KGM6P000",
+    "KGM6P001",
+    "KGM6P002",
+    "KGM6P003",
+    "KGM6P004",
+    "KGM6P005",
+    "OCLIP000",
+    "TAEDP000",
+    "TAEDP001",
+    "TAP7F017",
+    "TAP7P000",
+    "TAP7P003",
+    "TAP7P004",
+    "TAP7P005",
+    "TAP7P006",
+    "TAP8F019",
+    "TAP8F022",
+    "TAP8F023",
+    "TAP8F027",
+    "TAP8P000",
+    "TAP8P001",
+    "TAP8P002",
+    "TAP8P003",
+    "TAP8P005",
+    "TAP8P006",
+    "TAP8P007",
+    "TAPDF008",
+    "TAPDF010",
+    "TAPDF011",
+    "TAPDF012",
+    "TAPDF013",
+    "TAPDP000",
+    "TAPDP001",
+    "TAPDP002",
+    "TAPDP003",
+    "TBP7F016",
+    "TBP7P000",
+    "TBP7P003",
+    "TBP7P004",
+    "TBP7P005",
+    "TBP7P006"
+  ],
+  "four_without_prior_path": [
+    "EKDMF008",
+    "KBACF001",
+    "KCE8F000",
+    "KDE6F015"
+  ],
+  "bit6_nonhistorical": [
+    {
+      "firmware": "KBP8F064",
+      "paths": [
+        {
+          "port": "401h[]",
+          "address": "291E",
+          "strategy": "00A4",
+          "producer_count": 3,
+          "command_count": 0
+        }
+      ]
+    },
+    {
+      "firmware": "KBP8F065",
+      "paths": [
+        {
+          "port": "401h[]",
+          "address": "271C",
+          "strategy": "00A4",
+          "producer_count": 1,
+          "command_count": 0
+        }
+      ]
+    },
+    {
+      "firmware": "KBP8F066",
+      "paths": [
+        {
+          "port": "401h[]",
+          "address": "271C",
+          "strategy": "00A4",
+          "producer_count": 1,
+          "command_count": 0
+        }
+      ]
+    },
+    {
+      "firmware": "KCE6F018",
+      "paths": [
+        {
+          "port": "401h[]",
+          "address": "28C1",
+          "strategy": "00A4",
+          "producer_count": 1,
+          "command_count": 0
+        }
+      ]
+    },
+    {
+      "firmware": "KCE8F007",
+      "paths": [
+        {
+          "port": "401h[]",
+          "address": "28C1",
+          "strategy": "00A4",
+          "producer_count": 1,
+          "command_count": 0
+        }
+      ]
+    },
+    {
+      "firmware": "KCE8F009",
+      "paths": [
+        {
+          "port": "401h[]",
+          "address": "28C1",
+          "strategy": "00A4",
+          "producer_count": 1,
+          "command_count": 0
+        }
+      ]
+    },
+    {
+      "firmware": "KDE6F022",
+      "paths": [
+        {
+          "port": "401h[]",
+          "address": "2A32",
+          "strategy": "00A4",
+          "producer_count": 1,
+          "command_count": 0
+        }
+      ]
+    },
+    {
+      "firmware": "KGM6F004",
+      "paths": [
+        {
+          "port": "401h[]",
+          "address": "28C1",
+          "strategy": "00A4",
+          "producer_count": 1,
+          "command_count": 0
+        }
+      ]
+    },
+    {
+      "firmware": "KGM6F007",
+      "paths": [
+        {
+          "port": "401h[]",
+          "address": "28CF",
+          "strategy": "00A4",
+          "producer_count": 1,
+          "command_count": 0
+        }
+      ]
+    },
+    {
+      "firmware": "KGM6F008",
+      "paths": [
+        {
+          "port": "401h[]",
+          "address": "28CF",
+          "strategy": "00A4",
+          "producer_count": 1,
+          "command_count": 0
+        }
+      ]
+    }
+  ],
+  "nonhistorical_direct_flag_consumers": [],
+  "nonhistorical_computed_transfers": 108,
+  "note": "Review evidence per command and output; neither a graph witness nor a port bit proves a test of the instrument. No incompatible classification from an unresolved transfer."
+}
