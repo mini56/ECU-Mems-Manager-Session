@@ -8,10 +8,10 @@ assert sha=="4b465406cca3a3a619b0396bc8ca85c3af4c9dc0",sha
 paths=[p.decode("utf-8") for p in subprocess.check_output(["git","-C",str(src),"ls-files","-z"]).split(b"\0") if p]
 # Named ECU, numeric identity, and model reference used by Manager.
 patterns={
- "AANMP002":r"AANMP[\s_-]*002",
+ "AANMP002":r"AANMP[\s_-]{0,16}002",
  "ID_980002":r"(?<![0-9A-Fa-f])(?:0x)?980002(?:02)?(?![0-9A-Fa-f])",
- "ID_bytes":r"(?<![0-9A-Fa-f])(?:0x)?98\s*[,;:\s-]+\s*(?:0x)?0{1,2}\s*[,;:\s-]+\s*(?:0x)?0?2(?![0-9A-Fa-f])",
- "MNE101150":r"MNE[\s_-]*101150",
+ "ID_bytes":r"(?<![0-9A-Fa-f])(?:0x)?98[,;:\\s-]{1,16}(?:0x)?0{1,2}[,;:\\s-]{1,16}(?:0x)?0?2(?![0-9A-Fa-f])",
+ "MNE101150":r"MNE[\s_-]{0,16}101150",
 }
 rx={k:re.compile(v,re.I) for k,v in patterns.items()}
 hits=[]; coverage=[]; errors=[]
@@ -19,9 +19,11 @@ def add(name,layer,where,key,context):
     hits.append([name,layer,str(where),key,context.replace("\0","\\0")[:650]])
 def scan_text(name,layer,s):
     for key,r in rx.items():
+        previous=0; line=1
         for m in r.finditer(s):
+            line+=s.count("\n",previous,m.start()); previous=m.start()
             a=max(0,m.start()-100); b=min(len(s),m.end()+100)
-            add(name,layer,s.count("\n",0,m.start())+1,key,s[a:b].replace("\r"," ").replace("\n"," "))
+            add(name,layer,line,key,s[a:b].replace("\r"," ").replace("\n"," "))
 def scan_raw(name,layer,b):
     for k in ("AANMP002","980002","98000202","MNE101150"):
         for enc in ("ascii","utf-16le","utf-16be"):
@@ -31,9 +33,14 @@ def scan_raw(name,layer,b):
 def scan(name,b,depth=0):
     if depth>7: errors.append([name,"nested depth limit"]);return
     suffix=name.lower()
+    if len(b)>1000000: print("SCAN",name,len(b),flush=True)
     try:
         # Plain text, including scripts, generated resources, and data.
-        if b.startswith((b"\xff\xfe",b"\xfe\xff")):
+        if suffix.endswith((".qz64",".b64")):
+            # Search the decoded content as well; encoded ASCII is not meaningful for split numeric IDs.
+            for key in ("AANMP002","980002","98000202","MNE101150"):
+                for m in re.finditer(key.encode(),b,re.I):add(name,"encoded literal",hex(m.start()),key,"literal in encoded stream")
+        elif b.startswith((b"\xff\xfe",b"\xfe\xff")):
             scan_text(name,"UTF16",b.decode("utf-16"))
         elif b.count(b"\0")<=max(1,len(b)//1000):
             try: scan_text(name,"text",b.decode("utf-8-sig"))
@@ -56,7 +63,7 @@ def scan(name,b,depth=0):
         elif b.startswith(b"%PDF"):
             with tempfile.TemporaryDirectory() as td:
                 p=Path(td)/"in.pdf";p.write_bytes(b)
-                cmd=subprocess.run(["pdftotext","-layout",str(p),"-"],capture_output=True)
+                cmd=subprocess.run(["pdftotext","-layout",str(p),"-"],capture_output=True,timeout=60)
                 if cmd.returncode: raise ValueError("pdftotext: "+cmd.stderr.decode(errors="replace")[:160])
                 scan_text(name,"PDF text",cmd.stdout.decode("utf-8",errors="replace"))
         elif b.startswith(b"\x89PNG\r\n\x1a\n"):
@@ -70,7 +77,8 @@ def scan(name,b,depth=0):
                     key,rest=d.split(b"\0",1);flag=rest[0];tail=rest[2:].split(b"\0",2)[-1];scan_text(name,"PNG metadata",key.decode("latin1")+" "+(zlib.decompress(tail) if flag else tail).decode("utf-8",errors="replace"))
                 pos+=12+n
     except Exception as exc: errors.append([name,str(exc)[:300]])
-for name in paths:
+for index,name in enumerate(paths):
+    if index%50==0: print("PROGRESS",index,len(paths),name,flush=True)
     before=len(hits); error_before=len(errors)
     try:
         scan_text(name,"path",name)

@@ -1,8 +1,5 @@
 name: Audit exhaustif occurrences AANMP002 SESSION 231
 on:
-  push:
-    branches: [research/mems-firmwares-20261126]
-    paths: ['research/audit-occurrences-aanmp002-20261128/audit.py','.github/workflows/audit-aanmp002-session231.yml']
   workflow_dispatch:
 permissions:
   contents: write

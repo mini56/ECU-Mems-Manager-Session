@@ -1,0 +1,33 @@
+name: Audit AANMP002 SESSION 231 - scan corrige
+on:
+  push:
+    branches: [research/mems-firmwares-20261126]
+    paths: ['research/audit-occurrences-aanmp002-20261128/audit.py','.github/workflows/audit-aanmp002-session231-v2.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  audit:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: '4b465406cca3a3a619b0396bc8ca85c3af4c9dc0'
+          path: manager_snapshot
+          persist-credentials: false
+      - run: command -v pdftotext || (sudo apt-get update -qq && sudo apt-get install -y poppler-utils)
+      - run: python3 -u research/audit-occurrences-aanmp002-20261128/audit.py manager_snapshot research/audit-occurrences-aanmp002-20261128/results_v2
+      - name: Enregistrer les resultats
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/audit-occurrences-aanmp002-20261128/results_v2
+          git commit -m "Audit AANMP002 : scan corrige, resultats [skip ci]"
+          git pull --rebase origin research/mems-firmwares-20261126
+          git push origin HEAD:research/mems-firmwares-20261126
+      - uses: actions/upload-artifact@v4
+        with:
+          name: audit-AANMP002-v2
+          path: research/audit-occurrences-aanmp002-20261128/results_v2
