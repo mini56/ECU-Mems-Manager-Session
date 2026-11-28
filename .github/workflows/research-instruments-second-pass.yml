@@ -1,0 +1,28 @@
+name: Recherche instruments - seconde passe ROM et ASM
+on:
+  push:
+    branches: [research/mems-firmwares-20261126]
+    paths: ['.github/workflows/research-instruments-second-pass.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  analyse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Contrôler les 483 ROM et les chaînes de commande
+        run: python3 research/instruments-integral-20261127/audit_second_pass.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: instruments-seconde-passe-483
+          path: research/instruments-integral-20261127/results/*seconde_passe*
+      - name: Enregistrer les preuves dans la branche de recherche
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/instruments-integral-20261127/results/*seconde_passe*
+          if ! git diff --cached --quiet; then
+            git commit -m "Recherche instruments : seconde passe, preuves individuelles [skip ci]"
+            git push origin HEAD:research/mems-firmwares-20261126
+          fi
