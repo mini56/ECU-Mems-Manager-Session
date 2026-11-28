@@ -268,7 +268,7 @@ void DiagnosticPanel::rebuild(const mems_data &d)
              hasDtc ? I18n::text(6817) /* EN: Read the relevant bits before clearing anything. */
                     : incompleteDtc2?I18n::text(29002):I18n::text(6818) /* EN: No active fault bit in 0x7D/0x80 frames. */);
     if (hasDtc) ++issues;
-    addCheck(QStringLiteral("DTC 2"),QString::number(dtc2.raw),
+    addCheck(QStringLiteral("DTC 2"),MemsExtendedDtc::diagnosticDtc2Raw(&m_naEvidence,d.dtc2),
         fault2?I18n::text(29051):dtc2.indicators?I18n::text(6801):I18n::text(6849),
         MemsExtendedDtc::diagnosticDtc2Text(&m_naEvidence,d.dtc2));
     for(int group=3;group<=5;++group){

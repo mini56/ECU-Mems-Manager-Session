@@ -198,6 +198,10 @@ int main(int argc,char **argv) {
     auto known=generic19;auto rawKnown=b19;rawKnown[5]=4;known.setExtended80(a19);known.setExtended7d(rawKnown);
     d.dtc2=4;panel.updateData(&d,&known);CHECK(stateOf(6838)==I18n::text(6840));
     known.discardPair();panel.updateData(&d,&known);CHECK(stateOf(6838)!=I18n::text(6840));
+    CHECK(report->toPlainText().contains(I18n::text(29048)));
+    for(int row=0;row<table->rowCount();++row)
+        if(table->item(row,0)->text()==QStringLiteral("DTC 2"))
+            CHECK(table->item(row,1)->text()==QStringLiteral("--"));
     d.dtc2=0;panel.endNaSession();
     // Real SummaryTab widget: both themes, all six languages, target widths.
     for(const char *lang:{"fr","en","de","es","it","pt"}) {
@@ -240,6 +244,10 @@ int main(int argc,char **argv) {
                 &&dtc->toolTip().contains(I18n::text(29013))&&dtc->toolTip().contains(I18n::text(29015));
         };
         CHECK(checkOffline());
+        auto lost19=extended;lost19.discardPair();
+        summary.updateData(&d,&lost19);
+        CHECK(value(6630,2)==QStringLiteral("--"));
+        CHECK(value(6630,3).contains(I18n::text(29048)));
         summary.updateData(&d,&extended);
         CHECK(value(29026,3)==QStringLiteral("14.3 V"));
         CHECK(value(29031,3)==QStringLiteral("-1 RPM"));

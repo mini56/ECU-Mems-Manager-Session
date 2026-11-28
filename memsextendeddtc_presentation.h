@@ -4,7 +4,7 @@
 #include <QStringList>
 namespace MemsExtendedDtc {
 inline QString rawText(const Result &r) {return r.status==Status::Missing?QStringLiteral("--"):QString::number(r.raw);}
-inline QString mask(unsigned b) {return QStringLiteral("0x%1").arg(b,2,16,QLatin1Char('0')).toUpper();}
+inline QString mask(unsigned b) {return QStringLiteral("0x")+QString::number(b,16).rightJustified(2,QLatin1Char('0')).toUpper();}
 inline int labelKey(const char *f,int g,unsigned bit) {
     if(g==2&&dtc2Known(f)){if(bit==4)return 29017;if(bit==0x10)return 29018;if(bit==0x20)return 29251;if(bit==0x80)return 29252;}
     if(g==2&&short13(f)){if(bit==1)return 2972401;if(bit==2)return 2972402;}
@@ -23,16 +23,27 @@ inline Result diagnosticDtc2(const Mems16Na::SessionEvidence *s,unsigned legacy)
     const auto &b=s->extended7d();
     return diagnosticDtc2(s->firmwareName().c_str(),b.data(),b.size(),legacy);
 }
+inline bool diagnosticDtc2FrameAvailable(const Mems16Na::SessionEvidence *s){
+    return s&&s->extendedDtc(2).status!=Status::Missing;
+}
+inline QString diagnosticDtc2Raw(const Mems16Na::SessionEvidence *s,unsigned legacy){
+    // Restore the original missing-data display on identified, qualified profiles.
+    // Keep historical DLL raw readings on other profiles, explicitly labelled below.
+    if(s&&(dtc2Known(s->firmwareName().c_str())||short13(s->firmwareName().c_str()))
+       &&!diagnosticDtc2FrameAvailable(s))return QStringLiteral("--");
+    return QString::number(diagnosticDtc2(s,legacy).raw);
+}
 inline QString diagnosticDtc2Text(const Mems16Na::SessionEvidence *s,unsigned legacy) {
     const auto r=diagnosticDtc2(s,legacy);
     QStringList out;
+    if(!diagnosticDtc2FrameAvailable(s))out<<I18n::text(29048);
     if(r.status==Status::Unverified)out<<I18n::text(29002);
     if(r.status==Status::Decoded&&!r.faults&&!r.indicators)out<<I18n::text(29003);
     const char *f=s?s->firmwareName().c_str():nullptr;
     for(unsigned bit=1;bit<=128;bit<<=1)if(r.faults&bit)
         out<<I18n::text(labelKey(f,2,bit))+QStringLiteral(" (")+mask(bit)+QStringLiteral(")");
     // Unknown bits are preserved as raw evidence, not attributed to a circuit.
-    if(r.indicators)out<<I18n::text(2972310)+QStringLiteral(" (")+mask(r.indicators)+QStringLiteral(")");
+    if(r.indicators&&diagnosticDtc2FrameAvailable(s))out<<I18n::text(2972310)+QStringLiteral(" (")+mask(r.indicators)+QStringLiteral(")");
     return out.join(QStringLiteral(" ; "));
 }
 inline QString text(const Mems16Na::SessionEvidence *s,int group) {

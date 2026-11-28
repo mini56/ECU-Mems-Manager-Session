@@ -531,7 +531,7 @@ void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
            QString::number(data->dtc1),
            data->dtc1 != 0 ? I18n::text(6685) /* EN: FAULTS */ : I18n::text(6686) /* EN: no fault */);
   if(na && na->identifiedProfile())applyNaPresentation(*na);
-  else setValue(m_rowDtc2,QString::number(MemsExtendedDtc::diagnosticDtc2(na,data->dtc2).raw),MemsExtendedDtc::diagnosticDtc2Text(na,data->dtc2));
+  else setValue(m_rowDtc2,MemsExtendedDtc::diagnosticDtc2Raw(na,data->dtc2),MemsExtendedDtc::diagnosticDtc2Text(na,data->dtc2));
   if(na&&Mems220::profile19(*na))apply220Presentation(*na);
 }
 

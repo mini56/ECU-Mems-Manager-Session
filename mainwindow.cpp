@@ -1258,10 +1258,10 @@ void MainWindow::onDataReady()
     QLabel *labels[]={m_ui->m_faultCode17Label,m_ui->m_faultCode18Label,m_ui->m_faultCode19Label,
         m_ui->m_faultCode20Label,m_ui->m_faultCode21Label,m_ui->m_faultCode22Label,m_ui->m_faultCode23Label,m_ui->m_faultCode24Label};
     for(int i=0;i<8;++i){
-      if(short13Dtc2&&i<2&&genericDtc2.faults&(1u<<i))continue;
+      if(short13Dtc2&&i<2)continue; // stable labels even when fault is absent
       rememberNaLabel(labels[i]);
       labels[i]->setText(QString::number(17+i)+QStringLiteral(" - ")+I18n::text(2972310));
-      labels[i]->setToolTip(MemsExtendedDtc::diagnosticDtc2Text(&naEvidence,data->dtc2));
+      labels[i]->setToolTip(I18n::text(2972310)); // no technical raw masks in help bubbles
     }
   }
   if(syncProfile){rememberNaLabel(m_ui->m_faultCode21Label);m_ui->m_faultCode21Label->setText(QStringLiteral("21 - ")+I18n::text(29018));}
@@ -1571,7 +1571,7 @@ void MainWindow::onDataReady()
     {m_ui->r_7D_05->setText(I18n::text(7021) /* EN: FAULTS */);}
     else
     {m_ui->r_7D_05->setText(I18n::text(7022) /* EN: no fault */);} 
- if(!naIdentified){m_ui->m_7D_05->setText(QString::number(genericDtc2.raw));m_ui->r_7D_05->setText(MemsExtendedDtc::diagnosticDtc2Text(&naEvidence,data->dtc2));}
+ if(!naIdentified){m_ui->m_7D_05->setText(MemsExtendedDtc::diagnosticDtc2Raw(&naEvidence,data->dtc2));m_ui->r_7D_05->setText(MemsExtendedDtc::diagnosticDtc2Text(&naEvidence,data->dtc2));}
  m_ui->m_7D_06->setText(QString::number(data->lambda_voltage));
  m_ui->r_7D_06->setText(QString::number(data->lambda_voltage * 5) + " mV" );
  m_ui->m_7D_07->setText(QString::number(data->lambda_sensor_frequency));
