@@ -115,15 +115,15 @@ def analyse(r):
                 if op(s)=="ldb" and len(q)==2 and var(q[0])==6 and imm(q[1])==0x22:
                     hso=any(op(t)=="add" and args(t) and var(args(t)[0])==4 for _,t in ctx[j+1:j+5])
                 if op(s)=="orb" and len(q)==2 and var(q[0])==sy.get("io_strat_req") and imm(q[1])==64:
-                    port=any(op(t)=="stb" and len(args(t))==2 and re.fullmatch(r"0?401h\[\]",args(t)[1],re.I) for _,t in ctx[j+1:j+65])
-            w["hso_02_22_candidate"]=hso;w["port_0401_bit6_candidate"]=port
+                    port=any(op(t)=="stb" and len(args(t))==2 and re.fullmatch(r"(?:0?401h|1ffeh)\[\]",args(t)[1],re.I) for _,t in ctx[j+1:j+65])
+            w["hso_02_22_candidate"]=hso;w["port_0401_or_1ffe_bit6_candidate"]=port
     masks=generic_masks(b,ins,cs)
     # Preserve every command entry, not only known commands, with actual
     # handler instructions, and explicit output/control-flow witnesses.
     output_seeds={int(h["address"],16) for h in hw}
     command_output=reachable(ins,labels,cs,output_seeds)
     commands=[{**c,"handler":hx(c["handler"]),"entry":window(c["handler"],35)} for c in cs]
-    gauge=[c for c in consumers if c["pwm"] and any(w["hso_02_22_candidate"] or w["port_0401_bit6_candidate"] for w in c["pwm"])]
+    gauge=[c for c in consumers if c["pwm"] and any(w["hso_02_22_candidate"] or w["port_0401_or_1ffe_bit6_candidate"] for w in c["pwm"])]
     labelled=[c for c in gauge if "m_tmpgauge_dr" in c["duty_symbol"]]
     # Preserve all indirect addressing and unresolved branches for later review.
     indirect=[[hx(a),s] for a,s in ins.items() if re.search(r"\[(?:INTMEM_[0-9a-f]+(?:\+\d+)?|[A-Z][A-Z0-9_]+)\]",s,re.I)]
@@ -134,13 +134,15 @@ for n in ("AANMP002","EKDMF009"):
     x=next(x for x in results if x["firmware"]==n)
     assert x["labelled_gauge_candidates"], (n,x["all_flag_consumers"])
 assert len(results)==123
-with gzip.open(O/"preuves_16na_sorties_lot02.jsonl.gz","wt",encoding="utf-8") as f:
+missing=[x["firmware"] for x in results if x["known_gauge"] and not x["labelled_gauge_candidates"]]
+assert not missing, ("15 known gauge controls must be recovered", missing)
+with gzip.open(O/"preuves_16na_sorties_lot03.jsonl.gz","wt",encoding="utf-8") as f:
     for x in results:f.write(json.dumps(x,ensure_ascii=False)+"\n")
 cols=["firmware","identity","known_gauge","instructions","dialogue_entries","hardware_writes","command_to_hardware_witnesses","generic_bit6","flag_consumers","gauge_output_candidates","labelled_gauge_candidates","tacho_symbols","qualification"]
-with (O/"registre_16na_sorties_lot02.csv").open("w",encoding="utf-8-sig",newline="") as f:
+with (O/"registre_16na_sorties_lot03.csv").open("w",encoding="utf-8-sig",newline="") as f:
     w=csv.writer(f);w.writerow(cols)
     for x in results:w.writerow([x["firmware"],x["identity"],x["known_gauge"],x["instructions"],len(x["all_commands"]),len(x["hardware_writes"]),len(x["command_to_hardware_witnesses"]),any(m["bit6_reachable"] for m in x["generic_masks"]),len(x["all_flag_consumers"]),len(x["gauge_output_candidates"]),x["labelled_gauge_candidates"],len(x["tacho_symbols"]),x["qualification"]])
 summary={"firmwares":len(results),"known_gauge":sum(x["known_gauge"] for x in results),"known_gauge_recovered":[x["firmware"] for x in results if x["known_gauge"] and x["labelled_gauge_candidates"]],"new_gauge_candidates":[{"firmware":x["firmware"],"identity":x["identity"],"consumers":x["gauge_output_candidates"]} for x in results if not x["known_gauge"] and x["gauge_output_candidates"]],"generic_bit6":[x["firmware"] for x in results if any(m["bit6_reachable"] for m in x["generic_masks"])],"tacho_symbols":[x["firmware"] for x in results if x["tacho_symbols"]],"note":"Output candidates and reachability are not safe integration qualification; review exact command, calibration, identity and restoration. All 123 retained."}
-(O/"bilan_16na_sorties_lot02.json").write_text(json.dumps(summary,indent=2,ensure_ascii=False),encoding="utf-8")
+(O/"bilan_16na_sorties_lot03.json").write_text(json.dumps(summary,indent=2,ensure_ascii=False),encoding="utf-8")
 print(json.dumps({k:v for k,v in summary.items() if k!="new_gauge_candidates"},ensure_ascii=False))
 print("New candidates:",[x["firmware"] for x in summary["new_gauge_candidates"]])
