@@ -1,0 +1,28 @@
+name: Recherche intégrale MEMS - reprise V158
+on:
+  push:
+    branches: [research/mems-firmwares-20261126]
+    paths: ['.github/workflows/research-diagnostic-integral.yml','research/diagnostic-integral-20261128/audit.py']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  analyse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lire toutes les images et rechercher les variantes
+        run: python3 research/diagnostic-integral-20261128/audit.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: diagnostic-integral-V158
+          path: research/diagnostic-integral-20261128/results/
+      - name: Enregistrer les matrices et preuves
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/diagnostic-integral-20261128/results
+          if ! git diff --cached --quiet; then
+            git commit -m "Recherche intégrale V158 : matrices et preuves par firmware [skip ci]"
+            git push origin HEAD:research/mems-firmwares-20261126
+          fi

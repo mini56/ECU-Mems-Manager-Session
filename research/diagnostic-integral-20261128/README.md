@@ -1,0 +1,3 @@
+# Reprise intégrale des recherches V1.58
+
+Les résultats V1.49–V1.57 limités à quelques références ne constituent pas une qualification globale. Ce premier passage doit traiter chaque image présente, sans déduire une absence de l'absence de signature. Priorité : défauts actuels et secours des cinq capteurs analogiques ; indexation des autres chantiers pour leur étude détaillée. Aucune modification de Manager ou de DLL. Les définitions, les signatures candidates, les tables reliées au producteur et les accès réellement éprouvés sont des niveaux distincts. Les résultats incomplets restent ouverts.
