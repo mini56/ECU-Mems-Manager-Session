@@ -1,0 +1,8 @@
+path;error
+database/reference/mems_reference_seed_1.qz64;Error -5 while decompressing data: incomplete or truncated stream
+database/reference/mems_reference_seed_2.qz64;Error -3 while decompressing data: incorrect header check
+database/reference/mems_reference_seed_3.qz64;Error -3 while decompressing data: incorrect header check
+database/reference/mems_reference_seed_4.qz64;Error -3 while decompressing data: incorrect header check
+database/reference/research_enrichment_1620.qz64;Error -3 while decompressing data: incorrect header check
+tools/private_sources/fr_rave_addon_20261115/part_000.b64!base64;File is not a zip file
+tools/private_sources/rave_fr_wmxn980f_ocr_part1.b64!base64;Compressed file ended before the end-of-stream marker was reached
