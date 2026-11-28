@@ -14,3 +14,6 @@ Ce lot ne démontre pas la cartographie de transmission de tous les 215 MEMS 1.9
 
 ## Complément avant lancement du même run 241
 Inspection de la 240 : le délai de 3 s effaçait aussi la référence capturée alors qu'il ne prouve pas un changement de calculateur ; une notification répétée du même identifiant reconstruisait le diagnostic à partir de l'ancien échantillon, y compris après expiration. Correction source : distinction expiration / perte de connexion ; conservation de la référence dans la même connexion après expiration, effacement à la perte explicite ou au changement d'identité. La notification d'identité ne redéclenche plus de diagnostic. Tests Qt ajoutés pour le maintien de référence après expiration, le même ID sans rafraîchissement fictif, MEMS 2J/3, puis effacement à la perte réelle. Ces tests restent à exécuter. Pas de nouvelle version ni de run concurrent.
+
+## Lancement séquentiel
+Run 240 (46182183046) terminé avec succès : tests autonomes et Windows, Setup, installation et démarrage. Runs 234 et 236–239 également terminés. Lancement de la validation cumulative 241 par modification du workflow, sans autre run concurrent sur cette branche. La 241 ne constitue pas une recette finale : qualification des autres firmwares, contrôles historiques et essais matériels restent ouverts.

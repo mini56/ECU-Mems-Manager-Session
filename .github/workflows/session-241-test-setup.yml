@@ -1,3 +1,4 @@
+# Validation sequentielle : lancement apres succes complet du run 240 (46182183046).
 name: SESSION 241 - Setup de test
 run-name: SESSION 241 - Validation complete et Setup de test - ${{ github.sha }}
 on:
