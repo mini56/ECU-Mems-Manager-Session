@@ -1,0 +1,28 @@
+name: Recherche V166 - inventaire signatures essence
+on:
+  push:
+    branches: [research/mems-firmwares-20261126]
+    paths: ['research/diagnostic-integral-20261128/audit_signatures_v166.py','.github/workflows/research-signatures-v166.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  analyse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 research/diagnostic-integral-20261128/audit_signatures_v166.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signatures-essence-V166
+          path: research/diagnostic-integral-20261128/results_v166
+      - name: Enregistrer les preuves
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/diagnostic-integral-20261128/results_v166
+          if ! git diff --cached --quiet; then
+            git commit -m "V166 : qualification des contextes de tables [skip ci]"
+            git pull --rebase origin research/mems-firmwares-20261126
+            git push origin HEAD:research/mems-firmwares-20261126
+          fi
