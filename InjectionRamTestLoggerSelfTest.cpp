@@ -21,7 +21,7 @@ int main(int argc,char **argv)
     if(!require(tmp.isValid(),"temporary directory creation")) return 1;
 
     const QString phase1=QStringLiteral("TEST RAM TEMPS INJECTION — AANMP002\nPHASE 1 OK");
-    const QString phase2=QStringLiteral("TEST DYNAMIQUE RAM TEMPS INJECTION — AANMP002\nPHASE 2 OK");
+    const QString phase2=QStringLiteral("TEST DYNAMIQUE RAM TEMPS INJECTION — EKDMF008\nPHASE 2 OK");
 
     bool ok=true;
     QString first,second;
@@ -32,6 +32,7 @@ int main(int argc,char **argv)
     ok=require(first!=second && QFileInfo::exists(first) && QFileInfo::exists(second),
                "each phase must have its own file")&&ok;
 
+    ok=require(first.contains(QStringLiteral("AANMP002"))&&second.contains(QStringLiteral("EKDMF008")),"firmware-specific filenames")&&ok;
     QFile file1(first),file2(second);
     ok=require(file1.open(QIODevice::ReadOnly|QIODevice::Text) &&
                file2.open(QIODevice::ReadOnly|QIODevice::Text),

@@ -88,22 +88,21 @@ inline Measurements decode(const Profile *p, Frame a, Frame b) {
     Measurements m{};
     if (!p) return m;
     const bool aok=valid(a,28), bok=valid(b,32);
-    const bool reference=std::strcmp(p->firmware,"AANMP002")==0;
     if (aok) {
         const auto r=a.bytes;
         m.ambient=constantFF(r[4]);
         // Existing temperature conversion maintained for confirmed FRT.
         m.fuel=p->fuelTemperature ? available(r[6],int(r[6])-55) : constantFF(r[6]);
-        // Ch. 44/47: physical polarity only explicitly established for AANMP002.
-        m.pn=reference && (r[11]==0 || r[11]==32)
+        // 80/0B retains the profile-specific source bit; 80/0C and 80/1B are normalized inverted bits.
+        m.pn=p->pnSourceMask && (r[11]==0 || r[11]==p->pnSourceMask)
             ? available(r[11],r[11]==0) : unverified(r[11]);
-        m.ac=reference && r[12]<=1
+        m.ac=r[12]<=1
             ? available(r[12],r[12]==0) : unverified(r[12]);
         m.idleAmplitude=available(r[15],r[15]*6.25);
         m.idleHot=available(r[16],r[16]);
         m.learnVoltage=available(r[17],r[17]*0.1);
         m.throttleVoltage=available(r[9],r[9]*5.0/255.0);
-        m.ignitionOff=reference && r[27]<=1
+        m.ignitionOff=r[27]<=1
             ? available(r[27],r[27]) : unverified(r[27]);
     }
     if (bok) {

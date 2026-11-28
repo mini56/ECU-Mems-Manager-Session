@@ -101,6 +101,6 @@ int main() {
     auto repeated=byFirmware("EKDMF008"); CHECK(repeated && repeated->repeatedThrottleReference);
     for(unsigned i=0;i<4;++i) {b[23+2*i]=0x1B;b[24+2*i]=0;}
     m=decode(repeated,A,B); for(auto v:m.throttleReference) CHECK(v.calculated==27);
-    CHECK(m.pn.availability==Availability::Unverified);
+    CHECK(m.pn.availability==(a[11]==repeated->pnSourceMask||a[11]==0?Availability::Available:Availability::Unverified));
     std::cout<<"MEMS16NA_SELFTEST_OK: 123 profiles, 107 PETA IDs, measurements and DTC\n";
 }

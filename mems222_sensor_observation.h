@@ -12,7 +12,7 @@ struct Sample {
 inline Sample sample(const Mems16Na::SessionEvidence &s){
     using namespace Mems16Na;
     Sample r;
-    const bool na=s.identifiedProfile()&&s.firmwareName()=="AANMP002";
+    const bool na=s.identifiedProfile()!=nullptr;
     const bool nineteen=Mems220::profile19(s);
     const auto a=Mems217::frame80(s),b=Mems217::frame7d(s);
     if((!na&&!nineteen)||!valid(a,28)||!valid(b,na?32:33))return r;
@@ -20,7 +20,10 @@ inline Sample sample(const Mems16Na::SessionEvidence &s){
     r.airValid=Mems219::temperatureAvailable(a.bytes[5]);
     r.air=Mems219::temperatureC(a.bytes[5]);
     r.tps=a.bytes[9];r.map=a.bytes[7];
-    r.switchValid=a.bytes[10]<=1;r.idle=a.bytes[10]==0;
+    // NA table returns a masked bit, not necessarily the normalized value 1.
+    const unsigned sw=a.bytes[10];
+    r.switchValid=na?(sw==0||(sw&(sw-1u))==0):sw<=1;
+    r.idle=sw==0;
     r.airStored=(a.bytes[13]&2)!=0;
     r.tpsStored=(a.bytes[14]&0x80)!=0;
     r.mapStored=(a.bytes[14]&0x20)!=0;

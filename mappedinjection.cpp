@@ -4,6 +4,7 @@
 #include "analysistab.h"
 #include "i18n.h"
 #include "applicationvisualstyle.h"
+#include "injectionrapidplan.h"
 
 #include <QApplication>
 #include <QByteArray>
@@ -66,6 +67,24 @@ namespace {
 #include "mappedinjection_profiles_mems19_batch7.inc"
 #undef validatedInjectionProfileForFirmware
 #include "mappedinjection_profiles_mems19_tbp7f015.inc"
+}
+
+bool injectionRapidPlanForNa(const QString &firmware,InjectionRapidPlan *out)
+{
+    if(!out)return false;
+    *out=InjectionRapidPlan();
+    if(!Mems16Na::byFirmware(firmware.toLatin1().constData()))return false;
+    InjectionCalculationProfile p;
+    if(!validatedInjectionProfileForFirmwareNa(firmware,&p))return false;
+    if(!p.map.baseAddress||!p.map.transientSourceAddress||!p.map.transientCounterAddress||
+       (p.map.baseAddress&1u)||(p.map.transientSourceAddress&1u)||
+       p.kind==InjectionCalculationKind::Unverified)return false;
+    out->base=p.map.baseAddress;out->source=p.map.transientSourceAddress;
+    out->counter=p.map.transientCounterAddress;
+    out->incremental=p.counterPolicy==InjectionCounterPolicy::IncrementEvent;
+    out->additive=p.kind==InjectionCalculationKind::AdditiveC001;
+    out->baseScale=p.baseMsPerRaw;out->transientScale=p.transientMsPerRaw;
+    return true;
 }
 
 #include "mappedinjection_runtime.inc"

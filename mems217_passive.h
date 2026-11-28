@@ -20,24 +20,30 @@ inline bool present(Mems16Na::Frame f,unsigned i) {
 }
 inline int injectionUs(unsigned raw){return (int(raw)-128)*8;}
 inline int idleRpm(unsigned raw){return (int(raw)-128)*25;}
-inline bool passiveProfile(const std::string &f){return f=="AANMP002"||f=="KBHBG009";}
+inline bool passiveProfile(const Mems16Na::SessionEvidence &s){return s.identifiedProfile()!=nullptr || s.firmwareName()=="KBHBG009";}
 struct Observation {
-    bool valid=false, lambdaFault=false, lambdaObserved=false, coolantFault=false, coolantObserved=false, closedLoop=false;
+    bool valid=false, lambdaValid=false, coolantValid=false, lambdaFault=false, lambdaObserved=false, coolantFault=false, coolantObserved=false, closedLoop=false;
     unsigned mv=0, crossings=0, coolantRaw=0, low=0, high=0;
     int side=0;
     void reset(){*this=Observation();}
     void sample(const Mems16Na::SessionEvidence &s) {
         auto a=frame80(s), b=frame7d(s);
-        if(!passiveProfile(s.firmwareName()) || !present(a,14) || !present(b,10) ||
-           Mems16Na::word(a,1)==0 || b.bytes[9]>1 || b.bytes[10]>1){reset();return;}
+        if(!passiveProfile(s) || !present(a,14) || !present(b,10) ||
+           Mems16Na::word(a,1)==0){reset();return;}
         const unsigned t=a.bytes[3];
-        if(t==0||t>=250){reset();return;}
-        const bool first=!valid;
-        valid=true; coolantRaw=t; mv=unsigned(b.bytes[6])*5;
-        coolantFault=(a.bytes[13]&1)!=0; // stored circuit fault, not proof of current substitution
-        if(first||coolantFault){low=high=t;coolantObserved=false;}
-        else {if(t<low)low=t;if(t>high)high=t;coolantObserved=high-low>=3;}
-        closedLoop=b.bytes[10]==1;
+        const bool first=!coolantValid;
+        coolantValid=t>0&&t<250;
+        if(coolantValid){
+            coolantRaw=t;
+            coolantFault=(a.bytes[13]&1)!=0;
+            if(first||coolantFault){low=high=t;coolantObserved=false;}
+            else {if(t<low)low=t;if(t>high)high=t;coolantObserved=high-low>=3;}
+        } else {coolantFault=false;coolantObserved=false;low=high=0;}
+        lambdaValid=b.bytes[9]<=1&&(s.identifiedProfile()||b.bytes[10]<=1);
+        valid=coolantValid&&lambdaValid;
+        if(!lambdaValid){mv=0;crossings=0;side=0;lambdaObserved=false;lambdaFault=false;closedLoop=false;return;}
+        mv=unsigned(b.bytes[6])*5;
+        closedLoop=b.bytes[10]!=0;
         lambdaFault=b.bytes[9]==0;
         if(lambdaFault||!closedLoop){crossings=0;side=0;lambdaObserved=false;return;}
         // Deliberately conservative observation bands, not a Rover pass/fail spec.

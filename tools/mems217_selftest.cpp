@@ -26,7 +26,7 @@ int main(){
     Mems16Na::SessionEvidence n;
     n.tx({0xd0});n.rx({0xd0,0x99,0,9,1});n.finish();
     n.tx({0xd1});n.rx({0xd1,'K','B','H','B','G','0','0','9',0x99,0,9,1});n.finish();
-    assert(!n.identifiedProfile()&&injectionProfile(n)&&passiveProfile(n.firmwareName()));
+    assert(!n.identifiedProfile()&&injectionProfile(n)&&passiveProfile(n));
     std::vector<std::uint8_t> a19(28,0),b19(32,0);
     a19[0]=28;a19[1]=3;a19[2]=132;a19[3]=100;
     b19[0]=32;b19[6]=160;b19[9]=1;b19[10]=1;b19[11]=129;

@@ -1204,7 +1204,7 @@ void MainWindow::onDataReady()
   const auto settingsFrame7d=Mems217::frame7d(naEvidence);
   const bool settingsIacMinimum=measurementValid&&Mems217::injectionProfile(naEvidence)&&
       Mems217::present(settingsFrame80,18)&&settingsFrame80.bytes[18]==0;
-  const bool settingsLambdaValid=measurementValid&&Mems217::passiveProfile(naEvidence.firmwareName())&&
+  const bool settingsLambdaValid=measurementValid&&Mems217::passiveProfile(naEvidence)&&
       Mems217::present(settingsFrame7d,9)&&settingsFrame7d.bytes[9]==1;
   updateSettingsStateIndicators(this,settingsIacMinimum,settingsLambdaValid);
   // The header explains the active decoding without sending a new command.

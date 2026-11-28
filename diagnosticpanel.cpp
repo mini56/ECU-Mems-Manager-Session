@@ -510,7 +510,7 @@ QString DiagnosticPanel::buildReport() const
     text += I18n::text(6886) /* EN: raw coolant=%1 | raw intake air=%2 | lambda=%3 | closed loop=%4  */
         .arg(d.coolant_temp).arg(d.intake_air_temp).arg(d.lambda_voltage).arg(d.closed_loop ? I18n::text(6887) /* EN: oui */ : I18n::text(6888) /* EN: non */);
     // Include the same passive results in the generic (MEMS 1.9) report.
-    if(Mems217::passiveProfile(m_naEvidence.firmwareName())){
+    if(Mems217::passiveProfile(m_naEvidence)){
         for(int row=0;row<m_checks->rowCount();++row){
             const QString title=m_checks->item(row,0)->text();
             if(title!=I18n::text(2971710)&&title!=I18n::text(2971711))continue;
@@ -790,7 +790,7 @@ void DiagnosticPanel::refreshCoolantTest()
 
 void DiagnosticPanel::addPassiveChecks()
 {
-    if(!Mems217::passiveProfile(m_naEvidence.firmwareName()))return;
+    if(!Mems217::passiveProfile(m_naEvidence))return;
     const auto &o=m_passive;
     const QString unavailable=I18n::text(6849);
     auto add=[&](int title,const QString &value,int result,int advice){
@@ -802,17 +802,17 @@ void DiagnosticPanel::addPassiveChecks()
             item->setToolTip(I18n::text(advice));
         }
     };
-    add(2971710,o.valid?QStringLiteral("%1 mV | %2").arg(o.mv).arg(o.crossings):QStringLiteral("--"),
-        !o.valid?0:o.lambdaFault?6802:o.lambdaObserved?2971712:0,
-        !o.valid?2971713:o.lambdaFault?2971714:!o.closedLoop?2971715:o.lambdaObserved?2971716:2971717);
-    add(2971711,o.valid?QStringLiteral("%1 °C (%2–%3)").arg(int(o.coolantRaw)-55).arg(int(o.low)-55).arg(int(o.high)-55):QStringLiteral("--"),
-        !o.valid?0:o.coolantFault?6802:o.coolantObserved?2971712:0,
-        !o.valid?2971713:o.coolantFault?2971718:o.coolantObserved?2971719:2971720);
+    add(2971710,o.lambdaValid?QStringLiteral("%1 mV | %2").arg(o.mv).arg(o.crossings):QStringLiteral("--"),
+        !o.lambdaValid?0:o.lambdaFault?6802:o.lambdaObserved?2971712:0,
+        !o.lambdaValid?2971713:o.lambdaFault?2971714:!o.closedLoop?2971715:o.lambdaObserved?2971716:2971717);
+    add(2971711,o.coolantValid?QStringLiteral("%1 °C (%2–%3)").arg(int(o.coolantRaw)-55).arg(int(o.low)-55).arg(int(o.high)-55):QStringLiteral("--"),
+        !o.coolantValid?0:o.coolantFault?6802:o.coolantObserved?2971712:0,
+        !o.coolantValid?2971713:o.coolantFault?2971718:o.coolantObserved?2971719:2971720);
 }
 
 void DiagnosticPanel::addSensorObservations()
 {
-    if(!(m_naEvidence.identifiedProfile()&&m_naEvidence.firmwareName()=="AANMP002")&&!Mems220::profile19(m_naEvidence))return;
+    if(!m_naEvidence.identifiedProfile()&&!Mems220::profile19(m_naEvidence))return;
     const auto &o=m_sensorObservation;
     auto row=[&](int title,const QString &value,bool stored,bool observed,int advice){
         addCheck(I18n::text(title),value,stored?I18n::text(29051):observed?I18n::text(2971712):I18n::text(6849),I18n::text(advice));

@@ -12,6 +12,7 @@
 #include <QStandardPaths>
 #include <QUrl>
 #include <QUuid>
+#include <QRegularExpression>
 
 namespace InjectionRamTestLog {
 
@@ -27,8 +28,8 @@ QString directory()
 bool isFinalLog(const QString &text)
 {
     const QString trimmed=text.trimmed();
-    return trimmed.startsWith(QStringLiteral("TEST RAM TEMPS INJECTION — AANMP002")) ||
-           trimmed.startsWith(QStringLiteral("TEST DYNAMIQUE RAM TEMPS INJECTION — AANMP002"));
+    static const QRegularExpression header(QStringLiteral("^TEST (?:DYNAMIQUE )?RAM TEMPS INJECTION — ([A-Z0-9]{8})(?:\\r?\\n|$)"));
+    return header.match(trimmed).hasMatch();
 }
 
 bool writeFinalText(const QString &text,const QString &destinationDirectory,QString *savedPath)
@@ -40,8 +41,10 @@ bool writeFinalText(const QString &text,const QString &destinationDirectory,QStr
         return false;
 
     const QString suffix=QUuid::createUuid().toString(QUuid::Id128).left(8);
-    const QString fileName=QStringLiteral("Injection_RAM_AANMP002_%1_%2.txt")
-        .arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd_HH-mm-ss-zzz")),suffix);
+    static const QRegularExpression header(QStringLiteral("^TEST (?:DYNAMIQUE )?RAM TEMPS INJECTION — ([A-Z0-9]{8})(?:\\r?\\n|$)"));
+    const QString firmware=header.match(text.trimmed()).captured(1);
+    const QString fileName=QStringLiteral("Injection_RAM_%1_%2_%3.txt")
+        .arg(firmware,QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd_HH-mm-ss-zzz")),suffix);
     const QString path=QDir(destinationDirectory).filePath(fileName);
     QSaveFile file(path);
     if(!file.open(QIODevice::WriteOnly|QIODevice::Text))

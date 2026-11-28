@@ -106,7 +106,7 @@ struct CoolantSample {
 inline CoolantSample coolantSample(bool connected,const Mems16Na::SessionEvidence &s) {
     CoolantSample out;
     if(!connected){out.availability=CoolantAvailability::Disconnected;return out;}
-    if(!Mems217::passiveProfile(s.firmwareName())){
+    if(!Mems217::passiveProfile(s)){
         out.availability=CoolantAvailability::Unsupported;return out;
     }
     const auto a=Mems217::frame80(s);
