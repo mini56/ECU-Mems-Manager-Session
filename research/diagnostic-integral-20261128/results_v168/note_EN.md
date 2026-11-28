@@ -1,0 +1,25 @@
+# V1.68 — 68K frame field qualification
+
+{
+  "firmwares": 449,
+  "68k_firmwares": 104,
+  "entries": 30839,
+  "reclassified": 2572,
+  "new_chunk_sites": 2,
+  "firmwares_with_chunks": 1,
+  "statuses": {
+    "STATIC_LINKED": 118,
+    "SELECTOR_CANDIDATE": 295,
+    "STATIC_TABLE_CONTEXT_LINKED": 19239,
+    "STATIC_TABLE_LINKED": 5075,
+    "INTERNAL_STATE_TABLE_LINKED": 3540,
+    "FRAME_HEADER_COMPARISON": 104,
+    "OTHER_FRAME_FIELD_LINKED": 104,
+    "PRIMARY_SERVICE_FIELD_LINKED": 1511,
+    "SUBFUNCTION_FIELD_LINKED": 853
+  },
+  "physical": "NOT_TESTED",
+  "complete": false
+}
+
+Detached chunks included; indices established by constant propagation and branches, not proof of function semantics or full wire frames. The 295 80196 selectors remain pending. No diesel or Manager/DLL changes.
