@@ -1157,6 +1157,9 @@ void MainWindow::onDataReady()
     const QStringList faults=m_mems->mems2jFaults();
     updateSettingsStateIndicators(this,false,false);
     m_ui->m_short_term_correction->setProperty("session220Unavailable",true);
+    m_ui->m_short_term_correction->setProperty("sessionCorrectionHistorical",false);
+    m_ui->m_short_term_correction->setProperty("sessionCorrectionValue",QVariant());
+    m_ui->m_short_term_correction->setProperty("session219Unit",QStringLiteral("--"));
     m_ui->m_waterTempGauge->setProperty("session220Unavailable",!values.contains(QStringLiteral("coolant_c")));
     m_ui->m_airTempGauge->setProperty("session220Unavailable",!values.contains(QStringLiteral("intake_c")));
     restoreNaPages();
@@ -1201,7 +1204,15 @@ void MainWindow::onDataReady()
     m_naFaultHistoryIdentity=naIdentity;
   }
   const bool measurementValid=!naIdentified||naEvidence.ready();
-  m_ui->m_short_term_correction->setProperty("session220Unavailable",!Mems219::lambdaQualified(naEvidence));
+  const auto lambdaReading=Mems219::correctionReading(naEvidence,true);
+  const bool lambdaAvailable=Mems219::correctionDisplayable(lambdaReading);
+  const bool lambdaHistorical=lambdaReading.kind==Mems219::CorrectionKind::Historical;
+  for(QObject *g:{static_cast<QObject*>(m_ui->m_short_term_correction),static_cast<QObject*>(m_ui->e_short_term_fuel_trim)}){
+      g->setProperty("sessionCorrectionHistorical",lambdaHistorical);
+      g->setProperty("sessionCorrectionValue",lambdaReading.value);
+  }
+  m_ui->m_short_term_correction->setProperty("session220Unavailable",!lambdaAvailable);
+  m_ui->m_short_term_correction->setProperty("session219Unit",MemsCorrection::unit(lambdaReading,true));
   m_ui->m_waterTempGauge->setProperty("session220Unavailable",!measurementValid||!Mems219::temperatureAvailable(data->coolant_temp));
   m_ui->m_airTempGauge->setProperty("session220Unavailable",!measurementValid||!Mems219::temperatureAvailable(data->intake_air_temp));
   const auto naMeasurements=naEvidence.measurements();
@@ -1301,7 +1312,7 @@ void MainWindow::onDataReady()
  m_ui->m_idleBypassPosBar_2->setValue((float)corrected_iac / (float)IAC_MAXIMUM * 100);
  // m_ui->m_idle_base_pos->setValue(data->idle_base_pos);
 //  m_ui->m_iacPositionSteps->setText(QString::number(data->iac_position));
- m_ui->m_short_term_correction->setValue(data->short_term_fuel_trim - 100);
+ m_ui->m_short_term_correction->setValue(lambdaAvailable?lambdaReading.value:0);
  m_ui->m_revCounter->setValue(data->engine_rpm);
  m_ui->m_revCounter_exhaust->setValue(data->engine_rpm);
  if (((data->idle_switch) != 0) || ((data->uk3) != 16))
@@ -1311,7 +1322,7 @@ void MainWindow::onDataReady()
     else
     {m_ui->e_idle_error->setValue(data->idle_error);}
  m_ui->e_ignition_advance->setValue(ignitionAdvanceDeg);
- m_ui->e_short_term_fuel_trim->setValue(data->short_term_fuel_trim - 100);
+ m_ui->e_short_term_fuel_trim->setValue(lambdaAvailable?lambdaReading.value:0);
  m_ui->e_lambda->setValue(data->lambda_voltage * 5);
  m_ui->m_throttle_pos->setValue(round(data->throttle_pot / 2));
  m_ui->m_idle_position->setValue(round((float)corrected_iac / (float)IAC_MAXIMUM * 100));
@@ -1531,7 +1542,7 @@ void MainWindow::onDataReady()
      unit->setText(MemsCorrection::unit(injectionReading,false));
  m_ui->e_short_term_fuel_trim->setProperty("session217LambdaCorrection",
      injectionProfile && (!naIdentified || !naEvidence.identifiedProfile()->alternateTransmission));
- m_ui->e_short_term_fuel_trim->setProperty("session217LambdaUnavailable",!Mems219::lambdaQualified(naEvidence));
+ m_ui->e_short_term_fuel_trim->setProperty("session217LambdaUnavailable",!lambdaAvailable);
  if(injectionProfile) {
      m_ui->e_FuelTrim_lcd->display(MemsCorrection::number(injectionReading));
      m_ui->emi_idledecay->setText(I18n::text(2971704));
@@ -2004,6 +2015,11 @@ void MainWindow::onDisconnect()
   m_ui->e_short_term_fuel_trim->setValue(0);
   m_ui->e_short_term_fuel_trim->setProperty("session217LambdaCorrection",false);
   m_ui->e_short_term_fuel_trim->setProperty("session217LambdaUnavailable",true);
+  for(QObject *g:{static_cast<QObject*>(m_ui->m_short_term_correction),static_cast<QObject*>(m_ui->e_short_term_fuel_trim)}){
+      g->setProperty("sessionCorrectionHistorical",false);
+      g->setProperty("sessionCorrectionValue",QVariant());
+  }
+  m_ui->m_short_term_correction->setProperty("session219Unit",QStringLiteral("%"));
   m_ui->emi_shorttermftrim->setText(I18n::text(2971701));
   m_ui->emi_idledecay->setText(I18n::text(2022));
   setProperty("session221DisplayConnected",false);

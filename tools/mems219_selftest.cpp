@@ -26,12 +26,15 @@ int main(){
     assert(Mems217::injectionUs(127)==-8&&Mems217::injectionUs(129)==8);
     Mems16Na::SessionEvidence s;assert(!injectionAvailable(s)&&!lambdaQualified(s));
     assert(correctionReading(s,false).kind==CorrectionKind::Missing);
+    assert(!correctionDisplayable(correctionReading(s,false)));
+    assert(!correctionDisplayable({CorrectionKind::Unqualified,0}));
     for(unsigned v=0;v<256;++v){
         std::vector<std::uint8_t> b(14);b[0]=14;b[11]=static_cast<std::uint8_t>(v);b[12]=static_cast<std::uint8_t>(v);
         s.setExtended7d(b);
         auto longRaw=correctionReading(s,false),shortRaw=correctionReading(s,true);
         assert(longRaw.kind==CorrectionKind::Historical&&longRaw.value==int(v)-128);
         assert(shortRaw.kind==CorrectionKind::Historical&&shortRaw.value==int(v)-100);
+        assert(correctionDisplayable(shortRaw)&&correctionDisplayable(longRaw));
         assert(!injectionAvailable(s)&&!lambdaQualified(s));
         b.resize(11);b[0]=11;s.setExtended7d(b);
         assert(correctionReading(s,false).kind==CorrectionKind::Missing&&correctionReading(s,true).kind==CorrectionKind::Missing);

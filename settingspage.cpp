@@ -142,7 +142,9 @@ protected:
 
         const bool offline=!window()->property("session221DisplayConnected").toBool();
         const bool unavailable=!offline&&m_kind==FuelTrim&&(!m_source||m_source->property("session217LambdaUnavailable").toBool());
-        double value=offline||unavailable?0.0:(m_source?m_source->property("value").toDouble():0.0);
+        const bool historical=m_kind==FuelTrim&&!offline&&!unavailable&&m_source&&m_source->property("sessionCorrectionHistorical").toBool();
+        const QVariant received=m_kind==FuelTrim&&m_source?m_source->property("sessionCorrectionValue"):QVariant();
+        double value=offline||unavailable?0.0:(received.isValid()?received.toDouble():(m_source?m_source->property("value").toDouble():0.0));
         double minv=m_source?m_source->property("minimum").toDouble():0.0;
         double maxv=m_source?m_source->property("maximum").toDouble():100.0;
         if(!qIsFinite(minv)||!qIsFinite(maxv)||qFuzzyCompare(minv,maxv)) {
@@ -153,6 +155,7 @@ protected:
             else {minv=0.0;maxv=900.0;}
         }
 
+        if(historical){minv=-100.0;maxv=156.0;}
         auto pointFor=[&](double fraction,qreal radius){
             const qreal angle=qDegreesToRadians(startDeg+sweepDeg*fraction);
             return c+QPointF(qCos(angle)*radius,qSin(angle)*radius);
@@ -269,7 +272,14 @@ protected:
         p.setPen(darkTheme?QColor("#d4dbe0"):QColor("#101820"));
         // The central RPM unit sits below the digital value, with a visible gap.
         // Keep the smaller gauges at their approved positions.
-        p.drawText(QRectF(c.x()-(large?55:36),c.y()+(large?100:45),large?110:72,large?17:13),Qt::AlignCenter,m_unit);
+        const QString unit=m_kind==FuelTrim?(historical?I18n::text(2973901):unavailable?QStringLiteral("--"):m_unit):m_unit;
+        const QRectF unitRect(c.x()-(large?55:43),c.y()+(large?100:45),large?110:86,large?17:13);
+        if(QFontMetricsF(p.font()).horizontalAdvance(unit)>unitRect.width()){
+            QFont fitted=p.font();
+            fitted.setPointSizeF(qMax(4.5,fitted.pointSizeF()*unitRect.width()/QFontMetricsF(fitted).horizontalAdvance(unit)));
+            p.setFont(fitted);
+        }
+        p.drawText(unitRect,Qt::AlignCenter,unit);
     }
 
 private:

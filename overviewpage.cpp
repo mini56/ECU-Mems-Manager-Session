@@ -46,7 +46,7 @@ public:
         const QString unit=displayUnit();
         if(unit!=m_historyUnit){m_history.clear();m_historyUnit=unit;}
         if(offline()||unavailable()){m_history.clear();update();return;}
-        const QVariant v=m_source->property("value");
+        const QVariant v=readingValue();
         if(!v.isValid()) return;
 
         const qint64 now=m_clock.elapsed();
@@ -84,7 +84,7 @@ protected:
         p.setPen(QPen(darkTheme?QColor("#27333b"):QColor("#cbd5de"),1.0));
         p.drawLine(QPointF(8,25),QPointF(180,25));
 
-        double value=offline()||unavailable()?0.0:(m_source?m_source->property("value").toDouble():0.0);
+        double value=offline()||unavailable()?0.0:readingValue().toDouble();
         double minv=m_source?m_source->property("minimum").toDouble():0.0;
         double maxv=m_source?m_source->property("maximum").toDouble():100.0;
         if(!qIsFinite(minv) || !qIsFinite(maxv) || qFuzzyCompare(minv,maxv)) {
@@ -92,6 +92,7 @@ protected:
             maxv=100.0;
         }
 
+        if(historicalCorrection()){minv=-100.0;maxv=156.0;}
         const QString sourceName=m_source?m_source->objectName():QString();
         const bool rpmGauge=(sourceName==QStringLiteral("m_revCounter"));
         const bool coolantGauge=(sourceName==QStringLiteral("m_waterTempGauge"));
@@ -319,6 +320,12 @@ private:
     QString m_unit,m_historyUnit;
     bool offline() const {return !window()->property("session221DisplayConnected").toBool();}
     bool unavailable() const {return !m_source||m_source->property("session220Unavailable").toBool();}
+    bool historicalCorrection() const {return !offline()&&!unavailable()&&m_source&&m_source->property("sessionCorrectionHistorical").toBool();}
+    QVariant readingValue() const {
+        if(!m_source)return QVariant();
+        const QVariant correction=m_source->property("sessionCorrectionValue");
+        return correction.isValid()?correction:m_source->property("value");
+    }
     QString displayUnit() const {const QString u=m_source?m_source->property("session219Unit").toString():QString();return u.isEmpty()?m_unit:u;}
     qreal m_titleSize=8.0;
     QElapsedTimer m_clock;

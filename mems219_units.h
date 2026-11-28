@@ -33,6 +33,9 @@ inline CorrectionReading correctionReading(const Mems16Na::SessionEvidence &s,bo
         return {CorrectionKind::Qualified,lambda?int(raw)-100:Mems217::injectionUs(raw)};
     return {CorrectionKind::Historical,int(raw)-(lambda?100:128)};
 }
+inline bool correctionDisplayable(const CorrectionReading &r){
+    return r.kind==CorrectionKind::Qualified||r.kind==CorrectionKind::Historical;
+}
 // Offline test plan only: no serial transport or physical qualification.
 enum class GaugeIntent { Minimum, Maximum, Stop, MotorStarted, LostLink };
 enum class GaugePhase { Idle, Forcing, RestorePending, ReturnUnconfirmed };

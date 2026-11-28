@@ -784,13 +784,14 @@ void DiagnosticPanel::rebuildNa(const mems_data &d)
     // Existing short-term correction retained as an indicative check only on
     // standard transmission profiles; the three alternate encodings are not
     // generalized. No new long-term µs threshold is invented.
-    if(!p->alternateTransmission) {
-        const int shortTrim=int(d.short_term_fuel_trim)-100;
+    const auto shortReading=Mems219::correctionReading(m_naEvidence,true);
+    if(shortReading.kind==Mems219::CorrectionKind::Qualified) {
+        const int shortTrim=shortReading.value;
         const bool watch=qAbs(shortTrim)>20;
         add(I18n::text(29055),QString::number(shortTrim)+QStringLiteral(" %"),stateFor(!watch,true),
             I18n::text(watch?6847:6848));
         if(watch)++warnings;
-    } else add(I18n::text(29055),QString::number(d.short_term_fuel_trim),notEvaluated,I18n::text(29002));
+    } else add(I18n::text(29055),MemsCorrection::detail(shortReading,true),notEvaluated,I18n::text(29002));
     if(m_naReference.valid) {
         add(I18n::text(6867),I18n::text(6868).arg(int(d.engine_rpm)-int(m_naReference.data.engine_rpm))
             .arg(int(d.map_kpa)-int(m_naReference.data.map_kpa))
