@@ -70,7 +70,7 @@
   "6868": "ΔRPM=%1  ΔMAP=%2 kPa  ΔTPS=%3",
   "6869": "INFO",
   "6870": "Reference captured on %1. This comparison helps identify drift; it is not a manufacturer specification.",
-  "6871": "NORMAL",
+  "6871": "NO ANOMALY DETECTED",
   "6872": "WATCH",
   "6873": "ANOMALY TO INVESTIGATE",
   "6874": "Diagnostics: %1  |  %2 anomaly(s), %3 warning(s)",
@@ -103,5 +103,6 @@
   "2972902": "Time when the stored fault first appeared during this connection.",
   "2972903": "Engine coolant temperature sensor",
   "2972904": "Fault already stored at the first reading",
-  "2972905": "The fault onset is unknown."
+  "2972905": "The fault onset is unknown.",
+  "2973301": "PARTIAL CHECKS"
 }

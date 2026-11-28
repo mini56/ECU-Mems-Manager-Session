@@ -70,7 +70,7 @@
   "6868": "ΔRPM=%1  ΔMAP=%2 kPa  ΔTPS=%3",
   "6869": "INFO",
   "6870": "Referência capturada em %1. Esta comparação ajuda a identificar deriva; não é uma especificação do fabricante.",
-  "6871": "NORMAL",
+  "6871": "NENHUMA ANOMALIA DETETADA",
   "6872": "VIGIAR",
   "6873": "ANOMALIA A INVESTIGAR",
   "6874": "Diagnóstico: %1  |  %2 anomalia(s), %3 aviso(s)",
@@ -103,5 +103,6 @@
   "2972902": "Hora em que se observou pela primeira vez o aparecimento da falha memorizada durante esta ligação.",
   "2972903": "Sensor de temperatura do líquido de refrigeração",
   "2972904": "Falha já memorizada na primeira leitura",
-  "2972905": "Desconhece-se quando a falha começou."
+  "2972905": "Desconhece-se quando a falha começou.",
+  "2973301": "VERIFICAÇÕES PARCIAIS"
 }

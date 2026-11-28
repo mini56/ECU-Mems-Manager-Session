@@ -70,7 +70,7 @@
   "6868": "ΔRPM=%1  ΔMAP=%2 kPa  ΔTPS=%3",
   "6869": "INFO",
   "6870": "Referencia capturada el %1. Esta comparación ayuda a identificar desviaciones; no es una especificación del fabricante.",
-  "6871": "NORMAL",
+  "6871": "NINGUNA ANOMALÍA DETECTADA",
   "6872": "VIGILAR",
   "6873": "ANOMALÍA A INVESTIGAR",
   "6874": "Diagnóstico: %1  |  %2 anomalía(s), %3 advertencia(s)",
@@ -103,5 +103,6 @@
   "2972902": "Hora en que se observó por primera vez la aparición del fallo memorizado durante esta conexión.",
   "2972903": "Sensor de temperatura del refrigerante",
   "2972904": "Fallo ya memorizado en la primera lectura",
-  "2972905": "Se desconoce cuándo comenzó el fallo."
+  "2972905": "Se desconoce cuándo comenzó el fallo.",
+  "2973301": "COMPROBACIONES PARCIALES"
 }

@@ -70,7 +70,7 @@
   "6868": "ΔRPM=%1  ΔMAP=%2 kPa  ΔTPS=%3",
   "6869": "INFO",
   "6870": "Referenz am %1 erfasst. Dieser Vergleich hilft, Abweichungen zu erkennen; er ist keine Herstellerspezifikation.",
-  "6871": "NORMAL",
+  "6871": "KEINE AUFFÄLLIGKEIT ERKANNT",
   "6872": "BEOBACHTEN",
   "6873": "ZU UNTERSUCHENDE ANOMALIE",
   "6874": "Diagnose: %1  |  %2 Anomalie(n), %3 Warnung(en)",
@@ -103,5 +103,6 @@
   "2972902": "Zeitpunkt des ersten beobachteten Auftretens des gespeicherten Fehlers während dieser Verbindung.",
   "2972903": "Kühlmitteltemperatursensor",
   "2972904": "Fehler bei der ersten Abfrage bereits gespeichert",
-  "2972905": "Der Beginn des Fehlers ist unbekannt."
+  "2972905": "Der Beginn des Fehlers ist unbekannt.",
+  "2973301": "UNVOLLSTÄNDIGE PRÜFUNGEN"
 }

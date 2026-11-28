@@ -70,7 +70,7 @@
   "6868": "ΔRPM=%1  ΔMAP=%2 kPa  ΔTPS=%3",
   "6869": "INFO",
   "6870": "Référence capturée le %1. Cette comparaison sert à repérer une dérive ; elle ne constitue pas une spécification constructeur.",
-  "6871": "NORMAL",
+  "6871": "AUCUNE ANOMALIE DÉTECTÉE",
   "6872": "SURVEILLER",
   "6873": "ANOMALIE À INVESTIGUER",
   "6874": "Diagnostic : %1  |  %2 anomalie(s), %3 avertissement(s)",
@@ -103,5 +103,6 @@
   "2972902": "Heure de la première apparition observée du défaut mémorisé pendant cette connexion.",
   "2972903": "Sonde de température moteur",
   "2972904": "Défaut déjà mémorisé à la première lecture",
-  "2972905": "Le début du défaut est inconnu."
+  "2972905": "Le début du défaut est inconnu.",
+  "2973301": "CONTRÔLES PARTIELS"
 }

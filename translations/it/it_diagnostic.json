@@ -70,7 +70,7 @@
   "6868": "ΔRPM=%1  ΔMAP=%2 kPa  ΔTPS=%3",
   "6869": "INFO",
   "6870": "Riferimento acquisito il %1. Questo confronto aiuta a individuare derive; non è una specifica del costruttore.",
-  "6871": "NORMALE",
+  "6871": "NESSUNA ANOMALIA RILEVATA",
   "6872": "DA MONITORARE",
   "6873": "ANOMALIA DA VERIFICARE",
   "6874": "Diagnostica: %1  |  %2 anomalia(e), %3 avviso(i)",
@@ -103,5 +103,6 @@
   "2972902": "Ora della prima comparsa osservata del guasto memorizzato durante questa connessione.",
   "2972903": "Sensore di temperatura del liquido di raffreddamento",
   "2972904": "Guasto già memorizzato alla prima lettura",
-  "2972905": "Il momento di insorgenza del guasto è sconosciuto."
+  "2972905": "Il momento di insorgenza del guasto è sconosciuto.",
+  "2973301": "CONTROLLI PARZIALI"
 }

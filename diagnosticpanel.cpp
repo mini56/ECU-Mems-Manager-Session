@@ -177,7 +177,7 @@ QString DiagnosticPanel::hexByte(quint8 v)
 
 void DiagnosticPanel::setEcuId(const QByteArray &id)
 {
-    if(m_naEvidence.identifiedProfile()&&id!=m_ecuId)endNaSession();
+    if(id!=m_ecuId)endNaSession();
     m_ecuId = id;
     if (m_haveData)
         rebuild(m_last);
@@ -186,10 +186,16 @@ void DiagnosticPanel::setEcuId(const QByteArray &id)
 void DiagnosticPanel::updateData(const mems_data *data,const Mems16Na::SessionEvidence *na)
 {
     if (!data)return;
+    if(m_showing2J)endNaSession();
     const auto *profile=na?na->identifiedProfile():nullptr;
-    if(m_naEvidence.identifiedProfile()!=profile||
-       (profile&&m_naEvidence.identity()!=na->identity()))m_naReference=Snapshot();
-    if(!na || m_naEvidence.firmwareName()!=na->firmwareName() || m_naEvidence.identity()!=na->identity()){
+    const bool identityChanged=na
+        ? m_naEvidence.firmwareName()!=na->firmwareName() || m_naEvidence.identity()!=na->identity()
+        : !m_naEvidence.firmwareName().empty();
+    if(identityChanged||m_naEvidence.identifiedProfile()!=profile){
+        m_reference=Snapshot();
+        m_naReference=Snapshot();
+    }
+    if(!na || identityChanged){
         m_passive.reset();m_sensorObservation.reset();resetCoolantTest();
     }
     if(na)m_naEvidence=*na;
@@ -211,9 +217,14 @@ void DiagnosticPanel::endNaSession()
 {
     restoreNaChecksStyle();
     m_passive.reset();m_sensorObservation.reset();resetCoolantTest();m_coolantConnected=false;refreshCoolantTest();
-    if(!m_naEvidence.identifiedProfile()&&m_naEvidence.firmwareName().empty())return;
     m_naEvidence.reset();
     m_naReference=Snapshot();
+    m_reference=Snapshot();
+    m_2jReference.clear();
+    m_2jReferenceTime.clear();
+    m_mems2jValues.clear();
+    m_mems2jFaults.clear();
+    m_showing2J=false;
     m_haveData=false;
     m_checks->setRowCount(0);
     m_status->setText(I18n::text(6803));
@@ -242,11 +253,14 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     m_checks->setRowCount(0);
     int issues = 0;
     int warnings = 0;
+    bool incomplete = false;
 
     const bool knownDtc2=MemsExtendedDtc::dtc2Known(m_naEvidence.firmwareName().c_str());
     const unsigned fault2=knownDtc2?m_naEvidence.extendedDtc(2).faults:d.dtc2;
     const bool hasDtc = (d.dtc0 != 0 || d.dtc1 != 0 || fault2 != 0);
     const bool incompleteDtc2=knownDtc2&&m_naEvidence.extendedDtc(2).status!=MemsExtendedDtc::Status::Decoded;
+    // Legacy DTC interpretation is retained pending per-firmware qualification.
+    incomplete=!knownDtc2||incompleteDtc2;
     addCheck(I18n::text(6813) /* EN: ECU faults */,
              I18n::text(6814) /* EN: DTC0=%1  DTC1=%2  DTC2=%3 */.arg(hexByte(d.dtc0), hexByte(d.dtc1), hexByte(d.dtc2)),
              hasDtc ? I18n::text(6815) /* EN: anomaly */ : incompleteDtc2?I18n::text(29002):I18n::text(6816) /* EN: OK */,
@@ -255,6 +269,7 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     if (hasDtc) ++issues;
     for(int group=knownDtc2?2:3;group<=5;++group){
         const auto r=m_naEvidence.extendedDtc(group);
+        if(r.status==MemsExtendedDtc::Status::Missing||r.status==MemsExtendedDtc::Status::Unverified)incomplete=true;
         const unsigned legacy=group==2?d.dtc2:group==3?d.dtc3:group==4?d.dtc4:d.dtc5;
         addCheck(QStringLiteral("DTC %1").arg(group),MemsExtendedDtc::raw(&m_naEvidence,group,legacy),
             r.faults?I18n::text(29051):I18n::text(6841),MemsExtendedDtc::text(&m_naEvidence,group));
@@ -316,6 +331,7 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     const int shortFuelTrim = int(d.short_term_fuel_trim) - 100;
     const bool shortQualified=Mems219::lambdaQualified(m_naEvidence);
     const bool longQualified=Mems219::injectionAvailable(m_naEvidence);
+    if(!shortQualified||!longQualified)incomplete=true;
     const bool trimWatch=shortQualified&&qAbs(shortFuelTrim)>20;
     addCheck(I18n::text(6845) /* EN: Corrections fuel */,
              I18n::text(6846) /* EN: short-term=%1  long-term=%2 */
@@ -410,8 +426,12 @@ void DiagnosticPanel::rebuild(const mems_data &d)
     addPassiveChecks();
     addSensorObservations();
     const int total = issues * 2 + warnings;
-    const QString level = issues == 0 ? (warnings == 0 ? I18n::text(6871) /* EN: NORMAL */ : I18n::text(6872) /* EN: SURVEILLER */)
-                                      : I18n::text(6873) /* EN: ANOMALY TO INVESTIGATE */;
+    for(int row=0;row<m_checks->rowCount();++row){
+        const QString state=m_checks->item(row,2)->text();
+        if(state==I18n::text(6849)||state==I18n::text(29002))incomplete=true;
+    }
+    QString level=issues?I18n::text(6873):warnings?I18n::text(6872):I18n::text(6871);
+    if(incomplete)level+=QStringLiteral(" — ")+I18n::text(2973301);
     m_score->setText(I18n::text(6874) /* EN: Diagnostics : %1  |  %2 anomaly(s), %3 warning(s) */.arg(level).arg(issues).arg(warnings));
     m_status->setText(I18n::text(6875) /* EN: Last analysis : %1  |  score interne=%2 */
                       .arg(QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss")).arg(total));
@@ -524,6 +544,7 @@ QString DiagnosticPanel::buildReport() const
         text+=QStringLiteral("\n")+coolantTestSummary()+QStringLiteral("\n");
     if (m_reference.valid)
         text += I18n::text(6889) /* EN: Reference: %1  */.arg(m_reference.timestamp);
+    text+=QStringLiteral("\n")+m_score->text()+QStringLiteral("\n");
     text += I18n::text(6890) /* EN:  The statuses and guidance in this report are consistency checks and do not replace manufacturer specifications.  */;
     return text;
 }
@@ -551,7 +572,7 @@ void DiagnosticPanel::exportReport()
 void DiagnosticPanel::update2JData(const QVariantMap &values, const QStringList &faults,
                                    const QString &family)
 {
-    endNaSession();
+    if(!m_showing2J||m_structuredEcuName!=family)endNaSession();
     m_coolantConnected=true;refreshCoolantTest();
     m_showing2J=true;
     m_structuredEcuName=family;
@@ -621,6 +642,7 @@ void DiagnosticPanel::rebuildNa(const mems_data &d)
     if(m_checks->styleSheet()!=style)m_checks->setStyleSheet(style);
     m_checks->setRowCount(0);
     int issues=0,warnings=0;
+    bool incomplete=false;
     const QString info=I18n::text(6841);
     const QString notEvaluated=I18n::text(6849);
     auto add=[&](const QString &name,const QString &value,const QString &state,const QString &advice) {
@@ -643,6 +665,7 @@ void DiagnosticPanel::rebuildNa(const mems_data &d)
     const Group groups[]={Group::Dtc0,Group::Dtc1,Group::Dtc2,Group::Dtc3,Group::Dtc4,Group::Dtc5,Group::Indirect7D10};
     for(int i=0;i<7;++i) {
         const auto r=m_naEvidence.dtc(groups[i]);
+        if(r.availability==Availability::Missing||r.availability==Availability::Unverified||r.unknownBits)incomplete=true;
         for(unsigned bit=1;bit<=128;bit<<=1) {
             if(r.faultBits&bit)++issues;
             if(r.unknownBits&bit)++warnings;
@@ -721,7 +744,12 @@ void DiagnosticPanel::rebuildNa(const mems_data &d)
     }
     addPassiveChecks();
     addSensorObservations();
-    const QString level=issues?I18n::text(6873):warnings?I18n::text(6872):I18n::text(6871);
+    for(int row=0;row<m_checks->rowCount();++row){
+        const QString state=m_checks->item(row,2)->text();
+        if(state==I18n::text(6849)||state==I18n::text(29002))incomplete=true;
+    }
+    QString level=issues?I18n::text(6873):warnings?I18n::text(6872):I18n::text(6871);
+    if(incomplete)level+=QStringLiteral(" — ")+I18n::text(2973301);
     m_score->setText(I18n::text(6874).arg(level).arg(issues).arg(warnings));
     m_status->setText(I18n::text(6875).arg(QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss"))).arg(2*issues+warnings));
     m_report->setPlainText(buildNaReport());
@@ -735,6 +763,8 @@ void DiagnosticPanel::resetCoolantTest()
 
 void DiagnosticPanel::invalidateCoolantTest()
 {
+    m_reference=Snapshot();m_naReference=Snapshot();
+    m_2jReference.clear();m_2jReferenceTime.clear();
     m_coolantConnected=false;m_coolantFresh.invalidate();m_coolantTest.interrupt();m_sensorObservation.reset();
     if(m_haveData&&!m_showing2J)rebuild(m_last);
     refreshCoolantTest();if(m_haveData)m_report->setPlainText(buildReport());
@@ -855,6 +885,7 @@ QString DiagnosticPanel::buildNaReport() const
     }
     if(m_coolantTest.state!=Mems218::TestState::Idle)lines<<coolantTestSummary();
     if(m_naReference.valid)lines<<I18n::text(6889).arg(m_naReference.timestamp).trimmed();
+    lines<<m_score->text();
     lines<<I18n::text(6890).trimmed();
     return lines.join(QLatin1Char('\n'));
 }

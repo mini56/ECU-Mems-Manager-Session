@@ -148,6 +148,41 @@ int main(int argc,char **argv) {
     CHECK(!report->toPlainText().contains(QStringLiteral("42.50 ")+I18n::text(2972003)));
     extended.setExtended80(a19);extended.setExtended7d(b19);
     panel.endNaSession();
+    // Multi-ECU: a generic reference belongs to this identity and connection.
+    auto capture=[&](){for(auto *button:buttons)if(button->text()==I18n::text(6805))button->click();};
+    auto generic19=evidence("KBHBG009",0x90,0,9,0,0,false);
+    generic19.setExtended80(a19);generic19.setExtended7d(b19);
+    auto other19=evidence("KBHBV001",0x90,0,1,0,0,false);
+    other19.setExtended80(a19);other19.setExtended7d(b19);
+    d.dtc0=0;d.dtc1=0;d.dtc2=0;
+    panel.updateData(&d,&generic19);capture();
+    CHECK(report->toPlainText().contains(referencePrefix));
+    CHECK(report->toPlainText().contains(I18n::text(2973301)));
+    panel.updateData(&d,&generic19);
+    CHECK(report->toPlainText().contains(referencePrefix));
+    panel.updateData(&d,&other19);
+    CHECK(!report->toPlainText().contains(referencePrefix));
+    capture();CHECK(report->toPlainText().contains(referencePrefix));
+    panel.endNaSession();CHECK(report->toPlainText().isEmpty());
+    panel.updateData(&d,&other19);CHECK(!report->toPlainText().contains(referencePrefix));
+    panel.setEcuId(QByteArray::fromHex("90000102"));
+    panel.updateData(&d,&other19);capture();
+    panel.setEcuId(QByteArray::fromHex("90000902"));
+    CHECK(report->toPlainText().isEmpty());
+    panel.updateData(&d,&generic19);CHECK(!report->toPlainText().contains(referencePrefix));
+    panel.updateData(&d);capture();CHECK(report->toPlainText().contains(referencePrefix));
+    panel.endNaSession();panel.updateData(&d);CHECK(!report->toPlainText().contains(referencePrefix));
+    QVariantMap structured;structured.insert(QStringLiteral("rpm"),900);
+    panel.update2JData(structured,QStringList(),QStringLiteral("MEMS 2J"));capture();
+    CHECK(report->toPlainText().contains(QStringLiteral("Référence enregistrée le")));
+    panel.update2JData(structured,QStringList(),QStringLiteral("MEMS 2J"));
+    CHECK(report->toPlainText().contains(QStringLiteral("Référence enregistrée le")));
+    panel.update2JData(structured,QStringList(),QStringLiteral("MEMS 3"));
+    CHECK(!report->toPlainText().contains(QStringLiteral("Référence enregistrée le")));
+    capture();panel.endNaSession();
+    panel.update2JData(structured,QStringList(),QStringLiteral("MEMS 3"));
+    CHECK(!report->toPlainText().contains(QStringLiteral("Référence enregistrée le")));
+    panel.endNaSession();
     // Real SummaryTab widget: both themes, all six languages, target widths.
     for(const char *lang:{"fr","en","de","es","it","pt"}) {
         CHECK(I18n::load(QString::fromLatin1(lang)));
