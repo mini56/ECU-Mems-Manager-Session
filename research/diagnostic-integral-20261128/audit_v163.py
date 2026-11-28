@@ -62,8 +62,8 @@ for r in old:
     row=dict(path=r["path"],family=r["family"],firmware=r["firmware"],sha256=sha,physical="NOT_TESTED",previous_status=r["status"])
     if r["status"]=="WORD_READER_AND_DISPATCH_LINKED":
         row.update(status="PREVIOUS_WORD_READER_LINKED",previous_handler=r["handler"],previous_table=r["table"],previous_dc=r["dc_handler"])
-    elif hashlib.md5(raw).hexdigest() in old7:
-        q=old7[hashlib.md5(raw).hexdigest()]
+    elif hashlib.sha1(f"blob {len(raw)}\0".encode()+raw).hexdigest() in old7:
+        q=old7[hashlib.sha1(f"blob {len(raw)}\0".encode()+raw).hexdigest()]
         row.update(status="PREVIOUS_WORD_READER_LINKED",previous_handler=q["handler"],previous_table=q["table"],previous_dc=q["dc"])
     else:
         sib=next((s for s in p.parent.iterdir() if s.stem.lower()==p.stem.lower() and s.suffix.lower()==".asm"),None)
