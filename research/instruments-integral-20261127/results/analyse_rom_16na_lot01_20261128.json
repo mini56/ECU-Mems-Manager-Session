@@ -1,0 +1,157 @@
+{
+  "source": "bc92f04ff036ceaa08baabbc78184ff4371dd5f1",
+  "method": "Recherche dans la ROM du handler 80196 et du consommateur exact connu. Correspondance binaire, pas preuve de sortie physique. Les branches candidates peuvent etre des donnees. AANMP002 et EKDMF009 sont les temoins positifs.",
+  "rows": [
+    {
+      "firmware": "EKDMF000",
+      "size": 23550,
+      "command10": "3B4D",
+      "handler": "91 40 b2 20 03 71 bf b2 91 20 b2 e7 83 fc",
+      "valid": true,
+      "force_register": "00B2",
+      "force_bit": 5,
+      "direction_bit": 6,
+      "consumers": [],
+      "branches": [
+        {
+          "address": "66A7",
+          "bytes": "3d b2 39 2d 98 2d 3d d7 0d f0 c6 38"
+        }
+      ],
+      "clears": [
+        "37DA"
+      ],
+      "assessment": "AUCUN_CONSOMMATEUR_DE_LA_FORME_CONNUE"
+    },
+    {
+      "firmware": "EKDMF002",
+      "size": 23550,
+      "command10": "3B51",
+      "handler": "91 01 b2 20 03 71 fe b2 91 80 b1 e7 93 fc",
+      "valid": false,
+      "force_register": null,
+      "force_bit": null,
+      "direction_bit": null,
+      "consumers": [],
+      "branches": [],
+      "clears": [],
+      "assessment": "HANDLER_NON_CONFIRME"
+    },
+    {
+      "firmware": "EKDMF003",
+      "size": 23550,
+      "command10": "3B67",
+      "handler": "91 01 b2 20 03 71 fe b2 91 80 b1 e7 83 fc",
+      "valid": false,
+      "force_register": null,
+      "force_bit": null,
+      "direction_bit": null,
+      "consumers": [],
+      "branches": [],
+      "clears": [],
+      "assessment": "HANDLER_NON_CONFIRME"
+    },
+    {
+      "firmware": "EKDMF005",
+      "size": 27902,
+      "command10": "3D9D",
+      "handler": "91 02 ad 20 03 71 fd ad 91 01 ad e7 44 fc",
+      "valid": true,
+      "force_register": "00AD",
+      "force_bit": 0,
+      "direction_bit": 1,
+      "consumers": [],
+      "branches": [],
+      "clears": [
+        "39EB"
+      ],
+      "assessment": "AUCUN_CONSOMMATEUR_DE_LA_FORME_CONNUE"
+    },
+    {
+      "firmware": "EKDMF006",
+      "size": 27902,
+      "command10": "3D9D",
+      "handler": "91 02 ad 20 03 71 fd ad 91 01 ad e7 44 fc",
+      "valid": true,
+      "force_register": "00AD",
+      "force_bit": 0,
+      "direction_bit": 1,
+      "consumers": [],
+      "branches": [],
+      "clears": [
+        "39EB"
+      ],
+      "assessment": "AUCUN_CONSOMMATEUR_DE_LA_FORME_CONNUE"
+    },
+    {
+      "firmware": "EKDMF007",
+      "size": 28670,
+      "command10": "3D2B",
+      "handler": "91 02 ac 20 03 71 fd ac 91 01 ac e7 b0 fb",
+      "valid": true,
+      "force_register": "00AC",
+      "force_bit": 0,
+      "direction_bit": 1,
+      "consumers": [],
+      "branches": [],
+      "clears": [
+        "38E2"
+      ],
+      "assessment": "AUCUN_CONSOMMATEUR_DE_LA_FORME_CONNUE"
+    },
+    {
+      "firmware": "AANMP002",
+      "size": 28670,
+      "command10": "3D49",
+      "handler": "91 80 ac 20 03 71 7f ac 91 40 ac e7 29 fc",
+      "valid": true,
+      "force_register": "00AC",
+      "force_bit": 6,
+      "direction_bit": 7,
+      "consumers": [
+        {
+          "address": "4FA3",
+          "variable": "01AB",
+          "bytes": "36 ac 07 11 1c 37 ac 02 15 1c c7 01 ab 01 1c"
+        }
+      ],
+      "branches": [
+        {
+          "address": "4FA3",
+          "bytes": "36 ac 07 11 1c 37 ac 02 15 1c c7 01"
+        }
+      ],
+      "clears": [
+        "3979"
+      ],
+      "assessment": "CONSOMMATEUR_STRUCTUREL_A_VERIFIER"
+    },
+    {
+      "firmware": "EKDMF009",
+      "size": 24574,
+      "command10": "3F61",
+      "handler": "91 10 ad 20 03 71 ef ad 91 08 ad e7 82 fb",
+      "valid": true,
+      "force_register": "00AD",
+      "force_bit": 3,
+      "direction_bit": 4,
+      "consumers": [
+        {
+          "address": "4B87",
+          "variable": "01AC",
+          "bytes": "33 ad 07 11 1c 34 ad 02 15 1c c7 01 ac 01 1c"
+        }
+      ],
+      "branches": [
+        {
+          "address": "4B87",
+          "bytes": "33 ad 07 11 1c 34 ad 02 15 1c c7 01"
+        }
+      ],
+      "clears": [
+        "3AEA"
+      ],
+      "assessment": "CONSOMMATEUR_STRUCTUREL_A_VERIFIER"
+    }
+  ]
+}
