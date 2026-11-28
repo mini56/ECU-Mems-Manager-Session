@@ -307,13 +307,15 @@ m_mems(0), m_diagnosticPanel(0), m_options(0), m_pleaseWaitBox(0), m_helpViewerD
               if (m_diagnosticPanel) m_diagnosticPanel->setEcuId(QByteArray());
           });
   connect(m_mems, SIGNAL(errorSendingCommand()), this, SLOT(onCommandError()));
-  connect(m_mems,&MEMSInterface::actuatorTestReply,this,[this](bool coil,bool received,int reply,QString firmware){
+  connect(m_mems,&MEMSInterface::actuatorTestReply,this,[this](bool coil,bool received,int reply,QString){
     if(m_closing||!m_reconnectPolicy.connected())return;
     auto *label=findChild<QLabel*>(coil?QStringLiteral("coilTestReply"):QStringLiteral("injectorTestReply"));
     if(!label)return;
-    QString result=received?I18n::text(2972202).arg(reply):I18n::text(2972203);
-    if(received&&!coil&&reply==3&&(firmware==QStringLiteral("AANMP002")||firmware==QStringLiteral("AANMP000")))
-        result=I18n::text(2972204);
+    // An ECU reply alone never establishes physical actuation, for ANY ECU.
+    // Preserve the reply value for diagnosis; do not privilege a firmware.
+    const QString result=received
+        ? I18n::text(2972202).arg(reply)+QStringLiteral(" — ")+I18n::text(2972204)
+        : I18n::text(2972203);
     label->setText(result);
     label->setToolTip(received?I18n::text(2972205):QString());
   });
