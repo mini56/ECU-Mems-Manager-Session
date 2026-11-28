@@ -1,0 +1,163 @@
+{
+  "Land Rover Td5": {
+    "firmwares": 30,
+    "with_asm": 30,
+    "with_instrument_symbols": 0,
+    "with_instrument_refs": 0,
+    "with_all_dialogue_entries": 0,
+    "with_new_opcode_candidates": 0,
+    "with_generic_masks": 0,
+    "with_generic_bit6": 0,
+    "previous_gauge": {
+      "OTHER_ARCHITECTURE_REQUIRES_PROTOCOL_TRACE": 30
+    },
+    "previous_tacho": {
+      "OTHER_ARCHITECTURE_REQUIRES_PROTOCOL_TRACE": 30
+    },
+    "status": {
+      "NO_BOUNDED_PATH_FOUND": 30
+    }
+  },
+  "Rover L-Series Di": {
+    "firmwares": 4,
+    "with_asm": 4,
+    "with_instrument_symbols": 4,
+    "with_instrument_refs": 0,
+    "with_all_dialogue_entries": 4,
+    "with_new_opcode_candidates": 0,
+    "with_generic_masks": 0,
+    "with_generic_bit6": 0,
+    "previous_gauge": {
+      "OTHER_ARCHITECTURE_REQUIRES_PROTOCOL_TRACE": 4
+    },
+    "previous_tacho": {
+      "OTHER_ARCHITECTURE_REQUIRES_PROTOCOL_TRACE": 4
+    },
+    "status": {
+      "NO_BOUNDED_PATH_FOUND": 4
+    }
+  },
+  "Rover MEMS 1.3": {
+    "firmwares": 3,
+    "with_asm": 3,
+    "with_instrument_symbols": 0,
+    "with_instrument_refs": 0,
+    "with_all_dialogue_entries": 0,
+    "with_new_opcode_candidates": 0,
+    "with_generic_masks": 0,
+    "with_generic_bit6": 0,
+    "previous_gauge": {
+      "NO_KNOWN_COMMAND_PAIR": 3
+    },
+    "previous_tacho": {
+      "NO_KNOWN_COMMAND_PAIR": 3
+    },
+    "status": {
+      "NO_BOUNDED_PATH_FOUND": 3
+    }
+  },
+  "Rover MEMS 1.6": {
+    "firmwares": 123,
+    "with_asm": 123,
+    "with_instrument_symbols": 122,
+    "with_instrument_refs": 118,
+    "with_all_dialogue_entries": 123,
+    "with_new_opcode_candidates": 116,
+    "with_generic_masks": 117,
+    "with_generic_bit6": 0,
+    "previous_gauge": {
+      "CONSUMER_AND_OUTPUT_CANDIDATE": 15,
+      "HANDLER_WITHOUT_KNOWN_CONSUMER": 107,
+      "NO_KNOWN_COMMAND_PAIR": 1
+    },
+    "previous_tacho": {
+      "NO_KNOWN_COMMAND_PAIR": 123
+    },
+    "status": {
+      "REVERSE_PATH_CANDIDATES": 116,
+      "NO_BOUNDED_PATH_FOUND": 7
+    }
+  },
+  "Rover MEMS 1.6 TURBO": {
+    "firmwares": 4,
+    "with_asm": 0,
+    "with_instrument_symbols": 0,
+    "with_instrument_refs": 0,
+    "with_all_dialogue_entries": 0,
+    "with_new_opcode_candidates": 0,
+    "with_generic_masks": 0,
+    "with_generic_bit6": 0,
+    "previous_gauge": {
+      "NO_KNOWN_COMMAND_PAIR": 4
+    },
+    "previous_tacho": {
+      "NO_KNOWN_COMMAND_PAIR": 4
+    },
+    "status": {
+      "NO_ASM": 4
+    }
+  },
+  "Rover MEMS 1.9": {
+    "firmwares": 215,
+    "with_asm": 215,
+    "with_instrument_symbols": 215,
+    "with_instrument_refs": 81,
+    "with_all_dialogue_entries": 215,
+    "with_new_opcode_candidates": 81,
+    "with_generic_masks": 1,
+    "with_generic_bit6": 0,
+    "previous_gauge": {
+      "NO_KNOWN_COMMAND_PAIR": 214,
+      "HANDLER_WITHOUT_KNOWN_CONSUMER": 1
+    },
+    "previous_tacho": {
+      "NO_KNOWN_COMMAND_PAIR": 134,
+      "COMMAND_PAIR_DIFFERENT_OR_LOGICAL_ONLY": 40,
+      "SPEED_LOADS_AND_VARIABLE_CANDIDATE": 41
+    },
+    "status": {
+      "REVERSE_PATH_CANDIDATES": 81,
+      "NO_BOUNDED_PATH_FOUND": 134
+    }
+  },
+  "Rover MEMS 2J": {
+    "firmwares": 9,
+    "with_asm": 9,
+    "with_instrument_symbols": 7,
+    "with_instrument_refs": 7,
+    "with_all_dialogue_entries": 0,
+    "with_new_opcode_candidates": 0,
+    "with_generic_masks": 0,
+    "with_generic_bit6": 0,
+    "previous_gauge": {
+      "OTHER_ARCHITECTURE_REQUIRES_PROTOCOL_TRACE": 9
+    },
+    "previous_tacho": {
+      "OTHER_ARCHITECTURE_REQUIRES_PROTOCOL_TRACE": 9
+    },
+    "status": {
+      "REVERSE_REFERENCES_NEED_PROTOCOL_TRACE": 7,
+      "NO_BOUNDED_PATH_FOUND": 2
+    }
+  },
+  "Rover MEMS3": {
+    "firmwares": 95,
+    "with_asm": 95,
+    "with_instrument_symbols": 83,
+    "with_instrument_refs": 83,
+    "with_all_dialogue_entries": 0,
+    "with_new_opcode_candidates": 0,
+    "with_generic_masks": 0,
+    "with_generic_bit6": 0,
+    "previous_gauge": {
+      "OTHER_ARCHITECTURE_REQUIRES_PROTOCOL_TRACE": 95
+    },
+    "previous_tacho": {
+      "OTHER_ARCHITECTURE_REQUIRES_PROTOCOL_TRACE": 95
+    },
+    "status": {
+      "REVERSE_REFERENCES_NEED_PROTOCOL_TRACE": 83,
+      "NO_BOUNDED_PATH_FOUND": 12
+    }
+  }
+}
