@@ -116,6 +116,7 @@ def analyse(r):
             ss=ins[t]; qq=args(ss)
             if op(ss)!="orb" or len(qq)!=2 or imm(qq[1])!=64:continue
             v=var(qq[0])
+            if v is None:continue
             ports.extend(m for m in merges if m["strategy"]==hx(v) and not m["bit6_preserved_in_shadow"] and a<int(m["address"],16)<a+400)
         if not hso0 and not ports:continue
         # All stores to the duty byte; bit-test predecessors include patterns
