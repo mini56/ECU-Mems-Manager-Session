@@ -1,0 +1,25 @@
+{
+  "firmwares": 123,
+  "known_gauge": 15,
+  "known_gauge_recovered": [
+    "AANMP000",
+    "AANMP001",
+    "AANMP002",
+    "ABNMF030",
+    "ABNMF032",
+    "ABNMP002",
+    "ABNMP005",
+    "ABNMP006",
+    "ACNMF024",
+    "ACNMF026",
+    "ACNMP001",
+    "ACNMP003",
+    "ACNMP004",
+    "ACNMP005",
+    "EKDMF009"
+  ],
+  "new_gauge_candidates": [],
+  "generic_bit6": [],
+  "tacho_symbols": [],
+  "note": "Output candidates and reachability are not safe integration qualification; review exact command, calibration, identity and restoration. All 123 retained."
+}
