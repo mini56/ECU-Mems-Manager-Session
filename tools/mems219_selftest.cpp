@@ -1,9 +1,20 @@
+#include "legacyhotidle.h"
 #include "mems219_units.h"
 #include <cassert>
 #include <cmath>
 #include <iostream>
 using namespace Mems219;
 int main(){
+    // Historical user convention: current hot-idle adjustment, never hard-code -3.
+    assert(LegacyHotIdle::raw(0x80,0)==32768);
+    assert(LegacyHotIdle::corrected(32768,32)==3);
+    assert(LegacyHotIdle::corrected(32768,35)==0);
+    assert(LegacyHotIdle::corrected(32768,38)==-3);
+    for(int raw=0;raw<=65535;++raw){
+        assert(LegacyHotIdle::raw(raw>>8,raw&255)==raw);
+        for(int hot=0;hot<=255;++hot)
+            assert(LegacyHotIdle::corrected(raw,hot)==raw-32768-hot+35);
+    }
     assert(temperatureC(55)==0&&temperatureC(35)==-20);
     assert(std::abs(celsiusToFahrenheit(90)-194)<1e-9);
     assert(std::abs(deltaFahrenheit(5)-9)<1e-9);

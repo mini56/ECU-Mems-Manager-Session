@@ -1,3 +1,4 @@
+#include "legacyhotidle.h"
 #include "summarytab.h"
 #include "applicationvisualstyle.h"
 #include <QApplication>
@@ -497,12 +498,8 @@ void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
            QString::number(data->idle_speed_offset),
            QString::number((data->idle_speed_offset - 128) * 25) + " RPM");
 
-  const int raw7d1415 =
-      (static_cast<int>(data->idle_error2) << 8) |
-       static_cast<int>(data->uk10);
-  const int idleHotCorrection = static_cast<int>(data->idle_hot) - 35;
-  const int idleErrorHotCorrected =
-      (raw7d1415 - 32768) - idleHotCorrection;
+  const int raw7d1415 = LegacyHotIdle::raw(data->idle_error2,data->uk10);
+  const int idleErrorHotCorrected = LegacyHotIdle::corrected(raw7d1415,data->idle_hot);
 
   setValue(m_rowIdleErrorHotCorrected,
            QString::number(raw7d1415),

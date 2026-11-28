@@ -1,3 +1,4 @@
+#include "legacyhotidle.h"
 #include "diagnosticpanel.h"
 
 #include <QDateTime>
@@ -380,9 +381,9 @@ void DiagnosticPanel::rebuild(const mems_data &d)
 
     // Décodage du champ 7D14-15. La correction de -3 n'est pas une constante :
     // elle correspond au réglage actuel « Position ralenti chaud » (idle_hot - 35).
-    const int raw7d1415 = (static_cast<int>(d.idle_error2) << 8) | static_cast<int>(d.uk10);
-    const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
-    const int hotIdleErrorCorrected = (raw7d1415 - 32768) - hotIdleCorrection;
+    const int raw7d1415 = LegacyHotIdle::raw(d.idle_error2,d.uk10);
+    const int hotIdleCorrection = LegacyHotIdle::adjustment(d.idle_hot);
+    const int hotIdleErrorCorrected = LegacyHotIdle::corrected(raw7d1415,d.idle_hot);
     const auto extended=Mems220::decode(m_naEvidence);
     if(extended.profile){
         auto add=[&](int title,const QString &value,int help){
@@ -405,7 +406,7 @@ void DiagnosticPanel::rebuild(const mems_data &d)
              I18n::text(6860) /* EN: %1 ECU | brut 7D14-15=%2 | correction=%3 */
                  .arg(hotIdleErrorCorrected).arg(raw7d1415).arg(hotIdleCorrection),
              stateFor(hotIdleErrorOk, true),
-             I18n::text(6897) /* EN: Decoding: (raw 7D14-15 - 32768) + Hot idle position correction. The correction follows the value configured in the Settings tab; it is not hard-coded. The indicative value is consistent when it remains close to zero. */);
+             I18n::text(6897) /* EN: Decoding: (raw 7D14-15 - 32768) - Hot idle position correction. The correction follows the value configured in the Settings tab; it is not hard-coded. The indicative value is consistent when it remains close to zero. */);
     if (!hotIdleErrorOk) ++warnings;
     }
 
@@ -513,9 +514,9 @@ QString DiagnosticPanel::buildReport() const
     text+=QStringLiteral("\nDTC 2 : ")+MemsExtendedDtc::diagnosticDtc2Text(&m_naEvidence,d.dtc2);
     for(int group=3;group<=5;++group)
         text+=QStringLiteral("\nDTC %1 : ").arg(group)+MemsExtendedDtc::text(&m_naEvidence,group);
-    const int raw7d1415 = (static_cast<int>(d.idle_error2) << 8) | static_cast<int>(d.uk10);
-    const int hotIdleCorrection = static_cast<int>(d.idle_hot) - 35;
-    const int hotIdleErrorCorrected = (raw7d1415 - 32768) - hotIdleCorrection;
+    const int raw7d1415 = LegacyHotIdle::raw(d.idle_error2,d.uk10);
+    const int hotIdleCorrection = LegacyHotIdle::adjustment(d.idle_hot);
+    const int hotIdleErrorCorrected = LegacyHotIdle::corrected(raw7d1415,d.idle_hot);
     text += I18n::text(6883) /* EN: Temps coil=%1 ms  */.arg(static_cast<double>(d.coil_time) * 0.002, 0, 'f', 2);
     const auto extended=Mems220::decode(m_naEvidence);
     if(extended.profile){

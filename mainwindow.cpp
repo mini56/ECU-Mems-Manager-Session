@@ -1,3 +1,4 @@
+#include "legacyhotidle.h"
 #include <cmath>
 #include <QCloseEvent>
 #include <QShowEvent>
@@ -1605,9 +1606,8 @@ void MainWindow::onDataReady()
  m_ui->m_7D_13->setText(QString::number(data->idle_speed_offset));
  m_ui->r_7D_13->setText(QString::number((data->idle_speed_offset - 128) * 25) + " RPM");
  // m_ui->m_7D_14->setText(QString::number(data->idle_error2));
- const int raw7d1415 = (static_cast<int>(data->idle_error2) << 8) | static_cast<int>(data->uk10);
- const int idleHotCorrection = static_cast<int>(data->idle_hot) - 35;
- const int idleErrorHotCorrected = (raw7d1415 - 32768) - idleHotCorrection;
+ const int raw7d1415 = LegacyHotIdle::raw(data->idle_error2,data->uk10);
+ const int idleErrorHotCorrected = LegacyHotIdle::corrected(raw7d1415,data->idle_hot);
  m_ui->m_7D_15->setText(QString::number(idleErrorHotCorrected));
  m_ui->m_7D_15->setToolTip(I18n::text(7033));
  m_ui->m_7D_16->setText(MemsExtendedDtc::raw(&naEvidence,5,data->dtc5));

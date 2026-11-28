@@ -1,3 +1,4 @@
+#include "legacyhotidle.h"
 #include "analysistab.h"
 #include "i18n.h"
 #include "mems16na_analysis.h"
@@ -281,8 +282,7 @@ static QVector<double> diagnosticValues(const mems_data *d)
 {
     QVector<double> v;
     if (!d) return v;
-    const int raw7d1415 = (int(d->idle_error2) << 8) | int(d->uk10);
-    const int idleHotCorrection = int(d->idle_hot) - 35;
+    const int raw7d1415 = LegacyHotIdle::raw(d->idle_error2,d->uk10);
     v << d->engine_rpm
       << (int(d->coolant_temp) - 55) << (int(d->ambient_temp) - 55)
       << (int(d->intake_air_temp) - 55) << (int(d->fuel_temp) - 55)
@@ -297,7 +297,7 @@ static QVector<double> diagnosticValues(const mems_data *d)
       << d->lambda_sensor_status << d->closed_loop << d->long_term_fuel_trim
       << d->short_term_fuel_trim << d->carbon_canister_dutycycle << d->dtc3
       << d->idle_base_pos << d->uk7 << d->dtc4 << d->ignition_advance2
-      << d->idle_speed_offset << ((raw7d1415 - 32768) + idleHotCorrection) << raw7d1415
+      << d->idle_speed_offset << LegacyHotIdle::corrected(raw7d1415,d->idle_hot) << raw7d1415
       << d->dtc5 << d->uk11 << d->uk12 << d->uk13 << d->uk14 << d->uk15 << d->uk16
       << d->uk1A << d->uk1B << d->uk1C;
     return v;

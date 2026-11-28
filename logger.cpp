@@ -1,3 +1,4 @@
+#include "legacyhotidle.h"
 #include <QDir>
 #include <QDateTime>
 #include <QStandardPaths>
@@ -317,9 +318,8 @@ void Logger::writeLegacyRow(const mems_data *data)
       data->dtc4<< "," <<
       data->ignition_advance2<< "," <<
       data->idle_speed_offset<< "," <<
-      (((((uint16_t)data->idle_error2 << 8 ) | data->uk10) - 32768) +
-       (static_cast<int>(data->idle_hot) - 35))<< "," <<
-      (((uint16_t)data->idle_error2 << 8 ) | data->uk10)<< "," <<
+      LegacyHotIdle::corrected(LegacyHotIdle::raw(data->idle_error2,data->uk10),data->idle_hot)<< "," <<
+      LegacyHotIdle::raw(data->idle_error2,data->uk10)<< "," <<
       data->dtc5<< "," <<
       data->uk11<< "," <<
       data->uk12<< "," <<
