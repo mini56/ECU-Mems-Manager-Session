@@ -166,9 +166,17 @@ int main(int argc,char **argv) {
         if(!qualified)CHECK(!report->toPlainText().contains(I18n::text(2972901)));
         panel.endNaSession();
     }
+    panel.setEcuId(QByteArray::fromHex("90000902"));
     panel.updateData(&d,&generic19);capture();
     CHECK(report->toPlainText().contains(referencePrefix));
     CHECK(report->toPlainText().contains(I18n::text(2973301)));
+    panel.updateData(&d,&generic19);
+    CHECK(report->toPlainText().contains(referencePrefix));
+    panel.invalidateCoolantTest(false);
+    CHECK(report->toPlainText().startsWith(I18n::text(2974001))&&table->rowCount()==0);
+    const QString expiredSameId=report->toPlainText();
+    panel.setEcuId(QByteArray::fromHex("90000902"));
+    CHECK(report->toPlainText()==expiredSameId&&table->rowCount()==0);
     panel.updateData(&d,&generic19);
     CHECK(report->toPlainText().contains(referencePrefix));
     panel.updateData(&d,&other19);
@@ -199,6 +207,12 @@ int main(int argc,char **argv) {
     auto *cap=captureButton();CHECK(cap&&!cap->isEnabled());
     for(const QString &family:{QStringLiteral("MEMS 2J"),QStringLiteral("MEMS 3")}){
         panel.update2JData(structured,QStringList(),family);CHECK(cap->isEnabled());
+        capture();
+        CHECK(report->toPlainText().contains(QStringLiteral("Référence enregistrée le")));
+        panel.invalidateCoolantTest(false);
+        CHECK(!cap->isEnabled()&&table->rowCount()==0);
+        panel.update2JData(structured,QStringList(),family);
+        CHECK(report->toPlainText().contains(QStringLiteral("Référence enregistrée le")));
         panel.invalidateCoolantTest();
         CHECK(!cap->isEnabled()&&table->rowCount()==0);
         CHECK(report->toPlainText().startsWith(I18n::text(2974001)));
@@ -206,6 +220,7 @@ int main(int argc,char **argv) {
         panel.invalidateCoolantTest();CHECK(report->toPlainText()==staleReport);
         panel.update2JData(structured,QStringList(),family);CHECK(cap->isEnabled());
         CHECK(!report->toPlainText().startsWith(I18n::text(2974001)));
+        CHECK(!report->toPlainText().contains(QStringLiteral("Référence enregistrée le")));
         panel.endNaSession();
     }
     panel.updateData(&d,&generic19);CHECK(cap->isEnabled());

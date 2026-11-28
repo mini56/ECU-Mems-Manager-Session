@@ -164,7 +164,7 @@ DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
     QTimer *freshness=new QTimer(this);freshness->setInterval(500);
     connect(freshness,&QTimer::timeout,this,[this](){
         if(m_coolantFresh.isValid()&&m_coolantFresh.elapsed()>3000){
-            invalidateCoolantTest();
+            invalidateCoolantTest(false);
         }
     });
     freshness->start();refreshCoolantTest();refreshReferenceButtons();
@@ -177,10 +177,10 @@ QString DiagnosticPanel::hexByte(quint8 v)
 
 void DiagnosticPanel::setEcuId(const QByteArray &id)
 {
+    // An identity notification is not a new measurement.
+    // Never rebuild an expired report or route a structured ECU through ROSCO.
     if(id!=m_ecuId)endNaSession();
     m_ecuId = id;
-    if (m_haveData)
-        rebuild(m_last);
 }
 
 void DiagnosticPanel::updateData(const mems_data *data,const Mems16Na::SessionEvidence *na)
@@ -594,7 +594,7 @@ QString DiagnosticPanel::buildReport() const
 
 void DiagnosticPanel::exportReport()
 {
-    if(m_haveData&&!diagnosticFresh())invalidateCoolantTest();
+    if(m_haveData&&!diagnosticFresh())invalidateCoolantTest(false);
     if (!m_haveData) {
         QMessageBox::information(this, I18n::text(6891) /* EN: Diagnostics */, I18n::text(6892) /* EN: No data to export. */);
         return;
@@ -603,7 +603,7 @@ void DiagnosticPanel::exportReport()
         QStringLiteral("diagnostic_mems_%1.txt").arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_hhmmss"))),
         I18n::text(6894) /* EN: report texte (*.txt) */);
     if (fileName.isEmpty()||!m_haveData) return;
-    if(!diagnosticFresh())invalidateCoolantTest();
+    if(!diagnosticFresh())invalidateCoolantTest(false);
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QMessageBox::warning(this, I18n::text(6895) /* EN: Diagnostics */, I18n::text(6896) /* EN: Unable to write report. */);
@@ -815,10 +815,14 @@ void DiagnosticPanel::resetCoolantTest()
     m_coolantTrend->clear();
 }
 
-void DiagnosticPanel::invalidateCoolantTest()
+void DiagnosticPanel::invalidateCoolantTest(bool connectionLost)
 {
-    m_reference=Snapshot();m_naReference=Snapshot();
-    m_2jReference.clear();m_2jReferenceTime.clear();
+    // Expiration alone does not prove that the ECU or connection changed.
+    // Preserve a captured reference in the same session; explicit loss clears it.
+    if(connectionLost){
+        m_reference=Snapshot();m_naReference=Snapshot();
+        m_2jReference.clear();m_2jReferenceTime.clear();
+    }
     const bool wasRunning=m_coolantTest.state==Mems218::TestState::Running;
     m_coolantConnected=false;m_coolantFresh.invalidate();m_coolantTest.interrupt();
     m_sensorObservation.reset();m_passive.reset();m_naEvidence.discardPair();

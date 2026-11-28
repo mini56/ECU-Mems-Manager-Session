@@ -25,7 +25,7 @@ public:
     explicit DiagnosticPanel(QWidget *parent = nullptr);
     void updateData(const mems_data *data, const Mems16Na::SessionEvidence *na = nullptr);
     void endNaSession();
-    void invalidateCoolantTest();
+    void invalidateCoolantTest(bool connectionLost=true);
     void update2JData(const QVariantMap &values, const QStringList &faults,
                       const QString &family = QStringLiteral("MEMS 2J"));
     void setEcuId(const QByteArray &id);
