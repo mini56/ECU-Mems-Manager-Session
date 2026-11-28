@@ -14,7 +14,8 @@ class SessionEvidence {
 public:
     // The DLL's dtc0 is byte 13 of a successfully received frame 80.
     void observeCoolantFault(bool stored, std::int64_t timeMs) {
-        if(!profile_ || firmware_!="AANMP002") return;
+        // Use the existing profile-specific DTC0 mapping for every identified NA ECU.
+        if(!profile_ || !(definition(profile_,Group::Dtc0).faultMask & 0x01u)) return;
         if(!haveCoolantBaseline_) firstCoolantFault_=stored;
         else if(stored && !lastCoolantFault_ && !coolantFaultSeenAt_) coolantFaultSeenAt_=timeMs;
         haveCoolantBaseline_=true;

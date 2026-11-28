@@ -19,6 +19,57 @@ static Bytes packet(unsigned c,unsigned length){
     Bytes b(length+1,0); b[0]=static_cast<std::uint8_t>(c); b[1]=static_cast<std::uint8_t>(length);return b;
 }
 int main(int argc,char**argv){
+    // SESSION 230: every known NA firmware, including duplicate PETA IDs.
+    std::size_t profileCount=0;
+    const auto *profiles=catalog(profileCount);
+    CHECK(profileCount==123);
+    for(std::size_t i=0;i<profileCount;++i) {
+        const auto &p=profiles[i];
+        SessionEvidence each;
+        const Bytes id{static_cast<std::uint8_t>(p.petaId>>16),
+                       static_cast<std::uint8_t>(p.petaId>>8),
+                       static_cast<std::uint8_t>(p.petaId),2};
+        Bytes d0{0xD0};d0.insert(d0.end(),id.begin(),id.end());
+        Bytes d1{0xD1};
+        const std::string name(p.firmware);
+        d1.insert(d1.end(),name.begin(),name.end());
+        d1.insert(d1.end(),id.begin(),id.end());
+        each.observeCoolantFault(true,500);
+        CHECK(!each.coolantFaultAtFirstSample()&&!each.coolantFaultSeenAt());
+        transaction(each,0xD0,d0);
+        transaction(each,0xD1,d1);
+        CHECK(each.identifiedProfile()==&p);
+        auto a=packet(0x80,28),b=packet(0x7D,32);
+        a[14]=1; // response echo precedes frame byte 13 (DTC0)
+        transaction(each,0x80,a);transaction(each,0x7D,b);
+        CHECK(each.ready());
+        const auto dtc=each.dtc(Group::Dtc0);
+        CHECK(dtc.availability==Availability::Available && dtc.faultBits==1);
+        CHECK(circuit(&p,Group::Dtc0,1)==Circuit::CoolantSensor);
+        each.observeCoolantFault(true,1000);
+        CHECK(each.coolantFaultAtFirstSample()&&!each.coolantFaultSeenAt());
+        each.observeCoolantFault(true,2000);
+        CHECK(!each.coolantFaultSeenAt());
+        each.observeCoolantFault(false,3000);
+        each.observeCoolantFault(true,4000);
+        each.observeCoolantFault(false,5000);
+        each.observeCoolantFault(true,6000);
+        CHECK(each.coolantFaultSeenAt()==4000);
+        each.reset();
+        CHECK(!each.coolantFaultSeenAt()&&!each.coolantFaultAtFirstSample());
+        transaction(each,0xD0,d0);transaction(each,0xD1,d1);
+        each.observeCoolantFault(false,7000);
+        each.observeCoolantFault(true,8000);
+        CHECK(!each.coolantFaultAtFirstSample()&&each.coolantFaultSeenAt()==8000);
+        transaction(each,0xD0,d0);
+        CHECK(!each.coolantFaultSeenAt()&&!each.coolantFaultAtFirstSample());
+        d1.back()=3; // mismatched D0/D1 calibration identity
+        transaction(each,0xD1,d1);
+        CHECK(!each.identifiedProfile());
+        each.observeCoolantFault(true,9000);
+        CHECK(!each.coolantFaultAtFirstSample()&&!each.coolantFaultSeenAt());
+    }
+    std::cout<<"MEMS16NA_COOLANT_HISTORY_123_PROFILES_PASS\n";
     SessionEvidence s;
     transaction(s,0xD0,ident());
     CHECK(!s.identifiedProfile());
