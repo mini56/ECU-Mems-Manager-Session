@@ -1,4 +1,4 @@
-name: Recherche instruments - sorties et commandes alternatives
+name: Recherche instruments - sorties et commandes alternatives V2
 on:
   push:
     branches: [research/mems-firmwares-20261126]
@@ -11,18 +11,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Remonter des variables et sorties vers tous les handlers
+      - name: Vérifier XF1 XF3, parcours inverse et 56 témoins
         run: python3 research/instruments-integral-20261127/audit_reverse.py
       - uses: actions/upload-artifact@v4
         with:
-          name: comparaison-recherche-inverse-483
-          path: research/instruments-integral-20261127/results/*recherche_inverse*
+          name: comparaison-recherche-inverse-v2-483
+          path: research/instruments-integral-20261127/results/*recherche_inverse_v2*
       - name: Enregistrer les preuves et la comparaison
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add research/instruments-integral-20261127/results/*recherche_inverse*
+          git add research/instruments-integral-20261127/results/*recherche_inverse_v2*
           if ! git diff --cached --quiet; then
-            git commit -m "Recherche instruments : comparaison inverse et preuves [skip ci]"
+            git commit -m "Recherche instruments : comparaison inverse V2 et preuves [skip ci]"
             git push origin HEAD:research/mems-firmwares-20261126
           fi
