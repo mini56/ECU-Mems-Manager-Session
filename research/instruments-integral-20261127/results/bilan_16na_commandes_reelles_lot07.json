@@ -1,0 +1,19 @@
+{
+  "firmwares": 123,
+  "known_recovered": 15,
+  "previous_paths": 750,
+  "terminal_classes": {
+    "CLEAR": 728,
+    "OTHER_BIT": 700,
+    "UNRELATED": 72
+  },
+  "generic_tables": 117,
+  "generic_bit6": [],
+  "periodic_xor": [],
+  "hso_channel_counts": {
+    "2": 7,
+    "3": 122,
+    "0": 70
+  },
+  "limitations": "Exact masks and witness terminal semantics only. No physical qualification. Other periodic or computed paths remain unresolved."
+}
