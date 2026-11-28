@@ -12,14 +12,25 @@
 namespace Mems16Na {
 class SessionEvidence {
 public:
-    // The DLL's dtc0 is byte 13 of a successfully received frame 80.
+    // Match the same proven 1.9 identities used for the ordinary-frame decoder.
+    bool equivalentOrdinary19() const {
+        return haveIdentity_&&identity_[1]==0&&
+            ((firmware_=="KBHBG009"&&identity_[0]==0x90&&identity_[2]==9)||
+             (firmware_=="KBHBV002"&&identity_[0]==0xc2&&identity_[2]==2));
+    }
+    bool coolantFaultMappingQualified() const {
+        return (profile_&&(definition(profile_,Group::Dtc0).faultMask&0x01u))||equivalentOrdinary19();
+    }
+    // Existing NA behavior is preserved. For other ordinary-frame families,
+    // capture the same historical DTC0 bit, but distinguish unqualified meaning.
     void observeCoolantFault(bool stored, std::int64_t timeMs) {
-        // Use the existing profile-specific DTC0 mapping for every identified NA ECU.
-        if(!profile_ || !(definition(profile_,Group::Dtc0).faultMask & 0x01u)) return;
-        if(!haveCoolantBaseline_) firstCoolantFault_=stored;
-        else if(stored && !lastCoolantFault_ && !coolantFaultSeenAt_) coolantFaultSeenAt_=timeMs;
-        haveCoolantBaseline_=true;
-        lastCoolantFault_=stored;
+        if(!profile_ || !coolantFaultMappingQualified())return;
+        recordCoolantFault(stored,timeMs);
+    }
+    void observeOrdinaryCoolantFault(unsigned dllDtc0,std::int64_t timeMs) {
+        if(profile_){observeCoolantFault((dllDtc0&1)!=0,timeMs);return;}
+        if(extended80_.size()<=13||extended80_[0]!=extended80_.size()||extended80_[13]!=dllDtc0)return;
+        recordCoolantFault((extended80_[13]&1)!=0,timeMs);
     }
     bool coolantFaultAtFirstSample() const { return firstCoolantFault_; }
     std::int64_t coolantFaultSeenAt() const { return coolantFaultSeenAt_; }
@@ -120,6 +131,12 @@ public:
 private:
     bool haveCoolantBaseline_=false, firstCoolantFault_=false, lastCoolantFault_=false;
     std::int64_t coolantFaultSeenAt_=0;
+    void recordCoolantFault(bool stored,std::int64_t timeMs) {
+        if(!haveCoolantBaseline_) firstCoolantFault_=stored;
+        else if(stored&&!lastCoolantFault_&&!coolantFaultSeenAt_)coolantFaultSeenAt_=timeMs;
+        haveCoolantBaseline_=true;
+        lastCoolantFault_=stored;
+    }
     void clearCoolantHistory() {
         haveCoolantBaseline_=firstCoolantFault_=lastCoolantFault_=false;
         coolantFaultSeenAt_=0;

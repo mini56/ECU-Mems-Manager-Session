@@ -108,5 +108,8 @@
   "2973901": "desv. bruta",
   "2973902": "Corrección de inyección: microsegundos solo en perfiles cualificados. En los demás, desviación bruta histórica sin unidad física confirmada. Una trama ausente no es una medida.",
   "2973903": "Corrección lambda instantánea: porcentaje solo en perfiles cualificados. En los demás, desviación bruta histórica sin diagnóstico automático.",
-  "2974001": "Último informe — datos no actualizados"
+  "2974001": "Último informe — datos no actualizados",
+  "2974101": "Indicador de fallo observado durante la sesión",
+  "2974102": "Indicador de fallo memorizado",
+  "2974103": "Indicador históricamente asociado al sensor de temperatura del refrigerante. La asignación no está confirmada en esta ECU. No demuestra que se aplique un valor de sustitución."
 }

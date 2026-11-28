@@ -108,5 +108,8 @@
   "2973901": "scarto grezzo",
   "2973902": "Correzione iniezione: microsecondi solo per profili qualificati. Altrimenti scarto grezzo storico senza unità fisica confermata. Un frame mancante non è una misura.",
   "2973903": "Correzione lambda istantanea: percentuale solo per profili qualificati. Altrimenti scarto grezzo storico senza diagnosi automatica.",
-  "2974001": "Ultimo rapporto — dati non aggiornati"
+  "2974001": "Ultimo rapporto — dati non aggiornati",
+  "2974101": "Indicatore di guasto osservato durante la sessione",
+  "2974102": "Indicatore di guasto memorizzato",
+  "2974103": "Indicatore storicamente associato al sensore di temperatura del refrigerante. L'associazione non è confermata su questa centralina. Non dimostra la sostituzione attiva."
 }

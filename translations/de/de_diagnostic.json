@@ -108,5 +108,8 @@
   "2973901": "Rohabweichung",
   "2973902": "Einspritzkorrektur: Mikrosekunden nur bei qualifizierten Profilen. Sonst historische Rohabweichung ohne bestätigte physikalische Einheit. Ein fehlender Datenrahmen ist kein Messwert.",
   "2973903": "Momentane Lambdakorrektur: Prozent nur bei qualifizierten Profilen. Sonst historische Rohabweichung ohne automatische Diagnose.",
-  "2974001": "Letzter Bericht — Daten nicht aktuell"
+  "2974001": "Letzter Bericht — Daten nicht aktuell",
+  "2974101": "Fehleranzeige während der Sitzung beobachtet",
+  "2974102": "Gespeicherte Fehleranzeige",
+  "2974103": "Historisch dem Kühlmitteltemperatursensor zugeordnete Anzeige. Die Zuordnung ist bei diesem Steuergerät nicht bestätigt. Eine aktive Ersatzwertbildung ist nicht nachgewiesen."
 }

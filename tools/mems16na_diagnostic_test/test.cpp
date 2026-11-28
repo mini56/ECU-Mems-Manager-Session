@@ -155,6 +155,17 @@ int main(int argc,char **argv) {
     auto other19=evidence("KBHBV001",0xc2,0,1,0,0,false);
     other19.setExtended80(a19);other19.setExtended7d(b19);
     d.dtc0=0;d.dtc1=0;d.dtc2=0;
+    for(auto observed19:{generic19,other19}){
+        const bool qualified=observed19.coolantFaultMappingQualified();
+        auto frame=a19;frame[13]=0;observed19.setExtended80(frame);observed19.observeOrdinaryCoolantFault(0,1000);
+        frame[13]=1;observed19.setExtended80(frame);observed19.observeOrdinaryCoolantFault(1,2000);
+        panel.updateData(&d,&observed19);
+        const int key=qualified?2972901:2974101;
+        CHECK(report->toPlainText().contains(I18n::text(key)));
+        CHECK(!table->findItems(I18n::text(key),Qt::MatchExactly).isEmpty());
+        if(!qualified)CHECK(!report->toPlainText().contains(I18n::text(2972901)));
+        panel.endNaSession();
+    }
     panel.updateData(&d,&generic19);capture();
     CHECK(report->toPlainText().contains(referencePrefix));
     CHECK(report->toPlainText().contains(I18n::text(2973301)));

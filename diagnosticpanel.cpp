@@ -284,6 +284,17 @@ void DiagnosticPanel::rebuild(const mems_data &d)
              hasDtc ? I18n::text(6817) /* EN: Read the relevant bits before clearing anything. */
                     : incompleteDtc2?I18n::text(29002):I18n::text(6818) /* EN: No active fault bit in 0x7D/0x80 frames. */);
     if (hasDtc) ++issues;
+    // Observe the same historical bit for every ordinary-frame ECU, without
+    // presenting its circuit assignment as proven on unqualified firmware.
+    const bool qualifiedCoolant=m_naEvidence.coolantFaultMappingQualified();
+    if(m_naEvidence.coolantFaultSeenAt()){
+        addCheck(I18n::text(qualifiedCoolant?2972901:2974101),
+            QDateTime::fromMSecsSinceEpoch(m_naEvidence.coolantFaultSeenAt()).toString(QStringLiteral("hh:mm:ss")),
+            I18n::text(qualifiedCoolant?6841:6849),I18n::text(qualifiedCoolant?2972902:2974103));
+    }else if(m_naEvidence.coolantFaultAtFirstSample()){
+        addCheck(I18n::text(qualifiedCoolant?2972903:2974102),I18n::text(2972904),
+            I18n::text(qualifiedCoolant?6841:6849),I18n::text(qualifiedCoolant?2972905:2974103));
+    }
     addCheck(QStringLiteral("DTC 2"),MemsExtendedDtc::diagnosticDtc2Raw(&m_naEvidence,d.dtc2),
         fault2?I18n::text(29051):dtc2.indicators?I18n::text(6801):I18n::text(6849),
         MemsExtendedDtc::diagnosticDtc2Text(&m_naEvidence,d.dtc2));
@@ -531,6 +542,13 @@ QString DiagnosticPanel::buildReport() const
     if (!m_ecuId.isEmpty()) text += I18n::text(6881) /* EN: Identification : %1  */.arg(QString::fromLatin1(m_ecuId.toHex(' ').toUpper()));
     text += I18n::text(6882) /* EN: DTC : %1 %2 %3  */.arg(hexByte(d.dtc0), hexByte(d.dtc1), hexByte(d.dtc2));
     text+=QStringLiteral("\nDTC 2 : ")+MemsExtendedDtc::diagnosticDtc2Text(&m_naEvidence,d.dtc2);
+    for(int row=0;row<m_checks->rowCount();++row){
+        const QString title=m_checks->item(row,0)->text();
+        if(title!=I18n::text(2972901)&&title!=I18n::text(2972903)&&title!=I18n::text(2974101)&&title!=I18n::text(2974102))continue;
+        QStringList fields;
+        for(int col=0;col<4;++col)fields<<m_checks->item(row,col)->text();
+        text+=QStringLiteral("\n")+fields.join(QStringLiteral(" | "));
+    }
     for(int group=3;group<=5;++group)
         text+=QStringLiteral("\nDTC %1 : ").arg(group)+MemsExtendedDtc::text(&m_naEvidence,group);
     const int raw7d1415 = LegacyHotIdle::raw(d.idle_error2,d.uk10);

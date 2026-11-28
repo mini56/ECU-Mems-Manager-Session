@@ -108,5 +108,8 @@
   "2973901": "écart brut",
   "2973902": "Correction d’injection : valeur en microsecondes uniquement sur les profils qualifiés. Sinon, écart brut historique sans unité physique confirmée. Une trame manquante n’est pas une mesure.",
   "2973903": "Correction instantanée lambda : pourcentage uniquement sur les profils qualifiés. Sinon, écart brut historique, sans diagnostic automatique.",
-  "2974001": "Dernier rapport — données non actualisées"
+  "2974001": "Dernier rapport — données non actualisées",
+  "2974101": "Apparition observée d'un indicateur de défaut",
+  "2974102": "Indicateur de défaut mémorisé",
+  "2974103": "Indicateur historiquement associé à la sonde de température moteur. Son attribution à ce circuit n'est pas confirmée sur ce calculateur. Il ne prouve pas l'activation de la valeur de remplacement."
 }

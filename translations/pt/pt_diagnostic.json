@@ -108,5 +108,8 @@
   "2973901": "desvio bruto",
   "2973902": "Correção de injeção: microssegundos apenas nos perfis qualificados. Nos restantes, desvio bruto histórico sem unidade física confirmada. Uma trama em falta não é uma medição.",
   "2973903": "Correção lambda instantânea: percentagem apenas nos perfis qualificados. Nos restantes, desvio bruto histórico sem diagnóstico automático.",
-  "2974001": "Último relatório — dados não atualizados"
+  "2974001": "Último relatório — dados não atualizados",
+  "2974101": "Indicador de avaria observado durante a sessão",
+  "2974102": "Indicador de avaria memorizado",
+  "2974103": "Indicador historicamente associado ao sensor de temperatura do líquido de refrigeração. A associação não está confirmada nesta ECU. Não comprova a substituição ativa."
 }

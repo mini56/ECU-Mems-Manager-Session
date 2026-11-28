@@ -6,9 +6,7 @@ namespace Mems217 {
 // SESSION 234: ROM/XF3 equivalence KBHBG009 / KBHBV002.
 // No inference from an identifier alone, nor from a similar firmware name.
 inline bool equivalent19(const Mems16Na::SessionEvidence &s) {
-    const auto &id=s.identity();
-    return id[1]==0 && ((s.firmwareName()=="KBHBG009"&&id[0]==0x90&&id[2]==9)||
-        (s.firmwareName()=="KBHBV002"&&id[0]==0xc2&&id[2]==2));
+    return s.equivalentOrdinary19();
 }
 inline bool injectionProfile(const Mems16Na::SessionEvidence &s) {
     // NA decoder already establishes the wire mapping; 1.9 only proven wire profiles.

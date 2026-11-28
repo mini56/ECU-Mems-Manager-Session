@@ -108,5 +108,8 @@
   "2973901": "raw offset",
   "2973902": "Injection correction: microseconds only on qualified profiles. Otherwise, historical raw offset with no confirmed physical unit. A missing frame is not a measurement.",
   "2973903": "Instantaneous lambda correction: percentage only on qualified profiles. Otherwise, historical raw offset, without automatic diagnosis.",
-  "2974001": "Last report — data not current"
+  "2974001": "Last report — data not current",
+  "2974101": "Fault indicator observed during session",
+  "2974102": "Stored fault indicator",
+  "2974103": "Indicator historically associated with the coolant temperature sensor. Its circuit assignment is not confirmed on this ECU. It does not establish active substitution."
 }

@@ -108,6 +108,30 @@ int main(int argc,char**argv){
     transaction(s,0xD1,named());CHECK(!s.identifiedProfile());
     transaction(s,0xD0,{0xD0,0x90,0,0,2});CHECK(!s.identifiedProfile());
     transaction(s,0xD1,named());CHECK(!s.identifiedProfile());
+    // Non-NA observation: no identity restriction on raw evidence; qualification
+    // is separate, and invalid, short or mismatching samples never set history.
+    const struct Variant {const char *name;unsigned id;bool qualified;} variants[]={
+        {"KBHBG009",0x900009,true},{"KBHBV002",0xc20002,true},
+        {"KBHBV001",0xc20001,false},{"KBHBG010",0x90000a,false},
+        {"KBHBG009",0x990009,false},{"UNKNOWN0",0x123456,false}};
+    for(const auto &v:variants){
+        SessionEvidence ordinary;
+        const Bytes id{static_cast<std::uint8_t>(v.id>>16),static_cast<std::uint8_t>(v.id>>8),static_cast<std::uint8_t>(v.id),2};
+        Bytes d0{0xd0};d0.insert(d0.end(),id.begin(),id.end());
+        Bytes d1{0xd1};const std::string name(v.name);d1.insert(d1.end(),name.begin(),name.end());d1.insert(d1.end(),id.begin(),id.end());
+        transaction(ordinary,0xd0,d0);transaction(ordinary,0xd1,d1);
+        CHECK(!ordinary.identifiedProfile()&&ordinary.coolantFaultMappingQualified()==v.qualified);
+        ordinary.observeOrdinaryCoolantFault(1,100);CHECK(!ordinary.coolantFaultAtFirstSample());
+        Bytes f(28,0);f[0]=28;f[13]=0;ordinary.setExtended80(f);
+        ordinary.observeOrdinaryCoolantFault(0,200);
+        ordinary.observeOrdinaryCoolantFault(1,300);CHECK(!ordinary.coolantFaultSeenAt());
+        f[13]=1;ordinary.setExtended80(f);ordinary.observeOrdinaryCoolantFault(1,400);CHECK(ordinary.coolantFaultSeenAt()==400);
+        ordinary.discardPair();ordinary.observeOrdinaryCoolantFault(0,500);CHECK(ordinary.coolantFaultSeenAt()==400);
+        ordinary.reset();CHECK(!ordinary.coolantFaultSeenAt()&&!ordinary.coolantFaultAtFirstSample());
+        // First observed stored bit, including unnamed ECU, is not a new fault.
+        ordinary.setExtended80(f);ordinary.observeOrdinaryCoolantFault(1,600);
+        CHECK(ordinary.coolantFaultAtFirstSample()&&!ordinary.coolantFaultSeenAt());
+    }
     CHECK(argc==2);
     std::ifstream file(argv[1]);CHECK(file.good());
     s.reset();std::string line;int command=-1;Bytes reply;unsigned pairs=0,unidentified=0;
