@@ -1,0 +1,2508 @@
+{
+  "version": "V1.73",
+  "scope": "449 petrol references, all V168 residual selector rows reconstructed from original 7 ROMs; no diesel",
+  "prior": {
+    "firmwares": 449,
+    "68k_firmwares": 104,
+    "entries": 30839,
+    "reclassified": 2572,
+    "new_chunk_sites": 2,
+    "firmwares_with_chunks": 1,
+    "statuses": {
+      "STATIC_LINKED": 118,
+      "SELECTOR_CANDIDATE": 295,
+      "STATIC_TABLE_CONTEXT_LINKED": 19239,
+      "STATIC_TABLE_LINKED": 5075,
+      "INTERNAL_STATE_TABLE_LINKED": 3540,
+      "FRAME_HEADER_COMPARISON": 104,
+      "OTHER_FRAME_FIELD_LINKED": 104,
+      "PRIMARY_SERVICE_FIELD_LINKED": 1511,
+      "SUBFUNCTION_FIELD_LINKED": 853
+    },
+    "physical": "NOT_TESTED",
+    "complete": false
+  },
+  "source_index_sha": "c99db70bd3745e0b3382348d11efceab9ee89a1e",
+  "source_coverage_sha": "b61d91ff3bd70481c257b64cc7df61e2a9551e0c",
+  "scope_by_family": {
+    "Rover MEMS 1.3": {
+      "firmwares": 3,
+      "candidate_rows": 129,
+      "duplicates": 9,
+      "bounds": 9,
+      "pending": 111
+    },
+    "Rover MEMS 1.6 TURBO": {
+      "firmwares": 4,
+      "candidate_rows": 166,
+      "duplicates": 14,
+      "bounds": 12,
+      "pending": 140
+    },
+    "Rover MEMS 1.6/NA": {
+      "firmwares": 123,
+      "candidate_rows": 0,
+      "duplicates": 0,
+      "bounds": 0,
+      "pending": 0
+    },
+    "Rover MEMS 1.9": {
+      "firmwares": 215,
+      "candidate_rows": 0,
+      "duplicates": 0,
+      "bounds": 0,
+      "pending": 0
+    },
+    "Rover MEMS 2J": {
+      "firmwares": 9,
+      "candidate_rows": 0,
+      "duplicates": 0,
+      "bounds": 0,
+      "pending": 0
+    },
+    "Rover MEMS3/EU3": {
+      "firmwares": 83,
+      "candidate_rows": 0,
+      "duplicates": 0,
+      "bounds": 0,
+      "pending": 0
+    },
+    "Rover MEMS3/EU4": {
+      "firmwares": 12,
+      "candidate_rows": 0,
+      "duplicates": 0,
+      "bounds": 0,
+      "pending": 0
+    }
+  },
+  "totals": {
+    "firmwares": 449,
+    "candidate_rows": 295,
+    "duplicates": 23,
+    "bounds": 21,
+    "pending": 251
+  },
+  "method": "Reproduce V165 pointer window scan; exact agreement with V168 grouped index by family and byte. Duplicate means same physical comparison site counted multiple times by overlapping 96-byte windows; keep all contexts, do not count as independent command. Three byte-exact range bounds per ROM anchored in MEMS 1.3 ASM (jnh/jc/jnc), identical 9-byte comparison and branch patterns in 4 Turbo ROMs. Other sites remain unqualified. Not a fresh analysis of all 449 firmware binaries, nor proof of external diagnostic accessibility. All 449 coverage rows audited; only seven contain this residual status. Other generations may have separate completeness gaps.",
+  "pending": 251,
+  "closed_for_unique_site_accounting": 44,
+  "physical": "NOT_TESTED",
+  "manager_dll": "unchanged",
+  "firmwares": [
+    {
+      "name": "ABEMR002",
+      "family": "Rover MEMS 1.3",
+      "path": "firmwares-extraits/Firmware Archive/Rover MEMS 1.3/ABEMR002.rom",
+      "sha": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+      "rows": [
+        {
+          "site": "2EE2",
+          "code": "DC",
+          "ptr": "2EDC",
+          "entry": "557E",
+          "bytes": "99 DC 47 D7 0C 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "2FF3",
+          "code": "F7",
+          "ptr": "2FED",
+          "entry": "5580",
+          "bytes": "99 F7 47 D7 2A 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56BB",
+          "code": "D0",
+          "ptr": "56B8",
+          "entry": "5582",
+          "bytes": "99 D0 47 D7 49 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "568B",
+          "code": "F5",
+          "ptr": "5688",
+          "entry": "5584",
+          "bytes": "99 F5 47 D7 27 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56BB",
+          "code": "D0",
+          "ptr": "5688",
+          "entry": "5584",
+          "bytes": "99 D0 47 D7 49 71 F7 9A A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "331C",
+          "code": "C1",
+          "ptr": "3314",
+          "entry": "5586",
+          "bytes": "99 C1 47 DF 4E 99 C2 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3321",
+          "code": "C2",
+          "ptr": "3314",
+          "entry": "5586",
+          "bytes": "99 C2 47 DF 50 99 C3 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3326",
+          "code": "C3",
+          "ptr": "3314",
+          "entry": "5586",
+          "bytes": "99 C3 47 DF 52 99 D8 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "332B",
+          "code": "D8",
+          "ptr": "3314",
+          "entry": "5586",
+          "bytes": "99 D8 47 DF 54 99 D9 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3330",
+          "code": "D9",
+          "ptr": "3314",
+          "entry": "5586",
+          "bytes": "99 D9 47 DF 61 99 C0 47 D1",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3335",
+          "code": "C0",
+          "ptr": "3314",
+          "entry": "5586",
+          "bytes": "99 C0 47 D1 02 20 98 99 80",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "333C",
+          "code": "80",
+          "ptr": "3314",
+          "entry": "5586",
+          "bytes": "99 80 47 DB 02 20 91 11 4F",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "3345",
+          "code": "A0",
+          "ptr": "3314",
+          "entry": "5586",
+          "bytes": "99 A0 47 D3 07 17 4F 79 A0",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "39A1",
+          "code": "D5",
+          "ptr": "399B",
+          "entry": "5588",
+          "bytes": "99 D5 47 DF 07 99 D6 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "39A6",
+          "code": "D6",
+          "ptr": "399B",
+          "entry": "5588",
+          "bytes": "99 D6 47 DF 32 20 40 C7 01",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "39F4",
+          "code": "D7",
+          "ptr": "399B",
+          "entry": "5588",
+          "bytes": "99 D7 47 D7 39 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "39F4",
+          "code": "D7",
+          "ptr": "39EE",
+          "entry": "558A",
+          "bytes": "99 D7 47 D7 39 71 F7 9A A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "3A99",
+          "code": "DA",
+          "ptr": "3A93",
+          "entry": "558C",
+          "bytes": "99 DA 47 D7 0E 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3A64",
+          "code": "E7",
+          "ptr": "3A5E",
+          "entry": "558E",
+          "bytes": "99 E7 47 D9 29 99 E0 47 D3",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3A69",
+          "code": "E0",
+          "ptr": "3A5E",
+          "entry": "558E",
+          "bytes": "99 E0 47 D3 24 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3A99",
+          "code": "DA",
+          "ptr": "3A5E",
+          "entry": "558E",
+          "bytes": "99 DA 47 D7 0E 71 F7 9A A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "5917",
+          "code": "F6",
+          "ptr": "5914",
+          "entry": "5590",
+          "bytes": "99 F6 47 D7 1B 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3084",
+          "code": "F0",
+          "ptr": "307E",
+          "entry": "5592",
+          "bytes": "99 F0 47 D7 0C 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "30CA",
+          "code": "C4",
+          "ptr": "307E",
+          "entry": "5592",
+          "bytes": "99 C4 47 DF 03 E7 D0 00 71",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "626B",
+          "code": "F4",
+          "ptr": "6268",
+          "entry": "5594",
+          "bytes": "99 F4 47 DF 05 99 F2 47 D7",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "6270",
+          "code": "F2",
+          "ptr": "6268",
+          "entry": "5594",
+          "bytes": "99 F2 47 D7 14 71 F7 9A B1",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "628F",
+          "code": "79",
+          "ptr": "6268",
+          "entry": "5594",
+          "bytes": "99 79 47 D3 13 99 7C 47 D9",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "6294",
+          "code": "7C",
+          "ptr": "6268",
+          "entry": "5594",
+          "bytes": "99 7C 47 D9 02 20 1F 99 89",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "629B",
+          "code": "89",
+          "ptr": "6268",
+          "entry": "5594",
+          "bytes": "99 89 47 D3 07 99 94 47 D2",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "62A0",
+          "code": "94",
+          "ptr": "6268",
+          "entry": "5594",
+          "bytes": "99 94 47 D2 02 20 13 99 7E",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "62A7",
+          "code": "7E",
+          "ptr": "6268",
+          "entry": "5594",
+          "bytes": "99 7E 47 D7 02 20 0C 99 7F",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "62AE",
+          "code": "7F",
+          "ptr": "6268",
+          "entry": "5594",
+          "bytes": "99 7F 47 D7 02 20 05 99 CB",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "62B5",
+          "code": "CB",
+          "ptr": "6268",
+          "entry": "5594",
+          "bytes": "99 CB 47 D7 28 B1 04 1B EF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "31D6",
+          "code": "C5",
+          "ptr": "31CE",
+          "entry": "5596",
+          "bytes": "99 C5 47 DF 16 99 C6 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "31DB",
+          "code": "C6",
+          "ptr": "31CE",
+          "entry": "5596",
+          "bytes": "99 C6 47 DF 25 99 C7 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "31E0",
+          "code": "C7",
+          "ptr": "31CE",
+          "entry": "5596",
+          "bytes": "99 C7 47 DF 34 99 C8 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "31E5",
+          "code": "C8",
+          "ptr": "31CE",
+          "entry": "5596",
+          "bytes": "99 C8 47 DF 4F 99 C9 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "31EA",
+          "code": "C9",
+          "ptr": "31CE",
+          "entry": "5596",
+          "bytes": "99 C9 47 DF 70 20 A6 51 20",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "572A",
+          "code": "F5",
+          "ptr": "571D",
+          "entry": "5598",
+          "bytes": "99 F5 47 D7 0F 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "329E",
+          "code": "F8",
+          "ptr": "3298",
+          "entry": "559A",
+          "bytes": "99 F8 47 D7 18 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "33DB",
+          "code": "D4",
+          "ptr": "33D5",
+          "entry": "559C",
+          "bytes": "99 D4 47 D7 48 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "57A4",
+          "code": "D1",
+          "ptr": "579E",
+          "entry": "559E",
+          "bytes": "99 D1 47 DF 08 99 D3 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "57A9",
+          "code": "D3",
+          "ptr": "579E",
+          "entry": "559E",
+          "bytes": "99 D3 47 DF 03 E7 3C 01 71",
+          "status": "SELECTOR_CANDIDATE"
+        }
+      ]
+    },
+    {
+      "name": "KBE6R003",
+      "family": "Rover MEMS 1.3",
+      "path": "firmwares-extraits/Firmware Archive/Rover MEMS 1.3/KBE6R003.rom",
+      "sha": "73544e40994909bf0e118d95819bdc12f940f5a1",
+      "rows": [
+        {
+          "site": "2EE2",
+          "code": "DC",
+          "ptr": "2EDC",
+          "entry": "5620",
+          "bytes": "99 DC 47 D7 0C 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "2FF3",
+          "code": "F7",
+          "ptr": "2FED",
+          "entry": "5622",
+          "bytes": "99 F7 47 D7 2A 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5766",
+          "code": "D0",
+          "ptr": "5760",
+          "entry": "5624",
+          "bytes": "99 D0 47 D7 49 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5733",
+          "code": "F5",
+          "ptr": "572D",
+          "entry": "5626",
+          "bytes": "99 F5 47 D7 27 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5766",
+          "code": "D0",
+          "ptr": "572D",
+          "entry": "5626",
+          "bytes": "99 D0 47 D7 49 71 F7 9A A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "331C",
+          "code": "C1",
+          "ptr": "3314",
+          "entry": "5628",
+          "bytes": "99 C1 47 DF 4E 99 C2 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3321",
+          "code": "C2",
+          "ptr": "3314",
+          "entry": "5628",
+          "bytes": "99 C2 47 DF 50 99 C3 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3326",
+          "code": "C3",
+          "ptr": "3314",
+          "entry": "5628",
+          "bytes": "99 C3 47 DF 52 99 D8 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "332B",
+          "code": "D8",
+          "ptr": "3314",
+          "entry": "5628",
+          "bytes": "99 D8 47 DF 54 99 D9 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3330",
+          "code": "D9",
+          "ptr": "3314",
+          "entry": "5628",
+          "bytes": "99 D9 47 DF 61 99 C0 47 D1",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3335",
+          "code": "C0",
+          "ptr": "3314",
+          "entry": "5628",
+          "bytes": "99 C0 47 D1 02 20 98 99 80",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "333C",
+          "code": "80",
+          "ptr": "3314",
+          "entry": "5628",
+          "bytes": "99 80 47 DB 02 20 91 11 4F",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "3345",
+          "code": "A0",
+          "ptr": "3314",
+          "entry": "5628",
+          "bytes": "99 A0 47 D3 07 17 4F 79 A0",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "39A1",
+          "code": "D5",
+          "ptr": "399B",
+          "entry": "562A",
+          "bytes": "99 D5 47 DF 07 99 D6 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "39A6",
+          "code": "D6",
+          "ptr": "399B",
+          "entry": "562A",
+          "bytes": "99 D6 47 DF 32 20 40 C7 01",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "39F4",
+          "code": "D7",
+          "ptr": "399B",
+          "entry": "562A",
+          "bytes": "99 D7 47 D7 39 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "39F4",
+          "code": "D7",
+          "ptr": "39EE",
+          "entry": "562C",
+          "bytes": "99 D7 47 D7 39 71 F7 9A A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "3A99",
+          "code": "DA",
+          "ptr": "3A93",
+          "entry": "562E",
+          "bytes": "99 DA 47 D7 0E 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3A64",
+          "code": "E7",
+          "ptr": "3A5E",
+          "entry": "5630",
+          "bytes": "99 E7 47 D9 29 99 E0 47 D3",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3A69",
+          "code": "E0",
+          "ptr": "3A5E",
+          "entry": "5630",
+          "bytes": "99 E0 47 D3 24 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3A99",
+          "code": "DA",
+          "ptr": "3A5E",
+          "entry": "5630",
+          "bytes": "99 DA 47 D7 0E 71 F7 9A A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "59D0",
+          "code": "F6",
+          "ptr": "59CA",
+          "entry": "5632",
+          "bytes": "99 F6 47 D7 1B 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3084",
+          "code": "F0",
+          "ptr": "307E",
+          "entry": "5634",
+          "bytes": "99 F0 47 D7 0C 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "30CA",
+          "code": "C4",
+          "ptr": "307E",
+          "entry": "5634",
+          "bytes": "99 C4 47 DF 03 E7 D0 00 71",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "6346",
+          "code": "F4",
+          "ptr": "6340",
+          "entry": "5636",
+          "bytes": "99 F4 47 DF 05 99 F2 47 D7",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "634B",
+          "code": "F2",
+          "ptr": "6340",
+          "entry": "5636",
+          "bytes": "99 F2 47 D7 14 71 F7 9A B1",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "636E",
+          "code": "79",
+          "ptr": "6340",
+          "entry": "5636",
+          "bytes": "99 79 47 D3 13 99 7C 47 D9",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "6373",
+          "code": "7C",
+          "ptr": "6340",
+          "entry": "5636",
+          "bytes": "99 7C 47 D9 02 20 1F 99 89",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "637A",
+          "code": "89",
+          "ptr": "6340",
+          "entry": "5636",
+          "bytes": "99 89 47 D3 07 99 94 47 D2",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "637F",
+          "code": "94",
+          "ptr": "6340",
+          "entry": "5636",
+          "bytes": "99 94 47 D2 02 20 13 99 7E",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "6386",
+          "code": "7E",
+          "ptr": "6340",
+          "entry": "5636",
+          "bytes": "99 7E 47 D7 02 20 0C 99 7F",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "638D",
+          "code": "7F",
+          "ptr": "6340",
+          "entry": "5636",
+          "bytes": "99 7F 47 D7 02 20 05 99 CB",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "6394",
+          "code": "CB",
+          "ptr": "6340",
+          "entry": "5636",
+          "bytes": "99 CB 47 D7 28 B1 04 1B EF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "31D6",
+          "code": "C5",
+          "ptr": "31CE",
+          "entry": "5638",
+          "bytes": "99 C5 47 DF 16 99 C6 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "31DB",
+          "code": "C6",
+          "ptr": "31CE",
+          "entry": "5638",
+          "bytes": "99 C6 47 DF 25 99 C7 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "31E0",
+          "code": "C7",
+          "ptr": "31CE",
+          "entry": "5638",
+          "bytes": "99 C7 47 DF 34 99 C8 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "31E5",
+          "code": "C8",
+          "ptr": "31CE",
+          "entry": "5638",
+          "bytes": "99 C8 47 DF 4F 99 C9 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "31EA",
+          "code": "C9",
+          "ptr": "31CE",
+          "entry": "5638",
+          "bytes": "99 C9 47 DF 70 20 A6 51 20",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "57DA",
+          "code": "F5",
+          "ptr": "57C7",
+          "entry": "563A",
+          "bytes": "99 F5 47 D7 0F 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "329E",
+          "code": "F8",
+          "ptr": "3298",
+          "entry": "563C",
+          "bytes": "99 F8 47 D7 18 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "33DB",
+          "code": "D4",
+          "ptr": "33D5",
+          "entry": "563E",
+          "bytes": "99 D4 47 D7 48 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5857",
+          "code": "D1",
+          "ptr": "584E",
+          "entry": "5640",
+          "bytes": "99 D1 47 DF 08 99 D3 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "585C",
+          "code": "D3",
+          "ptr": "584E",
+          "entry": "5640",
+          "bytes": "99 D3 47 DF 03 E7 3F 01 71",
+          "status": "SELECTOR_CANDIDATE"
+        }
+      ]
+    },
+    {
+      "name": "MGE7R002",
+      "family": "Rover MEMS 1.3",
+      "path": "firmwares-extraits/Firmware Archive/Rover MEMS 1.3/MGE7R002.rom",
+      "sha": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+      "rows": [
+        {
+          "site": "2EE2",
+          "code": "DC",
+          "ptr": "2EDC",
+          "entry": "56AE",
+          "bytes": "99 DC 47 D7 0C 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "2FF3",
+          "code": "F7",
+          "ptr": "2FED",
+          "entry": "56B0",
+          "bytes": "99 F7 47 D7 2A 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "57EB",
+          "code": "D0",
+          "ptr": "57E8",
+          "entry": "56B2",
+          "bytes": "99 D0 47 D7 49 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "57BB",
+          "code": "F5",
+          "ptr": "57B8",
+          "entry": "56B4",
+          "bytes": "99 F5 47 D7 27 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "57EB",
+          "code": "D0",
+          "ptr": "57B8",
+          "entry": "56B4",
+          "bytes": "99 D0 47 D7 49 71 F7 9A A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "331C",
+          "code": "C1",
+          "ptr": "3314",
+          "entry": "56B6",
+          "bytes": "99 C1 47 DF 4E 99 C2 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3321",
+          "code": "C2",
+          "ptr": "3314",
+          "entry": "56B6",
+          "bytes": "99 C2 47 DF 50 99 C3 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3326",
+          "code": "C3",
+          "ptr": "3314",
+          "entry": "56B6",
+          "bytes": "99 C3 47 DF 52 99 D8 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "332B",
+          "code": "D8",
+          "ptr": "3314",
+          "entry": "56B6",
+          "bytes": "99 D8 47 DF 54 99 D9 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3330",
+          "code": "D9",
+          "ptr": "3314",
+          "entry": "56B6",
+          "bytes": "99 D9 47 DF 61 99 C0 47 D1",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3335",
+          "code": "C0",
+          "ptr": "3314",
+          "entry": "56B6",
+          "bytes": "99 C0 47 D1 02 20 98 99 80",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "333C",
+          "code": "80",
+          "ptr": "3314",
+          "entry": "56B6",
+          "bytes": "99 80 47 DB 02 20 91 11 4F",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "3345",
+          "code": "A0",
+          "ptr": "3314",
+          "entry": "56B6",
+          "bytes": "99 A0 47 D3 07 17 4F 79 A0",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "39A1",
+          "code": "D5",
+          "ptr": "399B",
+          "entry": "56B8",
+          "bytes": "99 D5 47 DF 07 99 D6 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "39A6",
+          "code": "D6",
+          "ptr": "399B",
+          "entry": "56B8",
+          "bytes": "99 D6 47 DF 32 20 40 C7 01",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "39F4",
+          "code": "D7",
+          "ptr": "399B",
+          "entry": "56B8",
+          "bytes": "99 D7 47 D7 39 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "39F4",
+          "code": "D7",
+          "ptr": "39EE",
+          "entry": "56BA",
+          "bytes": "99 D7 47 D7 39 71 F7 9A A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "3A99",
+          "code": "DA",
+          "ptr": "3A93",
+          "entry": "56BC",
+          "bytes": "99 DA 47 D7 0E 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3A64",
+          "code": "E7",
+          "ptr": "3A5E",
+          "entry": "56BE",
+          "bytes": "99 E7 47 D9 29 99 E0 47 D3",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3A69",
+          "code": "E0",
+          "ptr": "3A5E",
+          "entry": "56BE",
+          "bytes": "99 E0 47 D3 24 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3A99",
+          "code": "DA",
+          "ptr": "3A5E",
+          "entry": "56BE",
+          "bytes": "99 DA 47 D7 0E 71 F7 9A A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "5A47",
+          "code": "F6",
+          "ptr": "5A44",
+          "entry": "56C0",
+          "bytes": "99 F6 47 D7 1B 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3084",
+          "code": "F0",
+          "ptr": "307E",
+          "entry": "56C2",
+          "bytes": "99 F0 47 D7 0C 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "30CA",
+          "code": "C4",
+          "ptr": "307E",
+          "entry": "56C2",
+          "bytes": "99 C4 47 DF 03 E7 D0 00 71",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "63D1",
+          "code": "F4",
+          "ptr": "63CE",
+          "entry": "56C4",
+          "bytes": "99 F4 47 DF 05 99 F2 47 D7",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "63D6",
+          "code": "F2",
+          "ptr": "63CE",
+          "entry": "56C4",
+          "bytes": "99 F2 47 D7 14 71 F7 9A B1",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "63F5",
+          "code": "79",
+          "ptr": "63CE",
+          "entry": "56C4",
+          "bytes": "99 79 47 D3 13 99 7C 47 D9",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "63FA",
+          "code": "7C",
+          "ptr": "63CE",
+          "entry": "56C4",
+          "bytes": "99 7C 47 D9 02 20 1F 99 89",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "6401",
+          "code": "89",
+          "ptr": "63CE",
+          "entry": "56C4",
+          "bytes": "99 89 47 D3 07 99 94 47 D2",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "6406",
+          "code": "94",
+          "ptr": "63CE",
+          "entry": "56C4",
+          "bytes": "99 94 47 D2 02 20 13 99 7E",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "640D",
+          "code": "7E",
+          "ptr": "63CE",
+          "entry": "56C4",
+          "bytes": "99 7E 47 D7 02 20 0C 99 7F",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "6414",
+          "code": "7F",
+          "ptr": "63CE",
+          "entry": "56C4",
+          "bytes": "99 7F 47 D7 02 20 05 99 CB",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "641B",
+          "code": "CB",
+          "ptr": "63CE",
+          "entry": "56C4",
+          "bytes": "99 CB 47 D7 28 B1 04 1B EF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "31D6",
+          "code": "C5",
+          "ptr": "31CE",
+          "entry": "56C6",
+          "bytes": "99 C5 47 DF 16 99 C6 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "31DB",
+          "code": "C6",
+          "ptr": "31CE",
+          "entry": "56C6",
+          "bytes": "99 C6 47 DF 25 99 C7 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "31E0",
+          "code": "C7",
+          "ptr": "31CE",
+          "entry": "56C6",
+          "bytes": "99 C7 47 DF 34 99 C8 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "31E5",
+          "code": "C8",
+          "ptr": "31CE",
+          "entry": "56C6",
+          "bytes": "99 C8 47 DF 4F 99 C9 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "31EA",
+          "code": "C9",
+          "ptr": "31CE",
+          "entry": "56C6",
+          "bytes": "99 C9 47 DF 70 20 A6 51 20",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "585A",
+          "code": "F5",
+          "ptr": "584D",
+          "entry": "56C8",
+          "bytes": "99 F5 47 D7 0F 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "329E",
+          "code": "F8",
+          "ptr": "3298",
+          "entry": "56CA",
+          "bytes": "99 F8 47 D7 18 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "33DB",
+          "code": "D4",
+          "ptr": "33D5",
+          "entry": "56CC",
+          "bytes": "99 D4 47 D7 48 71 F7 9A A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "58D4",
+          "code": "D1",
+          "ptr": "58CE",
+          "entry": "56CE",
+          "bytes": "99 D1 47 DF 08 99 D3 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "58D9",
+          "code": "D3",
+          "ptr": "58CE",
+          "entry": "56CE",
+          "bytes": "99 D3 47 DF 03 E7 3C 01 71",
+          "status": "SELECTOR_CANDIDATE"
+        }
+      ]
+    },
+    {
+      "name": "TCF7X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "path": "firmwares-extraits/Firmware Archive/Rover MEMS 1.6 TURBO/TCF7X005.rom",
+      "sha": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+      "rows": [
+        {
+          "site": "7093",
+          "code": "DC",
+          "ptr": "7090",
+          "entry": "7704",
+          "bytes": "99 DC 47 D7 0C 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "70A9",
+          "code": "DA",
+          "ptr": "7090",
+          "entry": "7704",
+          "bytes": "99 DA 47 D7 0C 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3B06",
+          "code": "F7",
+          "ptr": "3B03",
+          "entry": "7706",
+          "bytes": "99 F7 47 D7 2A 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "6E4F",
+          "code": "D0",
+          "ptr": "6E4C",
+          "entry": "7708",
+          "bytes": "99 D0 47 D7 4B 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "701F",
+          "code": "F5",
+          "ptr": "701C",
+          "entry": "770A",
+          "bytes": "99 F5 47 D7 27 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5035",
+          "code": "C1",
+          "ptr": "5030",
+          "entry": "770C",
+          "bytes": "99 C1 47 DF 4E 99 C2 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "503A",
+          "code": "C2",
+          "ptr": "5030",
+          "entry": "770C",
+          "bytes": "99 C2 47 DF 50 99 C3 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "503F",
+          "code": "C3",
+          "ptr": "5030",
+          "entry": "770C",
+          "bytes": "99 C3 47 DF 52 99 D8 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5044",
+          "code": "D8",
+          "ptr": "5030",
+          "entry": "770C",
+          "bytes": "99 D8 47 DF 54 99 D9 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5049",
+          "code": "D9",
+          "ptr": "5030",
+          "entry": "770C",
+          "bytes": "99 D9 47 DF 61 99 C0 47 D1",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "504E",
+          "code": "C0",
+          "ptr": "5030",
+          "entry": "770C",
+          "bytes": "99 C0 47 D1 02 20 98 99 80",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "5055",
+          "code": "80",
+          "ptr": "5030",
+          "entry": "770C",
+          "bytes": "99 80 47 DB 02 20 91 11 4F",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "505E",
+          "code": "A0",
+          "ptr": "5030",
+          "entry": "770C",
+          "bytes": "99 A0 47 D3 07 17 4F 79 A0",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "53D3",
+          "code": "D5",
+          "ptr": "53D0",
+          "entry": "770E",
+          "bytes": "99 D5 47 DF 07 99 D6 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "53D8",
+          "code": "D6",
+          "ptr": "53D0",
+          "entry": "770E",
+          "bytes": "99 D6 47 DF 2C 20 3A 11 9D",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "34F8",
+          "code": "D7",
+          "ptr": "34F5",
+          "entry": "7710",
+          "bytes": "99 D7 47 D7 39 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "70A9",
+          "code": "DA",
+          "ptr": "70A6",
+          "entry": "7712",
+          "bytes": "99 DA 47 D7 0C 71 FB B7 A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "34C6",
+          "code": "E7",
+          "ptr": "34C3",
+          "entry": "7714",
+          "bytes": "99 E7 47 D9 29 99 E0 47 D3",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "34CB",
+          "code": "E0",
+          "ptr": "34C3",
+          "entry": "7714",
+          "bytes": "99 E0 47 D3 24 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "34F8",
+          "code": "D7",
+          "ptr": "34C3",
+          "entry": "7714",
+          "bytes": "99 D7 47 D7 39 71 FB B7 A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "6EB6",
+          "code": "F6",
+          "ptr": "6EB3",
+          "entry": "7716",
+          "bytes": "99 F6 47 D7 1B 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3B76",
+          "code": "F0",
+          "ptr": "3B73",
+          "entry": "7718",
+          "bytes": "99 F0 47 D7 0C 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "568B",
+          "code": "F4",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 F4 47 DF 05 99 F2 47 D7",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5690",
+          "code": "F2",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 F2 47 D7 14 71 FB B7 B1",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56AF",
+          "code": "79",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 79 47 D3 13 99 7C 47 D9",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56B4",
+          "code": "7C",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 7C 47 D9 02 20 1F 99 89",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56BB",
+          "code": "89",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 89 47 D3 07 99 94 47 D2",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56C0",
+          "code": "94",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 94 47 D2 02 20 13 99 7E",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56C7",
+          "code": "7E",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 7E 47 D7 02 20 0C 99 7F",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56CE",
+          "code": "7F",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 7F 47 D7 02 20 05 99 CB",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56D5",
+          "code": "CB",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 CB 47 D7 28 B1 04 1B EF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F01",
+          "code": "C5",
+          "ptr": "4EFC",
+          "entry": "771C",
+          "bytes": "99 C5 47 DF 16 99 C6 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F06",
+          "code": "C6",
+          "ptr": "4EFC",
+          "entry": "771C",
+          "bytes": "99 C6 47 DF 22 99 C7 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F0B",
+          "code": "C7",
+          "ptr": "4EFC",
+          "entry": "771C",
+          "bytes": "99 C7 47 DF 2E 99 C8 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F10",
+          "code": "C8",
+          "ptr": "4EFC",
+          "entry": "771C",
+          "bytes": "99 C8 47 DF 49 99 C9 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F15",
+          "code": "C9",
+          "ptr": "4EFC",
+          "entry": "771C",
+          "bytes": "99 C9 47 DF 67 20 9A 38 BD",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "7093",
+          "code": "DC",
+          "ptr": "704C",
+          "entry": "771E",
+          "bytes": "99 DC 47 D7 0C 71 FB B7 A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "70A9",
+          "code": "DA",
+          "ptr": "704C",
+          "entry": "771E",
+          "bytes": "99 DA 47 D7 0C 71 FB B7 A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "4FBB",
+          "code": "F8",
+          "ptr": "4FB8",
+          "entry": "7720",
+          "bytes": "99 F8 47 D7 18 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "511D",
+          "code": "D4",
+          "ptr": "511A",
+          "entry": "7722",
+          "bytes": "99 D4 47 D7 50 71 FB B7 A3",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4D36",
+          "code": "D1",
+          "ptr": "4D31",
+          "entry": "7724",
+          "bytes": "99 D1 47 DF 07 99 D3 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4D3B",
+          "code": "D3",
+          "ptr": "4D31",
+          "entry": "7724",
+          "bytes": "99 D3 47 DF 02 21 58 71 FB",
+          "status": "SELECTOR_CANDIDATE"
+        }
+      ]
+    },
+    {
+      "name": "TCF8X005",
+      "family": "Rover MEMS 1.6 TURBO",
+      "path": "firmwares-extraits/Firmware Archive/Rover MEMS 1.6 TURBO/TCF8X005.rom",
+      "sha": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+      "rows": [
+        {
+          "site": "7093",
+          "code": "DC",
+          "ptr": "7090",
+          "entry": "7704",
+          "bytes": "99 DC 47 D7 0C 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "70A9",
+          "code": "DA",
+          "ptr": "7090",
+          "entry": "7704",
+          "bytes": "99 DA 47 D7 0C 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3B06",
+          "code": "F7",
+          "ptr": "3B03",
+          "entry": "7706",
+          "bytes": "99 F7 47 D7 2A 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "6E4F",
+          "code": "D0",
+          "ptr": "6E4C",
+          "entry": "7708",
+          "bytes": "99 D0 47 D7 4B 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "701F",
+          "code": "F5",
+          "ptr": "701C",
+          "entry": "770A",
+          "bytes": "99 F5 47 D7 27 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5035",
+          "code": "C1",
+          "ptr": "5030",
+          "entry": "770C",
+          "bytes": "99 C1 47 DF 4E 99 C2 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "503A",
+          "code": "C2",
+          "ptr": "5030",
+          "entry": "770C",
+          "bytes": "99 C2 47 DF 50 99 C3 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "503F",
+          "code": "C3",
+          "ptr": "5030",
+          "entry": "770C",
+          "bytes": "99 C3 47 DF 52 99 D8 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5044",
+          "code": "D8",
+          "ptr": "5030",
+          "entry": "770C",
+          "bytes": "99 D8 47 DF 54 99 D9 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5049",
+          "code": "D9",
+          "ptr": "5030",
+          "entry": "770C",
+          "bytes": "99 D9 47 DF 61 99 C0 47 D1",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "504E",
+          "code": "C0",
+          "ptr": "5030",
+          "entry": "770C",
+          "bytes": "99 C0 47 D1 02 20 98 99 80",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "5055",
+          "code": "80",
+          "ptr": "5030",
+          "entry": "770C",
+          "bytes": "99 80 47 DB 02 20 91 11 4F",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "505E",
+          "code": "A0",
+          "ptr": "5030",
+          "entry": "770C",
+          "bytes": "99 A0 47 D3 07 17 4F 79 A0",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "53D3",
+          "code": "D5",
+          "ptr": "53D0",
+          "entry": "770E",
+          "bytes": "99 D5 47 DF 07 99 D6 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "53D8",
+          "code": "D6",
+          "ptr": "53D0",
+          "entry": "770E",
+          "bytes": "99 D6 47 DF 2C 20 3A 11 9D",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "34F8",
+          "code": "D7",
+          "ptr": "34F5",
+          "entry": "7710",
+          "bytes": "99 D7 47 D7 39 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "70A9",
+          "code": "DA",
+          "ptr": "70A6",
+          "entry": "7712",
+          "bytes": "99 DA 47 D7 0C 71 FB B7 A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "34C6",
+          "code": "E7",
+          "ptr": "34C3",
+          "entry": "7714",
+          "bytes": "99 E7 47 D9 29 99 E0 47 D3",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "34CB",
+          "code": "E0",
+          "ptr": "34C3",
+          "entry": "7714",
+          "bytes": "99 E0 47 D3 24 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "34F8",
+          "code": "D7",
+          "ptr": "34C3",
+          "entry": "7714",
+          "bytes": "99 D7 47 D7 39 71 FB B7 A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "6EB6",
+          "code": "F6",
+          "ptr": "6EB3",
+          "entry": "7716",
+          "bytes": "99 F6 47 D7 1B 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3B76",
+          "code": "F0",
+          "ptr": "3B73",
+          "entry": "7718",
+          "bytes": "99 F0 47 D7 0C 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "568B",
+          "code": "F4",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 F4 47 DF 05 99 F2 47 D7",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5690",
+          "code": "F2",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 F2 47 D7 14 71 FB B7 B1",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56AF",
+          "code": "79",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 79 47 D3 13 99 7C 47 D9",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56B4",
+          "code": "7C",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 7C 47 D9 02 20 1F 99 89",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56BB",
+          "code": "89",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 89 47 D3 07 99 94 47 D2",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56C0",
+          "code": "94",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 94 47 D2 02 20 13 99 7E",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56C7",
+          "code": "7E",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 7E 47 D7 02 20 0C 99 7F",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56CE",
+          "code": "7F",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 7F 47 D7 02 20 05 99 CB",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56D5",
+          "code": "CB",
+          "ptr": "5688",
+          "entry": "771A",
+          "bytes": "99 CB 47 D7 28 B1 04 1B EF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F01",
+          "code": "C5",
+          "ptr": "4EFC",
+          "entry": "771C",
+          "bytes": "99 C5 47 DF 16 99 C6 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F06",
+          "code": "C6",
+          "ptr": "4EFC",
+          "entry": "771C",
+          "bytes": "99 C6 47 DF 22 99 C7 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F0B",
+          "code": "C7",
+          "ptr": "4EFC",
+          "entry": "771C",
+          "bytes": "99 C7 47 DF 2E 99 C8 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F10",
+          "code": "C8",
+          "ptr": "4EFC",
+          "entry": "771C",
+          "bytes": "99 C8 47 DF 49 99 C9 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F15",
+          "code": "C9",
+          "ptr": "4EFC",
+          "entry": "771C",
+          "bytes": "99 C9 47 DF 67 20 9A 38 BD",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "7093",
+          "code": "DC",
+          "ptr": "704C",
+          "entry": "771E",
+          "bytes": "99 DC 47 D7 0C 71 FB B7 A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "70A9",
+          "code": "DA",
+          "ptr": "704C",
+          "entry": "771E",
+          "bytes": "99 DA 47 D7 0C 71 FB B7 A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "4FBB",
+          "code": "F8",
+          "ptr": "4FB8",
+          "entry": "7720",
+          "bytes": "99 F8 47 D7 18 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "511D",
+          "code": "D4",
+          "ptr": "511A",
+          "entry": "7722",
+          "bytes": "99 D4 47 D7 50 71 FB B7 A3",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4D36",
+          "code": "D1",
+          "ptr": "4D31",
+          "entry": "7724",
+          "bytes": "99 D1 47 DF 07 99 D3 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4D3B",
+          "code": "D3",
+          "ptr": "4D31",
+          "entry": "7724",
+          "bytes": "99 D3 47 DF 02 21 58 71 FB",
+          "status": "SELECTOR_CANDIDATE"
+        }
+      ]
+    },
+    {
+      "name": "TFF8X000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "path": "firmwares-extraits/Firmware Archive/Rover MEMS 1.6 TURBO/TFF8X000.rom",
+      "sha": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+      "rows": [
+        {
+          "site": "73D3",
+          "code": "DC",
+          "ptr": "73D0",
+          "entry": "8924",
+          "bytes": "99 DC 47 D7 0C 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "73E9",
+          "code": "DA",
+          "ptr": "73D0",
+          "entry": "8924",
+          "bytes": "99 DA 47 D7 0C 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3B08",
+          "code": "F7",
+          "ptr": "3B05",
+          "entry": "8926",
+          "bytes": "99 F7 47 D7 2A 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "7197",
+          "code": "D0",
+          "ptr": "7194",
+          "entry": "8928",
+          "bytes": "99 D0 47 D7 4B 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "735E",
+          "code": "F5",
+          "ptr": "735B",
+          "entry": "892A",
+          "bytes": "99 F5 47 D7 27 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5031",
+          "code": "C1",
+          "ptr": "502C",
+          "entry": "892C",
+          "bytes": "99 C1 47 DF 4E 99 C2 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5036",
+          "code": "C2",
+          "ptr": "502C",
+          "entry": "892C",
+          "bytes": "99 C2 47 DF 50 99 C3 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "503B",
+          "code": "C3",
+          "ptr": "502C",
+          "entry": "892C",
+          "bytes": "99 C3 47 DF 52 99 D8 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5040",
+          "code": "D8",
+          "ptr": "502C",
+          "entry": "892C",
+          "bytes": "99 D8 47 DF 54 99 D9 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5045",
+          "code": "D9",
+          "ptr": "502C",
+          "entry": "892C",
+          "bytes": "99 D9 47 DF 61 99 C0 47 D1",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "504A",
+          "code": "C0",
+          "ptr": "502C",
+          "entry": "892C",
+          "bytes": "99 C0 47 D1 02 20 98 99 80",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "5051",
+          "code": "80",
+          "ptr": "502C",
+          "entry": "892C",
+          "bytes": "99 80 47 DB 02 20 91 11 4F",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "505A",
+          "code": "A0",
+          "ptr": "502C",
+          "entry": "892C",
+          "bytes": "99 A0 47 D3 07 17 4F 79 A0",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "53CF",
+          "code": "D5",
+          "ptr": "53CC",
+          "entry": "892E",
+          "bytes": "99 D5 47 DF 07 99 D6 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "53D4",
+          "code": "D6",
+          "ptr": "53CC",
+          "entry": "892E",
+          "bytes": "99 D6 47 DF 2C 20 3A 11 9D",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "34FA",
+          "code": "D7",
+          "ptr": "34F7",
+          "entry": "8930",
+          "bytes": "99 D7 47 D7 39 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "73E9",
+          "code": "DA",
+          "ptr": "73E6",
+          "entry": "8932",
+          "bytes": "99 DA 47 D7 0C 71 FB B7 A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "34C8",
+          "code": "E7",
+          "ptr": "34C5",
+          "entry": "8934",
+          "bytes": "99 E7 47 D9 29 99 E0 47 D3",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "34CD",
+          "code": "E0",
+          "ptr": "34C5",
+          "entry": "8934",
+          "bytes": "99 E0 47 D3 24 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "34FA",
+          "code": "D7",
+          "ptr": "34C5",
+          "entry": "8934",
+          "bytes": "99 D7 47 D7 39 71 FB B7 A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "71FE",
+          "code": "F6",
+          "ptr": "71FB",
+          "entry": "8936",
+          "bytes": "99 F6 47 D7 1B 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3B78",
+          "code": "F0",
+          "ptr": "3B75",
+          "entry": "8938",
+          "bytes": "99 F0 47 D7 0C 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5687",
+          "code": "F4",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 F4 47 DF 05 99 F2 47 D7",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "568C",
+          "code": "F2",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 F2 47 D7 14 71 FB B7 B1",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56AB",
+          "code": "79",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 79 47 D3 13 99 7C 47 D9",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56B0",
+          "code": "7C",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 7C 47 D9 02 20 1F 99 89",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56B7",
+          "code": "89",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 89 47 D3 07 99 94 47 D2",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56BC",
+          "code": "94",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 94 47 D2 02 20 13 99 7E",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56C3",
+          "code": "7E",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 7E 47 D7 02 20 0C 99 7F",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56CA",
+          "code": "7F",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 7F 47 D7 02 20 05 99 CB",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56D1",
+          "code": "CB",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 CB 47 D7 28 B1 04 1B EF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4EFD",
+          "code": "C5",
+          "ptr": "4EF8",
+          "entry": "893C",
+          "bytes": "99 C5 47 DF 16 99 C6 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F02",
+          "code": "C6",
+          "ptr": "4EF8",
+          "entry": "893C",
+          "bytes": "99 C6 47 DF 22 99 C7 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F07",
+          "code": "C7",
+          "ptr": "4EF8",
+          "entry": "893C",
+          "bytes": "99 C7 47 DF 2E 99 C8 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F0C",
+          "code": "C8",
+          "ptr": "4EF8",
+          "entry": "893C",
+          "bytes": "99 C8 47 DF 49 99 C9 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F11",
+          "code": "C9",
+          "ptr": "4EF8",
+          "entry": "893C",
+          "bytes": "99 C9 47 DF 67 20 9A 38 BD",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "73D3",
+          "code": "DC",
+          "ptr": "738B",
+          "entry": "893E",
+          "bytes": "99 DC 47 D7 0C 71 FB B7 A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "4FB7",
+          "code": "F8",
+          "ptr": "4FB4",
+          "entry": "8940",
+          "bytes": "99 F8 47 D7 18 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5119",
+          "code": "D4",
+          "ptr": "5116",
+          "entry": "8942",
+          "bytes": "99 D4 47 D7 50 71 FB B7 A3",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4D32",
+          "code": "D1",
+          "ptr": "4D2D",
+          "entry": "8944",
+          "bytes": "99 D1 47 DF 07 99 D3 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4D37",
+          "code": "D3",
+          "ptr": "4D2D",
+          "entry": "8944",
+          "bytes": "99 D3 47 DF 02 21 58 71 FB",
+          "status": "SELECTOR_CANDIDATE"
+        }
+      ]
+    },
+    {
+      "name": "TFFSX000",
+      "family": "Rover MEMS 1.6 TURBO",
+      "path": "firmwares-extraits/Firmware Archive/Rover MEMS 1.6 TURBO/TFFSX000.rom",
+      "sha": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+      "rows": [
+        {
+          "site": "73D3",
+          "code": "DC",
+          "ptr": "73D0",
+          "entry": "8924",
+          "bytes": "99 DC 47 D7 0C 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "73E9",
+          "code": "DA",
+          "ptr": "73D0",
+          "entry": "8924",
+          "bytes": "99 DA 47 D7 0C 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3B08",
+          "code": "F7",
+          "ptr": "3B05",
+          "entry": "8926",
+          "bytes": "99 F7 47 D7 2A 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "7197",
+          "code": "D0",
+          "ptr": "7194",
+          "entry": "8928",
+          "bytes": "99 D0 47 D7 4B 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "735E",
+          "code": "F5",
+          "ptr": "735B",
+          "entry": "892A",
+          "bytes": "99 F5 47 D7 27 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5031",
+          "code": "C1",
+          "ptr": "502C",
+          "entry": "892C",
+          "bytes": "99 C1 47 DF 4E 99 C2 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5036",
+          "code": "C2",
+          "ptr": "502C",
+          "entry": "892C",
+          "bytes": "99 C2 47 DF 50 99 C3 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "503B",
+          "code": "C3",
+          "ptr": "502C",
+          "entry": "892C",
+          "bytes": "99 C3 47 DF 52 99 D8 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5040",
+          "code": "D8",
+          "ptr": "502C",
+          "entry": "892C",
+          "bytes": "99 D8 47 DF 54 99 D9 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5045",
+          "code": "D9",
+          "ptr": "502C",
+          "entry": "892C",
+          "bytes": "99 D9 47 DF 61 99 C0 47 D1",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "504A",
+          "code": "C0",
+          "ptr": "502C",
+          "entry": "892C",
+          "bytes": "99 C0 47 D1 02 20 98 99 80",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "5051",
+          "code": "80",
+          "ptr": "502C",
+          "entry": "892C",
+          "bytes": "99 80 47 DB 02 20 91 11 4F",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "505A",
+          "code": "A0",
+          "ptr": "502C",
+          "entry": "892C",
+          "bytes": "99 A0 47 D3 07 17 4F 79 A0",
+          "status": "RANGE_BOUND_COMPARISON"
+        },
+        {
+          "site": "53CF",
+          "code": "D5",
+          "ptr": "53CC",
+          "entry": "892E",
+          "bytes": "99 D5 47 DF 07 99 D6 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "53D4",
+          "code": "D6",
+          "ptr": "53CC",
+          "entry": "892E",
+          "bytes": "99 D6 47 DF 2C 20 3A 11 9D",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "34FA",
+          "code": "D7",
+          "ptr": "34F7",
+          "entry": "8930",
+          "bytes": "99 D7 47 D7 39 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "73E9",
+          "code": "DA",
+          "ptr": "73E6",
+          "entry": "8932",
+          "bytes": "99 DA 47 D7 0C 71 FB B7 A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "34C8",
+          "code": "E7",
+          "ptr": "34C5",
+          "entry": "8934",
+          "bytes": "99 E7 47 D9 29 99 E0 47 D3",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "34CD",
+          "code": "E0",
+          "ptr": "34C5",
+          "entry": "8934",
+          "bytes": "99 E0 47 D3 24 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "34FA",
+          "code": "D7",
+          "ptr": "34C5",
+          "entry": "8934",
+          "bytes": "99 D7 47 D7 39 71 FB B7 A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "71FE",
+          "code": "F6",
+          "ptr": "71FB",
+          "entry": "8936",
+          "bytes": "99 F6 47 D7 1B 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "3B78",
+          "code": "F0",
+          "ptr": "3B75",
+          "entry": "8938",
+          "bytes": "99 F0 47 D7 0C 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5687",
+          "code": "F4",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 F4 47 DF 05 99 F2 47 D7",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "568C",
+          "code": "F2",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 F2 47 D7 14 71 FB B7 B1",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56AB",
+          "code": "79",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 79 47 D3 13 99 7C 47 D9",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56B0",
+          "code": "7C",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 7C 47 D9 02 20 1F 99 89",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56B7",
+          "code": "89",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 89 47 D3 07 99 94 47 D2",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56BC",
+          "code": "94",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 94 47 D2 02 20 13 99 7E",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56C3",
+          "code": "7E",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 7E 47 D7 02 20 0C 99 7F",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56CA",
+          "code": "7F",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 7F 47 D7 02 20 05 99 CB",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "56D1",
+          "code": "CB",
+          "ptr": "5684",
+          "entry": "893A",
+          "bytes": "99 CB 47 D7 28 B1 04 1B EF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4EFD",
+          "code": "C5",
+          "ptr": "4EF8",
+          "entry": "893C",
+          "bytes": "99 C5 47 DF 16 99 C6 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F02",
+          "code": "C6",
+          "ptr": "4EF8",
+          "entry": "893C",
+          "bytes": "99 C6 47 DF 22 99 C7 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F07",
+          "code": "C7",
+          "ptr": "4EF8",
+          "entry": "893C",
+          "bytes": "99 C7 47 DF 2E 99 C8 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F0C",
+          "code": "C8",
+          "ptr": "4EF8",
+          "entry": "893C",
+          "bytes": "99 C8 47 DF 49 99 C9 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4F11",
+          "code": "C9",
+          "ptr": "4EF8",
+          "entry": "893C",
+          "bytes": "99 C9 47 DF 67 20 9A 38 BD",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "73D3",
+          "code": "DC",
+          "ptr": "738B",
+          "entry": "893E",
+          "bytes": "99 DC 47 D7 0C 71 FB B7 A0",
+          "status": "DUPLICATE_SITE"
+        },
+        {
+          "site": "4FB7",
+          "code": "F8",
+          "ptr": "4FB4",
+          "entry": "8940",
+          "bytes": "99 F8 47 D7 18 71 FB B7 A0",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "5119",
+          "code": "D4",
+          "ptr": "5116",
+          "entry": "8942",
+          "bytes": "99 D4 47 D7 50 71 FB B7 A3",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4D32",
+          "code": "D1",
+          "ptr": "4D2D",
+          "entry": "8944",
+          "bytes": "99 D1 47 DF 07 99 D3 47 DF",
+          "status": "SELECTOR_CANDIDATE"
+        },
+        {
+          "site": "4D37",
+          "code": "D3",
+          "ptr": "4D2D",
+          "entry": "8944",
+          "bytes": "99 D3 47 DF 02 21 58 71 FB",
+          "status": "SELECTOR_CANDIDATE"
+        }
+      ]
+    }
+  ]
+}
