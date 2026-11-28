@@ -1,0 +1,13 @@
+{
+  "version": "V1.70",
+  "global_petrol_firmwares": 449,
+  "batch_firmwares": 7,
+  "prior_sites": 272,
+  "prefix_1e": 217,
+  "alternate_table": 49,
+  "state_c8": 3,
+  "unresolved": 3,
+  "extra_reader_bounds": 7,
+  "semantic_complete": false,
+  "physical": "NOT_TESTED"
+}
