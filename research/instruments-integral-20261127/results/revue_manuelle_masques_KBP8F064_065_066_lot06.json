@@ -1,0 +1,101 @@
+[
+  {
+    "n": "KBP8F064",
+    "sha": "4289a24b9536dd8950de86bc1d8b9cd465347629",
+    "rom": "5c8ce22cbb8f29dd920c3a6368d2dc39f815ba58",
+    "gen": [
+      {
+        "base": "3680",
+        "mask": "00 01 04 02 00 00 00 00 08 10 30 00 1c 00 23 00",
+        "union": 63,
+        "context": [
+          "ROM:3F0F                 clr     INTMEM_1A\r",
+          "ROM:3F11                 andb    INTMEM_1A, INTMEM_95, #0Fh\r",
+          "ROM:3F15                 add     INTMEM_20, INTMEM_1A, #3680h\r",
+          "ROM:3F1A                 ldb     INTMEM_1C+3, [INTMEM_20]\r",
+          "ROM:3F1D                 ldb     INTMEM_20, INTMEM_1C+3\r",
+          "ROM:3F20                 orb     INTMEM_1C+3, INTMEM_15D[]\r",
+          "ROM:3F25                 jbs     INTMEM_95, 4, ROM_3F31\r",
+          "ROM:3F28                 notb    INTMEM_20\r",
+          "ROM:3F2A                 andb    INTMEM_20, INTMEM_15E[]\r",
+          "ROM:3F2F                 sjmp    ROM_3F36\r",
+          "ROM:3F31                 orb     INTMEM_20, INTMEM_15E[]\r",
+          "ROM:3F36                 stb     INTMEM_20, INTMEM_15E[]\r",
+          "ROM:3F3B                 stb     INTMEM_1C+3, INTMEM_15D[]\r",
+          "ROM:3F40                 ljmp    ROM_3AD1\r",
+          "ROM:3F43                 orb     INTMEM_AD, #4\r",
+          "ROM:3F46                 sjmp    ROM_3F4B\r",
+          "ROM:3F48                 andb    INTMEM_AD, #-5\r",
+          "ROM:3F4B                 orb     INTMEM_AD, #2\r",
+          "ROM:3F4E                 ljmp    ROM_3AD1\r"
+        ]
+      }
+    ]
+  },
+  {
+    "n": "KBP8F065",
+    "sha": "28f2d38bbcfa9ea19826241de965bffd4d1eeb87",
+    "rom": "0f64b10b8886e056673e8c69f4c395d5e69b75da",
+    "gen": [
+      {
+        "base": "3474",
+        "mask": "00 01 04 02 00 00 00 00 08 10 30 00 1c 00 23 00",
+        "union": 63,
+        "context": [
+          "ROM:3BE0                 clr     INTMEM_1A\r",
+          "ROM:3BE2                 andb    INTMEM_1A, INTMEM_9A, #0Fh\r",
+          "ROM:3BE6                 add     INTMEM_20, INTMEM_1A, #3474h\r",
+          "ROM:3BEB                 ldb     INTMEM_1C+3, [INTMEM_20]\r",
+          "ROM:3BEE                 ldb     INTMEM_20, INTMEM_1C+3\r",
+          "ROM:3BF1                 orb     INTMEM_1C+3, INTMEM_152[]\r",
+          "ROM:3BF6                 jbs     INTMEM_9A, 4, ROM_3C02\r",
+          "ROM:3BF9                 notb    INTMEM_20\r",
+          "ROM:3BFB                 andb    INTMEM_20, INTMEM_153[]\r",
+          "ROM:3C00                 sjmp    ROM_3C07\r",
+          "ROM:3C02                 orb     INTMEM_20, INTMEM_153[]\r",
+          "ROM:3C07                 stb     INTMEM_20, INTMEM_153[]\r",
+          "ROM:3C0C                 stb     INTMEM_1C+3, INTMEM_152[]\r",
+          "ROM:3C11                 ljmp    ROM_3839\r",
+          "ROM:3C14                 orb     INTMEM_AE, #10h\r",
+          "ROM:3C17                 sjmp    ROM_3C1C\r",
+          "ROM:3C19                 andb    INTMEM_AE, #-11h\r",
+          "ROM:3C1C                 orb     INTMEM_AE, #8\r",
+          "ROM:3C1F                 ljmp    ROM_3839\r"
+        ]
+      }
+    ]
+  },
+  {
+    "n": "KBP8F066",
+    "sha": "aefe7ede57dc2876ac8e0b223cd4c33101e4223c",
+    "rom": "534231350b0a9321b7b90e7827e435a35a330d54",
+    "gen": [
+      {
+        "base": "3474",
+        "mask": "00 01 04 02 00 00 00 00 08 10 30 00 1c 00 23 00",
+        "union": 63,
+        "context": [
+          "ROM:3BE0                 clr     INTMEM_1A\r",
+          "ROM:3BE2                 andb    INTMEM_1A, INTMEM_9A, #0Fh\r",
+          "ROM:3BE6                 add     INTMEM_20, INTMEM_1A, #3474h\r",
+          "ROM:3BEB                 ldb     INTMEM_1C+3, [INTMEM_20]\r",
+          "ROM:3BEE                 ldb     INTMEM_20, INTMEM_1C+3\r",
+          "ROM:3BF1                 orb     INTMEM_1C+3, INTMEM_152[]\r",
+          "ROM:3BF6                 jbs     INTMEM_9A, 4, ROM_3C02\r",
+          "ROM:3BF9                 notb    INTMEM_20\r",
+          "ROM:3BFB                 andb    INTMEM_20, INTMEM_153[]\r",
+          "ROM:3C00                 sjmp    ROM_3C07\r",
+          "ROM:3C02                 orb     INTMEM_20, INTMEM_153[]\r",
+          "ROM:3C07                 stb     INTMEM_20, INTMEM_153[]\r",
+          "ROM:3C0C                 stb     INTMEM_1C+3, INTMEM_152[]\r",
+          "ROM:3C11                 ljmp    ROM_3839\r",
+          "ROM:3C14                 orb     INTMEM_AE, #10h\r",
+          "ROM:3C17                 sjmp    ROM_3C1C\r",
+          "ROM:3C19                 andb    INTMEM_AE, #-11h\r",
+          "ROM:3C1C                 orb     INTMEM_AE, #8\r",
+          "ROM:3C1F                 ljmp    ROM_3839\r"
+        ]
+      }
+    ]
+  }
+]
