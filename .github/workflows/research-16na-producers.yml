@@ -1,0 +1,30 @@
+name: Recherche 1.6 NA - producteurs de sorties lot 04
+on:
+  push:
+    branches: [research/mems-firmwares-20261126]
+    paths: ['.github/workflows/research-16na-producers.yml','research/instruments-integral-20261127/audit_16na_producers.py']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  analyse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remonter des sorties aux producteurs et aux commandes
+        run: python3 research/instruments-integral-20261127/audit_16na_producers.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: preuves-16na-producteurs-lot04
+          path: research/instruments-integral-20261127/results/*16na_producteurs_lot04*
+      - name: Sauvegarder le registre des 123 profils et les preuves
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/instruments-integral-20261127/results/
+          if ! git diff --cached --quiet; then
+            git commit -m "MEMS 1.6 NA : producteurs de sorties lot 04 [skip ci]"
+            git push origin HEAD:research/mems-firmwares-20261126
+          fi
