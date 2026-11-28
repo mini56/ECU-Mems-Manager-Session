@@ -1,0 +1,31 @@
+name: MEMS 1.6 NA - audit ASM complet lot 13
+on:
+  push:
+    branches: [research/mems-firmwares-20261126]
+    paths: ['.github/workflows/research-16na-asm-complete.yml','research/instruments-integral-20261127/audit_16na_asm_complete.py']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  analyse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reexaminer les 125 ASM et les 123 ROM sans filtre XF
+        run: python3 research/instruments-integral-20261127/audit_16na_asm_complete.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: preuves-16na-asm-lot13
+          path: research/instruments-integral-20261127/results/*16na_asm_lot13*
+      - name: Sauvegarder les preuves
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/instruments-integral-20261127/results/*16na_asm_lot13* || true
+          if ! git diff --cached --quiet; then
+            git commit -m "MEMS 1.6 NA : preuves audit ASM lot 13 [skip ci]"
+            git pull --rebase origin research/mems-firmwares-20261126
+            git push origin HEAD:research/mems-firmwares-20261126
+          fi
