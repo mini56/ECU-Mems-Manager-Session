@@ -26,6 +26,10 @@ int main(){
     Mems16Na::SessionEvidence n;
     n.tx({0xd0});n.rx({0xd0,0x99,0,9,1});n.finish();
     n.tx({0xd1});n.rx({0xd1,'K','B','H','B','G','0','0','9',0x99,0,9,1});n.finish();
+    // Contradictory identity must not select a verified decoder.
+    assert(!n.identifiedProfile()&&!injectionProfile(n)&&!passiveProfile(n));
+    n.tx({0xd0});n.rx({0xd0,0x90,0,9,1});n.finish();
+    n.tx({0xd1});n.rx({0xd1,'K','B','H','B','G','0','0','9',0x90,0,9,1});n.finish();
     assert(!n.identifiedProfile()&&injectionProfile(n)&&passiveProfile(n));
     std::vector<std::uint8_t> a19(28,0),b19(32,0);
     a19[0]=28;a19[1]=3;a19[2]=132;a19[3]=100;
@@ -33,6 +37,15 @@ int main(){
     n.setExtended80(a19);n.setExtended7d(b19);o.sample(n);
     assert(o.valid&&o.mv==800&&present(frame7d(n),11)&&injectionUs(frame7d(n).bytes[11])==8);
     n.discardPair();o.sample(n);assert(!o.valid&&!present(frame7d(n),11));
+    // Another historically supported injection profile: use its own XF3 identity.
+    n.tx({0xd0});n.rx({0xd0,0xc2,0,1,1});n.finish();
+    n.tx({0xd1});n.rx({0xd1,'K','B','H','B','V','0','0','1',0xc2,0,1,1});n.finish();
+    assert(injectionProfile(n)&&!passiveProfile(n));
+    n.setExtended80(a19);n.setExtended7d(b19);
+    assert(present(frame7d(n),11)&&injectionUs(frame7d(n).bytes[11])==8);
+    n.tx({0xd0});n.rx({0xd0,0x90,0,1,1});n.finish();
+    n.tx({0xd1});n.rx({0xd1,'K','B','H','B','V','0','0','1',0x90,0,1,1});n.finish();
+    assert(!injectionProfile(n)&&!passiveProfile(n));
     EcuReconnectPolicy p;using O=EcuReconnectPolicy::Outcome;
     assert(p.startManual()&&p.established());assert(p.cancel());assert(p.closed()==O::None&&p.startManual());
     assert(p.established()&&p.lost()&&p.closed()==O::Retry);

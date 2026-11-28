@@ -152,7 +152,7 @@ int main(int argc,char **argv) {
     auto capture=[&](){for(auto *button:buttons)if(button->text()==I18n::text(6805))button->click();};
     auto generic19=evidence("KBHBG009",0x90,0,9,0,0,false);
     generic19.setExtended80(a19);generic19.setExtended7d(b19);
-    auto other19=evidence("KBHBV001",0x90,0,1,0,0,false);
+    auto other19=evidence("KBHBV001",0xc2,0,1,0,0,false);
     other19.setExtended80(a19);other19.setExtended7d(b19);
     d.dtc0=0;d.dtc1=0;d.dtc2=0;
     panel.updateData(&d,&generic19);capture();

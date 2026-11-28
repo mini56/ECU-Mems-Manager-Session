@@ -27,6 +27,8 @@ int main(){
     a[11]=0;a[12]=1;states[1]=0;states[32]=0;s.setExtended80(a);s.setExtended7d(states);m=Mems220::decode(s);
     assert(m.dn.calculated==0&&m.ac.calculated==0&&m.ignition7d.calculated==0&&m.fanRequest.calculated==0);
     auto wrong=fixture(0x99);assert(!Mems220::decode(wrong).profile);
+    assert(!Mems217::injectionProfile(wrong)&&!Mems217::passiveProfile(wrong));
+    assert(!Mems219::injectionAvailable(wrong)&&!Mems219::lambdaQualified(wrong));
     auto b=s.extended7d();b[29]++;s.setExtended7d(b);
     m=Mems220::decode(s);assert(m.pair&&m.throttleReference.availability==Availability::Unverified);
     b.pop_back();s.setExtended7d(b);assert(!Mems220::decode(s).pair);
