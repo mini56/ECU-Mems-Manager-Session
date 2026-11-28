@@ -107,5 +107,6 @@
   "2973301": "COMPROBACIONES PARCIALES",
   "2973901": "desv. bruta",
   "2973902": "Corrección de inyección: microsegundos solo en perfiles cualificados. En los demás, desviación bruta histórica sin unidad física confirmada. Una trama ausente no es una medida.",
-  "2973903": "Corrección lambda instantánea: porcentaje solo en perfiles cualificados. En los demás, desviación bruta histórica sin diagnóstico automático."
+  "2973903": "Corrección lambda instantánea: porcentaje solo en perfiles cualificados. En los demás, desviación bruta histórica sin diagnóstico automático.",
+  "2974001": "Último informe — datos no actualizados"
 }

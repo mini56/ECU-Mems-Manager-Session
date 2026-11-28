@@ -183,6 +183,25 @@ int main(int argc,char **argv) {
     panel.update2JData(structured,QStringList(),QStringLiteral("MEMS 3"));
     CHECK(!report->toPlainText().contains(QStringLiteral("Référence enregistrée le")));
     panel.endNaSession();
+    // The last report is not a live diagnosis after loss of communications.
+    auto captureButton=[&]()->QPushButton*{for(auto *button:buttons)if(button->text()==I18n::text(6805))return button;return nullptr;};
+    auto *cap=captureButton();CHECK(cap&&!cap->isEnabled());
+    for(const QString &family:{QStringLiteral("MEMS 2J"),QStringLiteral("MEMS 3")}){
+        panel.update2JData(structured,QStringList(),family);CHECK(cap->isEnabled());
+        panel.invalidateCoolantTest();
+        CHECK(!cap->isEnabled()&&table->rowCount()==0);
+        CHECK(report->toPlainText().startsWith(I18n::text(2974001)));
+        const auto staleReport=report->toPlainText();
+        panel.invalidateCoolantTest();CHECK(report->toPlainText()==staleReport);
+        panel.update2JData(structured,QStringList(),family);CHECK(cap->isEnabled());
+        CHECK(!report->toPlainText().startsWith(I18n::text(2974001)));
+        panel.endNaSession();
+    }
+    panel.updateData(&d,&generic19);CHECK(cap->isEnabled());
+    panel.invalidateCoolantTest();CHECK(!cap->isEnabled()&&table->rowCount()==0);
+    CHECK(report->toPlainText().startsWith(I18n::text(2974001)));
+    panel.updateData(&d,&generic19);CHECK(cap->isEnabled());
+    panel.endNaSession();
     // Non-NA unknown DTC2 must not be presented as a proven TPS or lambda fault.
     auto unknown=evidence("KBHBV001",0xc2,0,1,0,0,false);
     auto rawUnknown=b19;rawUnknown[5]=255;unknown.setExtended80(a19);unknown.setExtended7d(rawUnknown);

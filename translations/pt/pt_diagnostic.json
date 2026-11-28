@@ -107,5 +107,6 @@
   "2973301": "VERIFICAÇÕES PARCIAIS",
   "2973901": "desvio bruto",
   "2973902": "Correção de injeção: microssegundos apenas nos perfis qualificados. Nos restantes, desvio bruto histórico sem unidade física confirmada. Uma trama em falta não é uma medição.",
-  "2973903": "Correção lambda instantânea: percentagem apenas nos perfis qualificados. Nos restantes, desvio bruto histórico sem diagnóstico automático."
+  "2973903": "Correção lambda instantânea: percentagem apenas nos perfis qualificados. Nos restantes, desvio bruto histórico sem diagnóstico automático.",
+  "2974001": "Último relatório — dados não atualizados"
 }

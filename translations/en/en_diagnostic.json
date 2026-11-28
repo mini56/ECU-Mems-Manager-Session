@@ -107,5 +107,6 @@
   "2973301": "PARTIAL CHECKS",
   "2973901": "raw offset",
   "2973902": "Injection correction: microseconds only on qualified profiles. Otherwise, historical raw offset with no confirmed physical unit. A missing frame is not a measurement.",
-  "2973903": "Instantaneous lambda correction: percentage only on qualified profiles. Otherwise, historical raw offset, without automatic diagnosis."
+  "2973903": "Instantaneous lambda correction: percentage only on qualified profiles. Otherwise, historical raw offset, without automatic diagnosis.",
+  "2974001": "Last report — data not current"
 }

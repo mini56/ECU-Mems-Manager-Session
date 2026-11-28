@@ -107,5 +107,6 @@
   "2973301": "CONTROLLI PARZIALI",
   "2973901": "scarto grezzo",
   "2973902": "Correzione iniezione: microsecondi solo per profili qualificati. Altrimenti scarto grezzo storico senza unità fisica confermata. Un frame mancante non è una misura.",
-  "2973903": "Correzione lambda istantanea: percentuale solo per profili qualificati. Altrimenti scarto grezzo storico senza diagnosi automatica."
+  "2973903": "Correzione lambda istantanea: percentuale solo per profili qualificati. Altrimenti scarto grezzo storico senza diagnosi automatica.",
+  "2974001": "Ultimo rapporto — dati non aggiornati"
 }

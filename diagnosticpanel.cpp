@@ -164,12 +164,10 @@ DiagnosticPanel::DiagnosticPanel(QWidget *parent) : QWidget(parent)
     QTimer *freshness=new QTimer(this);freshness->setInterval(500);
     connect(freshness,&QTimer::timeout,this,[this](){
         if(m_coolantFresh.isValid()&&m_coolantFresh.elapsed()>3000){
-            m_coolantFresh.invalidate();m_coolantTest.interrupt();m_sensorObservation.reset();refreshCoolantTest();
-            if(m_haveData&&!m_showing2J)rebuild(m_last);
-            if(m_haveData)m_report->setPlainText(buildReport());
+            invalidateCoolantTest();
         }
     });
-    freshness->start();refreshCoolantTest();
+    freshness->start();refreshCoolantTest();refreshReferenceButtons();
 }
 
 QString DiagnosticPanel::hexByte(quint8 v)
@@ -212,6 +210,7 @@ void DiagnosticPanel::updateData(const mems_data *data,const Mems16Na::SessionEv
     m_showing2J=false;
     m_last = *data;
     m_haveData = true;
+    refreshReferenceButtons();
     rebuild(m_last);
 }
 
@@ -232,6 +231,21 @@ void DiagnosticPanel::endNaSession()
     m_status->setText(I18n::text(6803));
     m_score->setText(I18n::text(6804));
     m_report->clear();
+    refreshReferenceButtons();
+}
+
+bool DiagnosticPanel::diagnosticFresh() const
+{
+    return m_haveData&&m_coolantConnected&&m_coolantFresh.isValid()&&m_coolantFresh.elapsed()<=3000;
+}
+
+void DiagnosticPanel::refreshReferenceButtons()
+{
+    const bool fresh=diagnosticFresh();
+    m_capture->setEnabled(fresh&&(!m_naEvidence.identifiedProfile()||m_naEvidence.ready()));
+    m_clear->setEnabled(fresh);
+    // A previously received report can still be exported, visibly marked as historical.
+    m_export->setEnabled(m_haveData);
 }
 
 void DiagnosticPanel::addCheck(const QString &name, const QString &value,
@@ -448,11 +462,12 @@ void DiagnosticPanel::rebuild(const mems_data &d)
 
 void DiagnosticPanel::captureReference()
 {
+    if(!diagnosticFresh())return;
     if (m_showing2J)
     {
         m_2jReference=m_mems2jValues;
         m_2jReferenceTime=QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss"));
-        update2JData(m_mems2jValues,m_mems2jFaults,m_structuredEcuName);
+        rebuildStructured();
         return;
     }
     if (!m_haveData) {
@@ -472,11 +487,12 @@ void DiagnosticPanel::captureReference()
 
 void DiagnosticPanel::clearReference()
 {
+    if(!diagnosticFresh())return;
     if (m_showing2J)
     {
         m_2jReference.clear();
         m_2jReferenceTime.clear();
-        update2JData(m_mems2jValues,m_mems2jFaults,m_structuredEcuName);
+        rebuildStructured();
         return;
     }
     if(m_naEvidence.identifiedProfile())m_naReference=Snapshot();
@@ -560,6 +576,7 @@ QString DiagnosticPanel::buildReport() const
 
 void DiagnosticPanel::exportReport()
 {
+    if(m_haveData&&!diagnosticFresh())invalidateCoolantTest();
     if (!m_haveData) {
         QMessageBox::information(this, I18n::text(6891) /* EN: Diagnostics */, I18n::text(6892) /* EN: No data to export. */);
         return;
@@ -567,7 +584,8 @@ void DiagnosticPanel::exportReport()
     const QString fileName = QFileDialog::getSaveFileName(this, I18n::text(6893) /* EN: Export report */,
         QStringLiteral("diagnostic_mems_%1.txt").arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_hhmmss"))),
         I18n::text(6894) /* EN: report texte (*.txt) */);
-    if (fileName.isEmpty()) return;
+    if (fileName.isEmpty()||!m_haveData) return;
+    if(!diagnosticFresh())invalidateCoolantTest();
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QMessageBox::warning(this, I18n::text(6895) /* EN: Diagnostics */, I18n::text(6896) /* EN: Unable to write report. */);
@@ -582,12 +600,21 @@ void DiagnosticPanel::update2JData(const QVariantMap &values, const QStringList 
                                    const QString &family)
 {
     if(!m_showing2J||m_structuredEcuName!=family)endNaSession();
-    m_coolantConnected=true;refreshCoolantTest();
+    m_coolantConnected=true;m_coolantFresh.start();refreshCoolantTest();
     m_showing2J=true;
     m_structuredEcuName=family;
     m_haveData=true;
     m_mems2jValues=values;
     m_mems2jFaults=faults;
+    refreshReferenceButtons();
+    rebuildStructured();
+}
+
+void DiagnosticPanel::rebuildStructured()
+{
+    const auto &family=m_structuredEcuName;
+    const auto &values=m_mems2jValues;
+    const auto &faults=m_mems2jFaults;
     m_checks->setRowCount(0);
     m_status->setText(QStringLiteral("%1 — %2").arg(family).arg(
         QDateTime::currentDateTime().toString(QStringLiteral("dd/MM/yyyy hh:mm:ss"))));
@@ -774,9 +801,24 @@ void DiagnosticPanel::invalidateCoolantTest()
 {
     m_reference=Snapshot();m_naReference=Snapshot();
     m_2jReference.clear();m_2jReferenceTime.clear();
-    m_coolantConnected=false;m_coolantFresh.invalidate();m_coolantTest.interrupt();m_sensorObservation.reset();
-    if(m_haveData&&!m_showing2J)rebuild(m_last);
-    refreshCoolantTest();if(m_haveData)m_report->setPlainText(buildReport());
+    const bool wasRunning=m_coolantTest.state==Mems218::TestState::Running;
+    m_coolantConnected=false;m_coolantFresh.invalidate();m_coolantTest.interrupt();
+    m_sensorObservation.reset();m_passive.reset();m_naEvidence.discardPair();
+    refreshCoolantTest();
+    if(m_haveData){
+        const QString stale=I18n::text(2974001);
+        QString previous=m_report->toPlainText();
+        if(!previous.startsWith(stale)){
+            previous=stale+QStringLiteral("\n\n")+previous;
+            if(wasRunning)previous+=QStringLiteral("\n\n")+coolantTestSummary();
+            m_report->setPlainText(previous);
+        }
+        // Do not rebuild old samples with a new timestamp or a current health score.
+        m_checks->setRowCount(0);
+        m_status->setText(stale);
+        m_score->setText(I18n::text(6804));
+    }
+    refreshReferenceButtons();
 }
 
 QString DiagnosticPanel::coolantTestSummary() const

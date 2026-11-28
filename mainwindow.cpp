@@ -1003,6 +1003,7 @@ void MainWindow::onDisconnectClicked()
   updateAdditionalErrors(this,false,nullptr);
   for(const char *name:{"injectorTestReply","coilTestReply"})if(auto *label=findChild<QLabel*>(QString::fromLatin1(name))){label->clear();label->setToolTip(QString());}
   if(m_diagnosticPanel)m_diagnosticPanel->invalidateCoolantTest();
+  IaMemsService::instance()->clearNaDiagnostic();
   m_ui->m_disconnectButton->setEnabled(false);
   m_ui->m_commsGoodLed->setChecked(false);
   m_ui->m_commsBadLed->setChecked(true);
@@ -2072,6 +2073,7 @@ void MainWindow::onReadError()
   restoreNaPages();
   setDefaultFaultLabels();
   if(m_diagnosticPanel)m_diagnosticPanel->invalidateCoolantTest();
+  IaMemsService::instance()->clearNaDiagnostic();
   EcuCommunicationLog::note(QStringLiteral("ERREUR_LECTURE"));
   // Do not arm the timer until disconnected() acknowledges worker closure.
   setProperty("ecuConnectInProgress", true);

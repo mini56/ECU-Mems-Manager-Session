@@ -30,7 +30,7 @@ public:
                       const QString &family = QStringLiteral("MEMS 2J"));
     void setEcuId(const QByteArray &id);
     // The IA consumes the same report, not a competing set of diagnostic rules.
-    QString naDiagnosticReport() const { return m_naEvidence.identifiedProfile()?buildNaReport():QString(); }
+    QString naDiagnosticReport() const { return m_coolantFresh.isValid()&&m_coolantFresh.elapsed()<=3000&&m_naEvidence.identifiedProfile()?buildNaReport():QString(); }
 
 private slots:
     void captureReference();
@@ -84,6 +84,9 @@ private:
     QByteArray m_ecuId;
 
     void rebuild(const mems_data &d);
+    void rebuildStructured();
+    bool diagnosticFresh() const;
+    void refreshReferenceButtons();
     void addCheck(const QString &name, const QString &value,
                   const QString &state, const QString &advice);
     QString buildReport() const;
