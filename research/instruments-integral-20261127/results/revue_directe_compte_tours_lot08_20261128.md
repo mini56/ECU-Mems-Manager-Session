@@ -1,0 +1,16 @@
+# Revue directe sans CI — MEMS 1.6 NA, jauge et compte-tours
+## Identification de la piste HSO0 / bit 7
+Lecture manuelle des ASM complets et confrontation XF1/XF3. Il s'agit d'une chaîne d'acquisition du cliquetis, non d'un générateur de compte-tours : les deux fronts sont programmés à partir de knk_fine_start 0204 et knk_fine_stop 0205, knk_state 0206, knk_next_event, output_int 005C et output_time 0080. Le résultat de l'ADC est lu puis la boucle corrige pwm_copy 0209. Le test de cette chaîne à régime nul ne doit pas être utilisé comme test d'instrument.
+| Firmware | Début/fin HSO | Sortie bit 7 | Test moteur arrêté | Blob ASM |
+|---|---|---|---|---|
+| EKDMF005 | 2482/2499 | 2470/2523, 0401 | 3E81–3EB2, commande EC d'après table 407E | 82d5d60e28a2b8ca23febad0262838f49af27ac1 |
+| TAP8P007 | 2490/24A7 | 247E, 1FFE | 4064–4098 | a8974d01d3263882e8476ceba63ed5551430d9fa |
+| TBP7P006 | 2490/24A7 | 247E, 1FFE | 4064–4098 | 7c9af982e0facf98608f6fb5c83f170f66cadd22 |
+| TAP7F017 | 2490/24A7 | 247E, 0401 | 40F0–4124 | d1c2fc09b45d2a24130c59ef57089a05032cb2b8 |
+XF1/XF3 : TAP8P007 1357574c640c4d4de68827c737a40c66582846cb ; TBP7P006 9063003ddec3bc3d4c6937ff9c97ca2fec270699 ; TAP7F017 5fd01f425a386afef489637fc4152590e91832d0. Pour EKDMF005 : 244A–2454 dispatch indexé par knk_state, 247D–24B5 début/fin de fenêtre, 24DB–250F mesure et correction, 2538–2563 régulation PWM. Pour TAP8P007/TBP7P006 et TAP7F017 : même lecture de 0204/0205 et calcul 24AA–24C3. Les chemins sont écartés comme mécanismes de test d'instrument, pas les firmwares entiers.
+## KCE6F018 : jauge et autres sorties
+XF1 flagbyte8 AD, bits 1/2 d_tpg_force/onoff ; commandes 00/10 3F2E/3F29 modifient AD2 puis AD1 ; remise à zéro commune 3A9C–3AB8 (3AB2 AND AD FD). Aucune lecture JBC/JBS de ces deux bits relevée dans l'ASM complet. Les lectures AD3/4 à 516B/516E concernent le contacteur papillon, et non la jauge. Aucune variable m_tmpgauge_dr ou m_tempg_pwm_cnt dans le XF1. Les huit écritures directes 0401 sont la surveillance/fusion de sorties et l'initialisation ou manipulation des bits 0/1/2 (287E, 28C1, 3832, 38D8, 38E3, 38EB, 38F3, 3900). La séquence HSO3 3BC5–3BDE programme une impulsion unique à durée donnée par appelant, puis RET, sans boucle périodique démontrée ; ne constitue pas un test de compte-tours. Les constantes HSO 19,18,23,03 et leurs accès dynamiques ne suffisent pas à qualifier un signal d'instrument.
+## KBACF001
+Fusion 2730 préserve E0 (dont bit 6), surveillance 26ED, initialisation 36BC, manipulations de bits 0/1/2 3762–378A. HSO3 390D/391B/394F, même forme d'impulsion à vérifier séparément ; pas de paire HSO2 02/22 dans les écritures constantes. Les drapeaux de commande 00/10 et la table générique ont été documentés lot 06. Aucun chemin complet d'instrument établi.
+## Conclusion
+Six profils examinés dans ce lot (dont plusieurs déjà abordés ; nouveaux éléments de preuve, pas six nouvelles exclusions globales). Les quatre pistes HSO0 sont identifiées comme acquisition cliquetis par concordance des données XF et de leur consommation. Aucune nouvelle intégration confirmée. Les transferts indirects, autres sorties et autres profils restent ouverts. Aucun run lancé pour ce lot, aucune modification de Manager ou DLL, aucune action sur ECU.
