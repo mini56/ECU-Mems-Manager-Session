@@ -1,0 +1,27 @@
+name: Recherche intégrale V161 - lecteurs mémoire variantes
+on:
+  push:
+    branches: [research/mems-firmwares-20261126]
+    paths: ['research/diagnostic-integral-20261128/audit_v161.py','.github/workflows/research-diagnostic-v161.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  analyse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 research/diagnostic-integral-20261128/audit_v161.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: diagnostic-integral-V161
+          path: research/diagnostic-integral-20261128/results_v161
+      - name: Enregistrer les preuves
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/diagnostic-integral-20261128/results_v161
+          if ! git diff --cached --quiet; then
+            git commit -m "V161 : couverture lecteurs mémoire et matrices [skip ci]"
+            git push origin HEAD:research/mems-firmwares-20261126
+          fi
