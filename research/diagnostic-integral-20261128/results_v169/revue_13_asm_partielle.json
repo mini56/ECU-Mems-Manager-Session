@@ -1,0 +1,108 @@
+{
+  "version": "V1.69-partial",
+  "scope": "ASM direct review; binary and complete selector reachability pending; no status totals changed",
+  "findings": [
+    {
+      "firmware": "KBE6R003",
+      "asm_blob": "7974a20fbfbee0a799880c591c3364f6cc64395a",
+      "rows": [
+        {
+          "site": "2EE2",
+          "compare": "ROM:2EE2                 cmpb    INTMEM_46+1, #-24h",
+          "next": "ROM:2EE5                 jne     ROM_2EF3"
+        },
+        {
+          "site": "331C",
+          "compare": "ROM:331C                 cmpb    INTMEM_46+1, #-3Fh",
+          "next": "ROM:331F                 je      ROM_336F"
+        },
+        {
+          "site": "3321",
+          "compare": "ROM:3321                 cmpb    INTMEM_46+1, #-3Eh",
+          "next": "ROM:3324                 je      ROM_3376"
+        },
+        {
+          "site": "3326",
+          "compare": "ROM:3326                 cmpb    INTMEM_46+1, #-3Dh",
+          "next": "ROM:3329                 je      ROM_337D"
+        },
+        {
+          "site": "332B",
+          "compare": "ROM:332B                 cmpb    INTMEM_46+1, #-28h",
+          "next": "ROM:332E                 je      ROM_3384"
+        },
+        {
+          "site": "3330",
+          "compare": "ROM:3330                 cmpb    INTMEM_46+1, #-27h",
+          "next": "ROM:3333                 je      ROM_3396"
+        },
+        {
+          "site": "3335",
+          "compare": "ROM:3335                 cmpb    INTMEM_46+1, #-40h",
+          "next": "ROM:3338                 jnh     ROM_333C"
+        },
+        {
+          "site": "333C",
+          "compare": "ROM:333C                 cmpb    INTMEM_46+1, #-80h",
+          "next": "ROM:333F                 jc      ROM_3343"
+        },
+        {
+          "site": "3345",
+          "compare": "ROM:3345                 cmpb    INTMEM_46+1, #-60h",
+          "next": "ROM:3348                 jnc     ROM_3351"
+        }
+      ]
+    },
+    {
+      "firmware": "MGE7R002",
+      "asm_blob": "3759ab2513678e0a7e27ce47f13713785c5442ee",
+      "rows": [
+        {
+          "site": "2EE2",
+          "compare": "ROM:2EE2                 cmpb    INTMEM_46+1, #-24h",
+          "next": "ROM:2EE5                 jne     ROM_2EF3"
+        },
+        {
+          "site": "331C",
+          "compare": "ROM:331C                 cmpb    INTMEM_46+1, #-3Fh",
+          "next": "ROM:331F                 je      ROM_336F"
+        },
+        {
+          "site": "3321",
+          "compare": "ROM:3321                 cmpb    INTMEM_46+1, #-3Eh",
+          "next": "ROM:3324                 je      ROM_3376"
+        },
+        {
+          "site": "3326",
+          "compare": "ROM:3326                 cmpb    INTMEM_46+1, #-3Dh",
+          "next": "ROM:3329                 je      ROM_337D"
+        },
+        {
+          "site": "332B",
+          "compare": "ROM:332B                 cmpb    INTMEM_46+1, #-28h",
+          "next": "ROM:332E                 je      ROM_3384"
+        },
+        {
+          "site": "3330",
+          "compare": "ROM:3330                 cmpb    INTMEM_46+1, #-27h",
+          "next": "ROM:3333                 je      ROM_3396"
+        },
+        {
+          "site": "3335",
+          "compare": "ROM:3335                 cmpb    INTMEM_46+1, #-40h",
+          "next": "ROM:3338                 jnh     ROM_333C"
+        },
+        {
+          "site": "333C",
+          "compare": "ROM:333C                 cmpb    INTMEM_46+1, #-80h",
+          "next": "ROM:333F                 jc      ROM_3343"
+        },
+        {
+          "site": "3345",
+          "compare": "ROM:3345                 cmpb    INTMEM_46+1, #-60h",
+          "next": "ROM:3348                 jnc     ROM_3351"
+        }
+      ]
+    }
+  ]
+}
