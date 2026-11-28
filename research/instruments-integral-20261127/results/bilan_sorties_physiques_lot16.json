@@ -1,0 +1,80 @@
+{
+  "asm": 342,
+  "rom": 338,
+  "known_controls": 56,
+  "recovered": 56,
+  "missing": [],
+  "orphans": [
+    "ABNMP000",
+    "ABNMP003",
+    "KLH3V004",
+    "TFH7G031"
+  ],
+  "method_status": "CONTROL_GATE_PASSED",
+  "new_integration_authorized": 0,
+  "note": "Linked generators are unqualified static leads; no opcode or symbol required for discovery. Other output architectures and unresolved transfers remain open.",
+  "families": {
+    "Rover MEMS 1.6": {
+      "asm": 125,
+      "rom": 123,
+      "gauge_controls_recovered": 15,
+      "tacho_controls_recovered": 0,
+      "with_linked_generators": 17,
+      "outside_catalogue": [
+        "ABNMP000",
+        "ABNMP003"
+      ]
+    },
+    "Rover MEMS 1.9": {
+      "asm": 217,
+      "rom": 215,
+      "gauge_controls_recovered": 0,
+      "tacho_controls_recovered": 41,
+      "with_linked_generators": 83,
+      "outside_catalogue": [
+        "KLH3G015",
+        "KLH3G017",
+        "KLH3G018",
+        "KLH3G019",
+        "KLH3G020",
+        "KLH3V004",
+        "KLH3V005",
+        "KLH3V006",
+        "KLHCG000",
+        "KLHCG001",
+        "KLHCG002",
+        "KLHCV000",
+        "KLHCV001",
+        "KUH3G000",
+        "KUH3G001",
+        "KUH3G002",
+        "KUH3G003",
+        "REGI0872",
+        "REGI1224",
+        "REGI1345",
+        "REGI1346",
+        "REGI1350",
+        "REGI1355",
+        "REGI1356",
+        "REGI1359",
+        "REGI1360",
+        "REGI1361",
+        "REGI1362",
+        "REGI1363",
+        "REGI1364",
+        "REGI1365",
+        "REGI1366",
+        "REGI1367",
+        "REGI1368",
+        "REGI1374",
+        "REGI1376",
+        "REGI1383",
+        "REGI1384",
+        "REGI1386",
+        "REGI1387",
+        "SELFG008",
+        "TFH7G031"
+      ]
+    }
+  }
+}
