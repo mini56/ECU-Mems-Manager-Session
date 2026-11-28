@@ -1,0 +1,52 @@
+{
+  "scope": "PETROL_ONLY",
+  "firmwares": 449,
+  "diesel_excluded": 34,
+  "entries": 30837,
+  "anchors": 449,
+  "statuses": {
+    "STATIC_LINKED": 118,
+    "SELECTOR_CANDIDATE": 295,
+    "TABLE_CONTEXT_UNRESOLVED": 22779,
+    "STATIC_TABLE_LINKED": 5075,
+    "SERVICE_COMPARE_CANDIDATE": 2570
+  },
+  "families": {
+    "Rover MEMS 1.3": {
+      "firmwares": 3,
+      "anchors": 3,
+      "entries": 135
+    },
+    "Rover MEMS 1.6/NA": {
+      "firmwares": 123,
+      "anchors": 123,
+      "entries": 8875
+    },
+    "Rover MEMS 1.6 TURBO": {
+      "firmwares": 4,
+      "anchors": 4,
+      "entries": 174
+    },
+    "Rover MEMS 1.9": {
+      "firmwares": 215,
+      "anchors": 215,
+      "entries": 18979
+    },
+    "Rover MEMS 2J": {
+      "firmwares": 9,
+      "anchors": 9,
+      "entries": 97
+    },
+    "Rover MEMS3/EU3": {
+      "firmwares": 83,
+      "anchors": 83,
+      "entries": 2253
+    },
+    "Rover MEMS3/EU4": {
+      "firmwares": 12,
+      "anchors": 12,
+      "entries": 324
+    }
+  },
+  "complete": false
+}
