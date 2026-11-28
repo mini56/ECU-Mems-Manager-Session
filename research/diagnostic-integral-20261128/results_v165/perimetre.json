@@ -1,0 +1,23 @@
+{
+  "version": "1.65",
+  "policy": "ESSENCE_ONLY",
+  "archive_total": 483,
+  "in_scope": 449,
+  "excluded_diesel": 34,
+  "included": {
+    "Rover MEMS 1.3": 3,
+    "Rover MEMS 1.6/NA": 123,
+    "Rover MEMS 1.6 TURBO": 4,
+    "Rover MEMS 1.9": 215,
+    "Rover MEMS 2J": 9,
+    "Rover MEMS3/EU3": 83,
+    "Rover MEMS3/EU4": 12
+  },
+  "excluded": {
+    "Land Rover Td5/MSB": 15,
+    "Land Rover Td5/NNN": 15,
+    "Rover L-Series Di": 4
+  },
+  "historical_evidence": "Preserve V1.64 and earlier; no deletion",
+  "inventory": "COMMAND_SIGNATURES_NOT_YET_COMPLETE"
+}

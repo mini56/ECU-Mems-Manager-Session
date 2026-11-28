@@ -1,0 +1,3 @@
+# V1.65 — Périmètre définitif des recherches Manager
+
+À la demande explicite du responsable, les calculateurs diesel sont définitivement exclus des recherches Manager. Les 34 images diesel (15 Td5 MSB, 15 Td5 NNN, 4 L-Series Di) restent archivées, mais ne font plus partie des études ni des statistiques de couverture. Le corpus essence actuel compte 449 références. Les preuves historiques V1.64 restent inchangées ; 449/449 lecteurs essence étaient déjà reliés statiquement. L'inventaire des signatures de commandes reste à réaliser sur les 449 références essence, et son répertoire doit intégrer le rapport. Aucun changement du logiciel ni de la DLL.
