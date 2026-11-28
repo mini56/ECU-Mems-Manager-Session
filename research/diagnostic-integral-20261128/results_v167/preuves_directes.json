@@ -1,0 +1,191 @@
+{
+  "status": "DIRECT_ASM_AND_BINARY_OBSERVATION",
+  "scope": "3 examples only; 104 68K full pass pending",
+  "observations": [
+    {
+      "firmware": "adjmp002",
+      "parent": "27",
+      "subfields": [
+        "01"
+      ],
+      "evidence": "10BCA4 move.w #1,d0; 10BCA8 cmpi.b #$27; 10BCB0 bne to 10BD42; 10BCE6 move.w #2,d1; 10BCEA cmpi.b #1; equal path 10BCF4."
+    },
+    {
+      "firmware": "cs73p001",
+      "parent": "3B",
+      "subfields": [
+        "87",
+        "8A"
+      ],
+      "evidence": "122746 move.w #1,d0; 12274A cmpi.b #$3B; 122752 bne to 12279E; 122758 move.w #2,d0; 12275C compare 87; mismatch to 12277A compare 8A, no intervening index change."
+    },
+    {
+      "firmware": "cs73p001",
+      "parent": "1A",
+      "subfields": [
+        "87",
+        "8A",
+        "9A",
+        "9B",
+        "9C",
+        "9E"
+      ],
+      "evidence": "122AB2 move.w #1,d0; 122AB6 compare 1A; 122ABE bne to 122E78; each subsequent field comparison follows move.w #2,d0 (122AC4,122B56,122BE8,122CAA,122D40,122DE0). Also 12234E compares 81 at offset 0, 122358 at offset 3; neither is an independent primary service."
+    },
+    {
+      "firmware": "ds43i003",
+      "parent": "3B",
+      "subfields": [
+        "87",
+        "8A"
+      ],
+      "evidence": "123A02 move.w #1,d0; 123A06 compare 3B; 123A0E bne to 123A5A; 123A14 move.w #2,d0; 123A18 compare 87; mismatch to 123A36 compare 8A."
+    },
+    {
+      "firmware": "ds43i003",
+      "parent": "1A",
+      "subfields": [
+        "87",
+        "8A",
+        "9A",
+        "9B",
+        "9C",
+        "9E"
+      ],
+      "evidence": "123D6E move.w #1,d0; 123D72 compare 1A; 123D7A bne to 124134; subsequent offset 2 loads at 123D80,123E12,123EA4,123F66,123FFC,12409C."
+    }
+  ],
+  "binary": [
+    {
+      "path": "Rover MEMS 2J/adjmp002.bin",
+      "sha": "3c642b22c1bda885440c5e9f96f43a279abf29f0",
+      "sites": [
+        {
+          "address": "10BCA8",
+          "bytes": "0c 30 00 27 01 a0 05 46"
+        },
+        {
+          "address": "10BCEA",
+          "bytes": "0c 30 00 01 11 a0 05 46"
+        }
+      ]
+    },
+    {
+      "path": "Rover MEMS3/EU3/cs73p001.bin",
+      "sha": "4541e0b8384ca6be750a888b2720acf63447311d",
+      "sites": [
+        {
+          "address": "12274A",
+          "bytes": "0c 30 00 3b 01 a0 11 d1"
+        },
+        {
+          "address": "12275C",
+          "bytes": "0c 30 00 87 01 a0 11 d1"
+        },
+        {
+          "address": "12277A",
+          "bytes": "0c 30 00 8a 01 a0 11 d1"
+        },
+        {
+          "address": "1228EA",
+          "bytes": "0c 30 00 27 01 a0 11 d1"
+        },
+        {
+          "address": "12296E",
+          "bytes": "0c 30 00 01 11 a0 11 d1"
+        },
+        {
+          "address": "122AB6",
+          "bytes": "0c 30 00 1a 01 a0 11 d1"
+        },
+        {
+          "address": "122AC8",
+          "bytes": "0c 30 00 87 01 a0 11 d1"
+        },
+        {
+          "address": "122B5A",
+          "bytes": "0c 30 00 8a 01 a0 11 d1"
+        },
+        {
+          "address": "122BEC",
+          "bytes": "0c 30 00 9a 01 a0 11 d1"
+        },
+        {
+          "address": "122CAE",
+          "bytes": "0c 30 00 9b 01 a0 11 d1"
+        },
+        {
+          "address": "122D44",
+          "bytes": "0c 30 00 9c 01 a0 11 d1"
+        },
+        {
+          "address": "122DE4",
+          "bytes": "0c 30 00 9e 01 a0 11 d1"
+        },
+        {
+          "address": "12234E",
+          "bytes": "0c 30 00 81 31 a0 11 d1"
+        },
+        {
+          "address": "122358",
+          "bytes": "0c 30 00 81 11 a0 11 d1"
+        }
+      ]
+    },
+    {
+      "path": "Rover MEMS3/EU4/ds43i003.bin",
+      "sha": "376349c1447ec17fbae38ed7cbb1ba52bf7944f9",
+      "sites": [
+        {
+          "address": "123A06",
+          "bytes": "0c 30 00 3b 01 a0 12 9c"
+        },
+        {
+          "address": "123A18",
+          "bytes": "0c 30 00 87 01 a0 12 9c"
+        },
+        {
+          "address": "123A36",
+          "bytes": "0c 30 00 8a 01 a0 12 9c"
+        },
+        {
+          "address": "123BA6",
+          "bytes": "0c 30 00 27 01 a0 12 9c"
+        },
+        {
+          "address": "123C2A",
+          "bytes": "0c 30 00 01 11 a0 12 9c"
+        },
+        {
+          "address": "123D72",
+          "bytes": "0c 30 00 1a 01 a0 12 9c"
+        },
+        {
+          "address": "123D84",
+          "bytes": "0c 30 00 87 01 a0 12 9c"
+        },
+        {
+          "address": "123E16",
+          "bytes": "0c 30 00 8a 01 a0 12 9c"
+        },
+        {
+          "address": "123EA8",
+          "bytes": "0c 30 00 9a 01 a0 12 9c"
+        },
+        {
+          "address": "123F6A",
+          "bytes": "0c 30 00 9b 01 a0 12 9c"
+        },
+        {
+          "address": "124000",
+          "bytes": "0c 30 00 9c 01 a0 12 9c"
+        },
+        {
+          "address": "1240A0",
+          "bytes": "0c 30 00 9e 01 a0 12 9c"
+        }
+      ]
+    }
+  ],
+  "physical": "NOT_TESTED"
+}
