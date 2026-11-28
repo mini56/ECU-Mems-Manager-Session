@@ -10,7 +10,7 @@ paths=[p.decode("utf-8") for p in subprocess.check_output(["git","-C",str(src),"
 patterns={
  "AANMP002":r"AANMP[\s_-]{0,16}002",
  "ID_980002":r"(?<![0-9A-Fa-f])(?:0x)?980002(?:02)?(?![0-9A-Fa-f])",
- "ID_bytes":r"(?<![0-9A-Fa-f])(?:0x)?98[,;:\\s-]{1,16}(?:0x)?0{1,2}[,;:\\s-]{1,16}(?:0x)?0?2(?![0-9A-Fa-f])",
+ "ID_bytes":r"(?<![0-9A-Fa-f])(?:0x)?98[,;:\s-]{1,16}(?:0x)?0{1,2}[,;:\s-]{1,16}(?:0x)?0?2(?![0-9A-Fa-f])",
  "MNE101150":r"MNE[\s_-]{0,16}101150",
 }
 rx={k:re.compile(v,re.I) for k,v in patterns.items()}
