@@ -14,3 +14,9 @@ Instruction explicite du responsable du projet : les recherches Manager concerne
 - Recherche uniquement : ne modifier ni Manager ni DLL sans demande explicite ; ne pas lancer de tests ECU risqués.
 
 Cette règle est permanente et s'applique aux recherches futures comme aux reprises de résultats incomplets.
+
+## Règle impérative : sauvegarde avant toute restitution
+
+- Avant toute réponse présentant des résultats de recherche, même partiels, enregistrer les résultats et leurs preuves dans le dépôt GitHub, dans les compléments du rapport FR/EN et, lorsque disponibles, dans le registre et l'archive cumulative. Vérifier la présence effective des fichiers enregistrés et conserver le lien vers le commit ou la version.
+- Les workflows doivent sauvegarder les résultats automatiquement dans le dépôt, indépendamment de la poursuite de la conversation. Un run vert ne suffit pas : vérifier que les résultats ont effectivement été publiés.
+- En cas d'interruption de ChatGPT, la reprise doit pouvoir se faire à partir des fichiers sauvegardés, sans dépendre des messages du chat. Si une sauvegarde ou une exécution est bloquée, consigner ce blocage et ne pas annoncer des résultats non sauvegardés comme acquis. Ne jamais attendre une réponse de l'utilisateur pour sauvegarder des résultats déjà obtenus.
