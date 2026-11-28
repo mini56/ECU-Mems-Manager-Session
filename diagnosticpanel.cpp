@@ -634,6 +634,12 @@ void DiagnosticPanel::rebuildNa(const mems_data &d)
         }
     };
     add(I18n::text(29049),QString::fromLatin1(p->firmware),info,I18n::text(29050));
+    if(m_naEvidence.coolantFaultSeenAt()) {
+        const QString observed=QDateTime::fromMSecsSinceEpoch(m_naEvidence.coolantFaultSeenAt()).toString(QStringLiteral("hh:mm:ss"));
+        add(I18n::text(2972901),observed,info,I18n::text(2972902));
+    } else if(m_naEvidence.coolantFaultAtFirstSample()) {
+        add(I18n::text(2972903),I18n::text(2972904),info,I18n::text(2972905));
+    }
     const Group groups[]={Group::Dtc0,Group::Dtc1,Group::Dtc2,Group::Dtc3,Group::Dtc4,Group::Dtc5,Group::Indirect7D10};
     for(int i=0;i<7;++i) {
         const auto r=m_naEvidence.dtc(groups[i]);

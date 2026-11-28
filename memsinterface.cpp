@@ -447,6 +447,7 @@ void MEMSInterface::runServiceLoop()
           }
         }
       }
+      m_naSession.observeCoolantFault((nextData.dtc0 & 0x01)!=0, QDateTime::currentMSecsSinceEpoch());
       const bool instrumentOk=serviceInstrumentTest(nextData,instrumentSampleClock.elapsed());
       {
         QMutexLocker locker(&m_dataMutex);

@@ -98,5 +98,10 @@
   "6896": "Não foi possível escrever o relatório.",
   "6897": "Descodificação: (bruto 7D14-15 - 32768) - correção da posição de ralenti a quente. A correção segue o valor configurado na aba Definições; não está codificada de forma fixa. O valor indicativo é coerente quando permanece próximo de zero.",
   "18121": "Tempo de carga superior a 3,5 ms e até 4,0 ms perto de 14 V: vigiar. Verificar medição e circuito primário se persistir.",
-  "18122": "Motor parado: medição apresentada apenas para informação, sem diagnóstico automático da bobina."
+  "18122": "Motor parado: medição apresentada apenas para informação, sem diagnóstico automático da bobina.",
+  "2972901": "Falha do sensor de temperatura do líquido de refrigeração detetada durante a sessão",
+  "2972902": "Hora em que se observou pela primeira vez o aparecimento da falha memorizada durante esta ligação.",
+  "2972903": "Sensor de temperatura do líquido de refrigeração",
+  "2972904": "Falha já memorizada na primeira leitura",
+  "2972905": "Desconhece-se quando a falha começou."
 }

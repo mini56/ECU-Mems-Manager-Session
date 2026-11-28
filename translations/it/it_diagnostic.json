@@ -98,5 +98,10 @@
   "6896": "Impossibile scrivere il rapporto.",
   "6897": "Decodifica: (7D14-15 grezzo - 32768) - correzione della posizione minimo a caldo. La correzione segue il valore configurato nella scheda Impostazioni; non è codificata in modo fisso. Il valore indicativo è coerente quando rimane vicino a zero.",
   "18121": "Tempo di carica superiore a 3,5 ms e fino a 4,0 ms a circa 14 V: monitorare. Controllare misura e circuito primario se persiste.",
-  "18122": "Motore fermo: misura visualizzata solo per informazione, senza diagnosi automatica della bobina."
+  "18122": "Motore fermo: misura visualizzata solo per informazione, senza diagnosi automatica della bobina.",
+  "2972901": "Guasto del sensore di temperatura del liquido di raffreddamento rilevato durante la sessione",
+  "2972902": "Ora della prima comparsa osservata del guasto memorizzato durante questa connessione.",
+  "2972903": "Sensore di temperatura del liquido di raffreddamento",
+  "2972904": "Guasto già memorizzato alla prima lettura",
+  "2972905": "Il momento di insorgenza del guasto è sconosciuto."
 }

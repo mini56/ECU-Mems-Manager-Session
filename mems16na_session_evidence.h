@@ -4,6 +4,7 @@
 #include "mems16na_decoder.h"
 #include "memsextendeddtc.h"
 #include <array>
+#include <cstdint>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -11,7 +12,19 @@
 namespace Mems16Na {
 class SessionEvidence {
 public:
+    // The DLL's dtc0 is byte 13 of a successfully received frame 80.
+    void observeCoolantFault(bool stored, std::int64_t timeMs) {
+        if(!profile_ || firmware_!="AANMP002") return;
+        if(!haveCoolantBaseline_) firstCoolantFault_=stored;
+        else if(stored && !lastCoolantFault_ && !coolantFaultSeenAt_) coolantFaultSeenAt_=timeMs;
+        haveCoolantBaseline_=true;
+        lastCoolantFault_=stored;
+    }
+    bool coolantFaultAtFirstSample() const { return firstCoolantFault_; }
+    std::int64_t coolantFaultSeenAt() const { return coolantFaultSeenAt_; }
+
     void reset() {
+        clearCoolantHistory();
         identity_.fill(0); haveIdentity_=false; profile_=nullptr; firmware_.clear(); extended7d_.clear(); extended80_.clear();
         have80_=false; havePair_=false; extended7d_.clear(); extended80_.clear(); command_=-1; reply_.clear(); overflow_=false;
     }
@@ -22,7 +35,7 @@ public:
         command_=bytes.size()==1 ? int(bytes[0]) : -1;
         reply_.clear(); overflow_=false;
         if(command_!=0x7D) have80_=false;
-        if(command_==0xD0 || command_==0xD1) {havePair_=false; firmware_.clear(); extended7d_.clear(); extended80_.clear();}
+        if(command_==0xD0 || command_==0xD1) {clearCoolantHistory(); havePair_=false; firmware_.clear(); extended7d_.clear(); extended80_.clear();}
         if(command_==0xD0) { haveIdentity_=false; profile_=nullptr; }
         if(command_==0xD1) profile_=nullptr;
     }
@@ -104,6 +117,12 @@ public:
     Measurements measurements() const { return decode(ready()?profile_:nullptr,frame80(),frame7d()); }
     DtcResult dtc(Group g) const { return decodeDtc(ready()?profile_:nullptr,g,frame80(),frame7d()); }
 private:
+    bool haveCoolantBaseline_=false, firstCoolantFault_=false, lastCoolantFault_=false;
+    std::int64_t coolantFaultSeenAt_=0;
+    void clearCoolantHistory() {
+        haveCoolantBaseline_=firstCoolantFault_=lastCoolantFault_=false;
+        coolantFaultSeenAt_=0;
+    }
     std::array<std::uint8_t,4> identity_{};
     bool haveIdentity_=false;
     const Profile* profile_=nullptr;

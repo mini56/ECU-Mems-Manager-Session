@@ -98,5 +98,10 @@
   "6896": "No se puede escribir el informe.",
   "6897": "Decodificación: (7D14-15 bruto - 32768) - corrección de la posición de ralentí en caliente. La corrección sigue el valor configurado en la pestaña Ajustes; no está codificada de forma fija. El valor indicativo es coherente cuando permanece próximo a cero.",
   "18121": "Tiempo de carga superior a 3,5 ms y hasta 4,0 ms cerca de 14 V: vigilar. Compruebe medición y circuito primario si persiste.",
-  "18122": "Motor parado: medición mostrada solo como información, sin diagnóstico automático de la bobina."
+  "18122": "Motor parado: medición mostrada solo como información, sin diagnóstico automático de la bobina.",
+  "2972901": "Fallo del sensor de temperatura del refrigerante detectado durante la sesión",
+  "2972902": "Hora en que se observó por primera vez la aparición del fallo memorizado durante esta conexión.",
+  "2972903": "Sensor de temperatura del refrigerante",
+  "2972904": "Fallo ya memorizado en la primera lectura",
+  "2972905": "Se desconoce cuándo comenzó el fallo."
 }

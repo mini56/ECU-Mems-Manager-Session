@@ -98,5 +98,10 @@
   "6896": "Unable to write report.",
   "6897": "Decoding: (raw 7D14-15 - 32768) - Hot idle position correction. The correction follows the value configured in the Settings tab; it is not hard-coded. The indicative value is consistent when it remains close to zero.",
   "18121": "Coil charge time above 3.5 ms up to 4.0 ms near 14 V: monitor. Check the measurement and primary circuit if persistent.",
-  "18122": "Engine stopped: measurement shown for information only, with no automatic coil diagnosis."
+  "18122": "Engine stopped: measurement shown for information only, with no automatic coil diagnosis.",
+  "2972901": "Engine coolant sensor fault detected during the session",
+  "2972902": "Time when the stored fault first appeared during this connection.",
+  "2972903": "Engine coolant temperature sensor",
+  "2972904": "Fault already stored at the first reading",
+  "2972905": "The fault onset is unknown."
 }

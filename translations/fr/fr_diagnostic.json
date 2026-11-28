@@ -98,5 +98,10 @@
   "6896": "Impossible d'écrire le rapport.",
   "6897": "Décodage : (7D14-15 brut - 32768) - correction Position ralenti chaud. La correction suit le réglage de l'onglet Réglages ; elle n'est pas codée en dur. Valeur indicative cohérente si elle reste proche de zéro.",
   "18121": "Temps de charge supérieur à 3,5 ms et jusqu'à 4,0 ms à environ 14 V : à surveiller. Vérifier la mesure et le circuit primaire si cela persiste.",
-  "18122": "Moteur arrêté : mesure affichée à titre informatif, sans diagnostic automatique de la bobine."
+  "18122": "Moteur arrêté : mesure affichée à titre informatif, sans diagnostic automatique de la bobine.",
+  "2972901": "Défaut de sonde de température moteur détecté pendant la session",
+  "2972902": "Heure de la première apparition observée du défaut mémorisé pendant cette connexion.",
+  "2972903": "Sonde de température moteur",
+  "2972904": "Défaut déjà mémorisé à la première lecture",
+  "2972905": "Le début du défaut est inconnu."
 }

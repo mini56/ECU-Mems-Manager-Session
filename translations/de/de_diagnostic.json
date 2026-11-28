@@ -98,5 +98,10 @@
   "6896": "Bericht kann nicht geschrieben werden.",
   "6897": "Dekodierung: (Rohwert 7D14-15 - 32768) - Korrektur der Warmlauf-Leerlaufposition. Die Korrektur folgt dem im Reiter Einstellungen konfigurierten Wert und ist nicht fest im Code hinterlegt. Der Richtwert ist plausibel, wenn er nahe null bleibt.",
   "18121": "Spulenladezeit über 3,5 ms bis 4,0 ms bei etwa 14 V: beobachten. Bei anhaltender Abweichung Messung und Primärkreis prüfen.",
-  "18122": "Motor steht: Messwert nur zur Information, ohne automatische Spulendiagnose."
+  "18122": "Motor steht: Messwert nur zur Information, ohne automatische Spulendiagnose.",
+  "2972901": "Kühlmitteltemperatursensorfehler während der Sitzung erkannt",
+  "2972902": "Zeitpunkt des ersten beobachteten Auftretens des gespeicherten Fehlers während dieser Verbindung.",
+  "2972903": "Kühlmitteltemperatursensor",
+  "2972904": "Fehler bei der ersten Abfrage bereits gespeichert",
+  "2972905": "Der Beginn des Fehlers ist unbekannt."
 }
