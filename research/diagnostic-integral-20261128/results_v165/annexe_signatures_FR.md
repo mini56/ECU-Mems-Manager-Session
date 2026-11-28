@@ -1,0 +1,3 @@
+# V1.65 — Répertoire des signatures de commandes (annexe du rapport)
+
+Périmètre : 449 images essence ; 34 diesel définitivement exclus. Premier passage : tables bornées 80196, listes de pointeurs 1.3 et Turbo, comparaisons des répartiteurs 68K. Les signatures sont les octets ROM exacts, distincts des trames série. Les commandes inconnues restent recensées avec leur niveau de preuve. Les comparaisons candidates ne prouvent pas l'exécution. Les autres modes, sous-fonctions, chemins indirects, trames complètes et sémantique restent à qualifier. Les fichiers signatures/repertoire_signatures.csv, index_commandes.csv, couverture_449.csv et bilan.json sont destinés à l'annexe des rapports FR/EN et à l'archive cumulative. Aucun essai physique, aucune modification Manager/DLL.
