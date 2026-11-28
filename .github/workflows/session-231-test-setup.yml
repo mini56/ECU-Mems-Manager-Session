@@ -27,6 +27,7 @@ jobs:
           python tools/test_injection_presentation.py
           python tools/test_session222_technical_contract.py
           c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems231_selftest.cpp -o session231 && ./session231
+          python tools/test_mems231_rapid_profiles.py
           c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems217_selftest.cpp -o session217 && ./session217
           c++ -std=c++11 -Wall -Wextra -Werror -pedantic -I. tools/mems218_selftest.cpp -o session218 && ./session218
           echo 'SESSION_231_INSTRUMENTS_56_PROFILE_SELFTEST_PASS'
@@ -42,7 +43,7 @@ jobs:
           python -c "import json; from pathlib import Path; langs=('fr','en','de','es','it','pt'); keys={str(i) for i in range(2972001,2972005)}; assert all(set(json.loads(Path(f'translations/{l}/{l}_session220.json').read_text(encoding='utf-8')))==keys for l in langs)"
           python -c "import json; from pathlib import Path; langs=('fr','en','de','es','it','pt'); assert all(set(json.loads(Path(f'translations/{l}/{l}_session221.json').read_text(encoding='utf-8')))=={'2972101'} for l in langs)"
           python -c "import json; from pathlib import Path; langs=('fr','en','de','es','it','pt'); keys={str(i) for i in range(2972201,2972217)}; assert all(set(json.loads(Path(f'translations/{l}/{l}_session222.json').read_text(encoding='utf-8')))==keys for l in langs)"
-          python -c "import json; from pathlib import Path; langs=('fr','en','de','es','it','pt'); keys={str(i) for i in range(2972311,2972314)}; assert all(set(json.loads(Path(f'translations/{l}/{l}_session223.json').read_text(encoding='utf-8')))==keys for l in langs)"
+          python -c "import json; from pathlib import Path; langs=('fr','en','de','es','it','pt'); keys={str(i) for i in range(2972301,2972314)}; assert all(set(json.loads(Path(f'translations/{l}/{l}_session223.json').read_text(encoding='utf-8')))==keys for l in langs)"
           python -c "import json; from pathlib import Path; langs=('fr','en','de','es','it','pt'); keys={str(i) for i in range(2972401,2972435)}; assert all(set(json.loads(Path(f'translations/{l}/{l}_session224.json').read_text(encoding='utf-8')))==keys for l in langs)"
           python tools/test_save81_source.py
           python tools/test_adjustment_buttons_source.py
