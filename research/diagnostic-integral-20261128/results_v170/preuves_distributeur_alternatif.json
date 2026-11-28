@@ -1,0 +1,314 @@
+{
+  "version": "V1.70",
+  "results": [
+    {
+      "firmware": "ABEMR002",
+      "selector_sites": [
+        {
+          "site": "628F",
+          "selector": "79"
+        },
+        {
+          "site": "6294",
+          "selector": "7C"
+        },
+        {
+          "site": "629B",
+          "selector": "89"
+        },
+        {
+          "site": "62A0",
+          "selector": "94"
+        },
+        {
+          "site": "62A7",
+          "selector": "7E"
+        },
+        {
+          "site": "62AE",
+          "selector": "7F"
+        },
+        {
+          "site": "62B5",
+          "selector": "CB"
+        }
+      ],
+      "hits": [
+        {
+          "load": "5B80",
+          "lo": "5BB0",
+          "hi": "5BD0",
+          "slot": "5BC8",
+          "handler": "628A",
+          "prefix": "3B 9A 02 20 53 99 79 47 D3 13",
+          "code": "A1 B0 5B 3C A1 D0 5B 48 88 48 3C DF 1A A2 3C 3A 28 1A 88 48 3C DF 06 65 02 00 3C 27 EB B3 25 5B 00 1C C7 01 92 C0 1C A1 34 55 26 F0 E3 3A FF 00 28 5C 14 59 5C 5D 22"
+        }
+      ]
+    },
+    {
+      "firmware": "KBE6R003",
+      "selector_sites": [
+        {
+          "site": "636E",
+          "selector": "79"
+        },
+        {
+          "site": "6373",
+          "selector": "7C"
+        },
+        {
+          "site": "637A",
+          "selector": "89"
+        },
+        {
+          "site": "637F",
+          "selector": "94"
+        },
+        {
+          "site": "6386",
+          "selector": "7E"
+        },
+        {
+          "site": "638D",
+          "selector": "7F"
+        },
+        {
+          "site": "6394",
+          "selector": "CB"
+        }
+      ],
+      "hits": [
+        {
+          "load": "5C40",
+          "lo": "5C70",
+          "hi": "5C90",
+          "slot": "5C88",
+          "handler": "6366",
+          "prefix": "51 08 9A 00 D7 02 20 53 99 79 47 D3 13",
+          "code": "A1 70 5C 3C A1 90 5C 48 88 48 3C DF 1A A2 3C 3A 28 1A 88 48 3C DF 06 65 02 00 3C 27 EB B3 25 5B 00 1C C7 01 92 C0 1C A1 D2 55 26 F0 E3 3A FF 00 E8 5C CA 59 1C 5E E4"
+        }
+      ]
+    },
+    {
+      "firmware": "MGE7R002",
+      "selector_sites": [
+        {
+          "site": "63F5",
+          "selector": "79"
+        },
+        {
+          "site": "63FA",
+          "selector": "7C"
+        },
+        {
+          "site": "6401",
+          "selector": "89"
+        },
+        {
+          "site": "6406",
+          "selector": "94"
+        },
+        {
+          "site": "640D",
+          "selector": "7E"
+        },
+        {
+          "site": "6414",
+          "selector": "7F"
+        },
+        {
+          "site": "641B",
+          "selector": "CB"
+        }
+      ],
+      "hits": [
+        {
+          "load": "5CB0",
+          "lo": "5CE0",
+          "hi": "5D02",
+          "slot": "5CF8",
+          "handler": "63F0",
+          "prefix": "3B 9A 02 20 53 99 79 47 D3 13",
+          "code": "A1 E0 5C 3C A1 02 5D 48 88 48 3C DF 1A A2 3C 3A 28 1A 88 48 3C DF 06 65 02 00 3C 27 EB B3 25 62 00 1C C7 01 9D C0 1C A1 64 56 26 F0 E3 3A FF 00 70 5D 44 5A A0 5E 66"
+        }
+      ]
+    },
+    {
+      "firmware": "TCF7X005",
+      "selector_sites": [
+        {
+          "site": "56AF",
+          "selector": "79"
+        },
+        {
+          "site": "56B4",
+          "selector": "7C"
+        },
+        {
+          "site": "56BB",
+          "selector": "89"
+        },
+        {
+          "site": "56C0",
+          "selector": "94"
+        },
+        {
+          "site": "56C7",
+          "selector": "7E"
+        },
+        {
+          "site": "56CE",
+          "selector": "7F"
+        },
+        {
+          "site": "56D5",
+          "selector": "CB"
+        }
+      ],
+      "hits": [
+        {
+          "load": "772C",
+          "lo": "775C",
+          "hi": "7784",
+          "slot": "7774",
+          "handler": "56AA",
+          "prefix": "3A B7 02 20 53 99 79 47 D3 13",
+          "code": "A1 5C 77 3C A1 84 77 48 88 48 3C DF 1A A2 3C 3A 28 1A 88 48 3C DF 06 65 02 00 3C 27 EB B3 27 8A 00 1C C7 01 AF 01 1C A1 E6 76 24 F0 E3 3A FF 00 56 71 B3 6E 6C 72 34"
+        }
+      ]
+    },
+    {
+      "firmware": "TCF8X005",
+      "selector_sites": [
+        {
+          "site": "56AF",
+          "selector": "79"
+        },
+        {
+          "site": "56B4",
+          "selector": "7C"
+        },
+        {
+          "site": "56BB",
+          "selector": "89"
+        },
+        {
+          "site": "56C0",
+          "selector": "94"
+        },
+        {
+          "site": "56C7",
+          "selector": "7E"
+        },
+        {
+          "site": "56CE",
+          "selector": "7F"
+        },
+        {
+          "site": "56D5",
+          "selector": "CB"
+        }
+      ],
+      "hits": [
+        {
+          "load": "772C",
+          "lo": "775C",
+          "hi": "7784",
+          "slot": "7774",
+          "handler": "56AA",
+          "prefix": "3A B7 02 20 53 99 79 47 D3 13",
+          "code": "A1 5C 77 3C A1 84 77 48 88 48 3C DF 1A A2 3C 3A 28 1A 88 48 3C DF 06 65 02 00 3C 27 EB B3 27 8A 00 1C C7 01 AF 01 1C A1 E6 76 24 F0 E3 3A FF 00 56 71 B3 6E 6C 72 34"
+        }
+      ]
+    },
+    {
+      "firmware": "TFF8X000",
+      "selector_sites": [
+        {
+          "site": "56AB",
+          "selector": "79"
+        },
+        {
+          "site": "56B0",
+          "selector": "7C"
+        },
+        {
+          "site": "56B7",
+          "selector": "89"
+        },
+        {
+          "site": "56BC",
+          "selector": "94"
+        },
+        {
+          "site": "56C3",
+          "selector": "7E"
+        },
+        {
+          "site": "56CA",
+          "selector": "7F"
+        },
+        {
+          "site": "56D1",
+          "selector": "CB"
+        }
+      ],
+      "hits": [
+        {
+          "load": "7A7A",
+          "lo": "8946",
+          "hi": "8970",
+          "slot": "895E",
+          "handler": "56A6",
+          "prefix": "3A B7 02 20 53 99 79 47 D3 13",
+          "code": "A1 46 89 3C A1 70 89 48 88 48 3C DF 1A A2 3C 3A 28 1A 88 48 3C DF 06 65 02 00 3C 27 EB B3 27 8A 00 1C C7 01 78 07 1C A1 5A 7A 24 F0 E3 3A 30 00 21 00 2F 00 2D 00 40"
+        }
+      ]
+    },
+    {
+      "firmware": "TFFSX000",
+      "selector_sites": [
+        {
+          "site": "56AB",
+          "selector": "79"
+        },
+        {
+          "site": "56B0",
+          "selector": "7C"
+        },
+        {
+          "site": "56B7",
+          "selector": "89"
+        },
+        {
+          "site": "56BC",
+          "selector": "94"
+        },
+        {
+          "site": "56C3",
+          "selector": "7E"
+        },
+        {
+          "site": "56CA",
+          "selector": "7F"
+        },
+        {
+          "site": "56D1",
+          "selector": "CB"
+        }
+      ],
+      "hits": [
+        {
+          "load": "7A7E",
+          "lo": "8946",
+          "hi": "8970",
+          "slot": "895E",
+          "handler": "56A6",
+          "prefix": "3A B7 02 20 53 99 79 47 D3 13",
+          "code": "A1 46 89 3C A1 70 89 48 88 48 3C DF 1A A2 3C 3A 28 1A 88 48 3C DF 06 65 02 00 3C 27 EB B3 27 8A 00 1C C7 01 78 07 1C A1 5E 7A 24 F0 E3 3A 30 00 21 00 2F 00 2D 00 40"
+        }
+      ]
+    }
+  ],
+  "limitation": "Pointer-table bounds and alternate interpreter signature; external mode not established."
+}
