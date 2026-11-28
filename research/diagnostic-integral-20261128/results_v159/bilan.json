@@ -1,0 +1,42 @@
+{
+  "firmwares": 483,
+  "mode4": {
+    "Land Rover Td5/MSB": {
+      "UNRESOLVED_OTHER_PROTOCOL_OR_VARIANT": 15
+    },
+    "Land Rover Td5/NNN": {
+      "UNRESOLVED_OTHER_PROTOCOL_OR_VARIANT": 15
+    },
+    "Rover L-Series Di": {
+      "UNRESOLVED_OTHER_PROTOCOL_OR_VARIANT": 4
+    },
+    "Rover MEMS 1.3": {
+      "UNRESOLVED_OTHER_PROTOCOL_OR_VARIANT": 3
+    },
+    "Rover MEMS 1.6 TURBO": {
+      "UNRESOLVED_OTHER_PROTOCOL_OR_VARIANT": 4
+    },
+    "Rover MEMS 1.6/NA": {
+      "WORD_READER_AND_DISPATCH_LINKED": 87,
+      "UNRESOLVED_OTHER_PROTOCOL_OR_VARIANT": 36
+    },
+    "Rover MEMS 1.9": {
+      "UNRESOLVED_OTHER_PROTOCOL_OR_VARIANT": 74,
+      "WORD_READER_AND_DISPATCH_LINKED": 141
+    },
+    "Rover MEMS 2J": {
+      "UNRESOLVED_OTHER_PROTOCOL_OR_VARIANT": 9
+    },
+    "Rover MEMS3/EU3": {
+      "UNRESOLVED_OTHER_PROTOCOL_OR_VARIANT": 83
+    },
+    "Rover MEMS3/EU4": {
+      "UNRESOLVED_OTHER_PROTOCOL_OR_VARIANT": 12
+    }
+  },
+  "corrections": {
+    "CURRENT_BATTERY_LINKED_LOG_DISCREPANCY": 90,
+    "INSTANTANEOUS_ADC_AND_SEPARATE_MAP_FLAG_LINKED": 9
+  },
+  "access_candidates": 1140
+}
