@@ -1,0 +1,159 @@
+{
+  "profiles": 44,
+  "by_kind": {
+    "GAUGE_ASM_ONLY": 2,
+    "FIXED_PERIOD": 41,
+    "SPEED_SIMULATION": 1
+  },
+  "by_status": {
+    "ASM_ONLY_REVIEW_REQUIRED": 4,
+    "STATIC_FIXED_PERIOD_CHAIN": 40
+  },
+  "fixed_period_complete": [
+    "KLH3G015",
+    "KLH3G017",
+    "KLH3G018",
+    "KLH3G019",
+    "KLH3G020",
+    "KLH3V005",
+    "KLH3V006",
+    "KLHCG000",
+    "KLHCG001",
+    "KLHCG002",
+    "KLHCV000",
+    "KLHCV001",
+    "KUH3G000",
+    "KUH3G001",
+    "KUH3G002",
+    "KUH3G003",
+    "REGI0872",
+    "REGI1224",
+    "REGI1345",
+    "REGI1346",
+    "REGI1350",
+    "REGI1355",
+    "REGI1356",
+    "REGI1359",
+    "REGI1360",
+    "REGI1361",
+    "REGI1362",
+    "REGI1363",
+    "REGI1364",
+    "REGI1365",
+    "REGI1366",
+    "REGI1367",
+    "REGI1368",
+    "REGI1374",
+    "REGI1376",
+    "REGI1383",
+    "REGI1384",
+    "REGI1386",
+    "REGI1387",
+    "SELFG008"
+  ],
+  "manual_review": [
+    "ABNMP000",
+    "ABNMP003",
+    "KLH3V004",
+    "TFH7G031"
+  ],
+  "identity_collisions": {
+    "KLH3G015": [
+      "KLH3G015",
+      "KRHBG015",
+      "KTHBG015",
+      "TBP7F015"
+    ],
+    "KLH3G017": [
+      "KLH3G017",
+      "KLH4G017",
+      "KRHBG017",
+      "TBH7G017"
+    ],
+    "KLH3G018": [
+      "KLH3G018",
+      "KLH4G018",
+      "KRHBG018",
+      "TAH7G018"
+    ],
+    "KLH3G019": [
+      "KLH3G019",
+      "KLH4G019",
+      "TAHHG019",
+      "TBH7G019"
+    ],
+    "KLH3G020": [
+      "KLH3G020",
+      "KLH4G020"
+    ],
+    "KLHCG000": [
+      "KIHBG000",
+      "KLHBG000",
+      "KLHCG000",
+      "KLQ4G000",
+      "KTHHG000",
+      "KUH3G000",
+      "KUHHG000"
+    ],
+    "KLHCG001": [
+      "KFACG001",
+      "KLHBG001",
+      "KLHCG001",
+      "KLQ4G001",
+      "KUH3G001",
+      "KUHHG001"
+    ],
+    "KLHCG002": [
+      "KFACG002",
+      "KLHBG002",
+      "KLHCG002",
+      "KLQ4G002",
+      "KUH3G002"
+    ],
+    "KLHCV000": [
+      "KLHBV000",
+      "KLHCV000"
+    ],
+    "KLHCV001": [
+      "KLHBV001",
+      "KLHCV001"
+    ],
+    "KUH3G000": [
+      "KIHBG000",
+      "KLHBG000",
+      "KLHCG000",
+      "KLQ4G000",
+      "KTHHG000",
+      "KUH3G000",
+      "KUHHG000"
+    ],
+    "KUH3G001": [
+      "KFACG001",
+      "KLHBG001",
+      "KLHCG001",
+      "KLQ4G001",
+      "KUH3G001",
+      "KUHHG001"
+    ],
+    "KUH3G002": [
+      "KFACG002",
+      "KLHBG002",
+      "KLHCG002",
+      "KLQ4G002",
+      "KUH3G002"
+    ],
+    "KUH3G003": [
+      "KLQ4G003",
+      "KUH3G003"
+    ],
+    "SELFG008": [
+      "KBHHG008",
+      "KFHBG008",
+      "KJH6G008",
+      "KTH6G008",
+      "SELFG008"
+    ]
+  },
+  "authorized": 0,
+  "note": "Static chain only. Full four-byte D0 identity, instrument wiring, frequency-to-RPM relation, bench interlocks and physical validation not certified."
+}
