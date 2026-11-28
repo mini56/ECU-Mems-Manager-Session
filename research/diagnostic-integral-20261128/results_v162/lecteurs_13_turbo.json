@@ -1,0 +1,355 @@
+[
+  {
+    "g": "1.3",
+    "n": "ABEMR002",
+    "sha": "89d3d1caccabf5a76625cb748b10df4d0b559619",
+    "handler": "2FB5",
+    "table": [
+      "557C"
+    ],
+    "mode": [
+      "5560"
+    ],
+    "dc": [
+      "2EE2"
+    ],
+    "store": [
+      "2EFA"
+    ],
+    "block": "C08B",
+    "reader": "51 08 9a 00 df 31 99 7f 47 d9 2c a0 48 3c 71 f7 9a 19 01 47 ac 47 4c b3 01 8b c0 3a 09 08 3a 64 4c 3a 89 20 00 3a d3 0f a2 3a 3a b0 3a 1c ef ce 00 91",
+    "mode_bytes": [
+      "99 1e 46 df 01 f0 3b 9a 05 a1 34 55 26 f0 a1 7c 55 3c a1 a0 55 48 e7 99 d8 ff ff 00 b5 2f dc 2e ed 2f b8"
+    ],
+    "dc_bytes": [
+      "99 dc 47 d7 0c 71 f7 9a a0 48 3c b0 46 4e b1 31 46 f0 51 08 9a 00"
+    ],
+    "store_bytes": [
+      "c7 01 8b c0 47 b0 4e 46 a0 48 3c 71 f7 9a"
+    ],
+    "cmd": [
+      {
+        "site": "30CA",
+        "bytes": "99 c4 47 df 03 e7 d0 00 71 f7 9a a0 48 3c 71 df 9a 71 bf 9a b1 00 1b ef 5c 0e 98 00"
+      },
+      {
+        "site": "31A9",
+        "bytes": "99 f5 47 d7 1f 71 f7 9a a0 48 3c b1 14 46 71 ef 9a a3 01 6a c0 7c a3 01 44 40 24 a0"
+      },
+      {
+        "site": "55B9",
+        "bytes": "99 c4 47 df 03 e7 c6 00 71 f7 9a a0 48 3c 71 df 9a 71 bf 9a b1 00 1b ef 6d e9 98 00"
+      },
+      {
+        "site": "568B",
+        "bytes": "99 f5 47 d7 27 71 f7 9a a0 48 3c b1 14 46 71 ef 9a a3 01 6a c0 7c a1 20 77 24 a0 00"
+      },
+      {
+        "site": "572A",
+        "bytes": "99 f5 47 d7 0f 71 f7 9a a0 48 3c b1 14 46 b0 00 1c ef 76 d9 f0 ff a2 4d 3a c2 4b 3a"
+      },
+      {
+        "site": "622E",
+        "bytes": "99 f5 47 df 07 99 f6 47 df 14 20 2d 34 9a 0a 99 f3 47 d7 05 b1 1e 46 20 14 b1 14 46"
+      }
+    ]
+  },
+  {
+    "g": "1.3",
+    "n": "KBE6R003",
+    "sha": "73544e40994909bf0e118d95819bdc12f940f5a1",
+    "handler": "2FB5",
+    "table": [
+      "561E"
+    ],
+    "mode": [
+      "5600"
+    ],
+    "dc": [
+      "2EE2"
+    ],
+    "store": [
+      "2EFA"
+    ],
+    "block": "C08B",
+    "reader": "51 08 9a 00 df 31 99 7f 47 d9 2c a0 48 3c 71 f7 9a 19 01 47 ac 47 4c b3 01 8b c0 3a 09 08 3a 64 4c 3a 89 20 00 3a d3 0f a2 3a 3a b0 3a 1c ef ce 00 91",
+    "mode_bytes": [
+      "99 1e 46 df 01 f0 51 08 9a 00 d7 05 a1 d2 55 26 f0 a1 1e 56 3c a1 42 56 48 e7 f6 d7 ff 00 b5 2f dc 2e ed"
+    ],
+    "dc_bytes": [
+      "99 dc 47 d7 0c 71 f7 9a a0 48 3c b0 46 4e b1 31 46 f0 51 08 9a 00"
+    ],
+    "store_bytes": [
+      "c7 01 8b c0 47 b0 4e 46 a0 48 3c 71 f7 9a"
+    ],
+    "cmd": [
+      {
+        "site": "30CA",
+        "bytes": "99 c4 47 df 03 e7 d0 00 71 f7 9a a0 48 3c 71 df 9a 71 bf 9a b1 00 1b ef 5c 0e 98 00"
+      },
+      {
+        "site": "31A9",
+        "bytes": "99 f5 47 d7 1f 71 f7 9a a0 48 3c b1 14 46 71 ef 9a a3 01 6a c0 7c a3 01 44 40 24 a0"
+      },
+      {
+        "site": "565E",
+        "bytes": "99 c4 47 df 03 e7 c6 00 71 f7 9a a0 48 3c 71 df 9a 71 bf 9a b1 00 1b ef c8 e8 98 00"
+      },
+      {
+        "site": "5733",
+        "bytes": "99 f5 47 d7 27 71 f7 9a a0 48 3c b1 14 46 71 ef 9a a3 01 6a c0 7c a1 20 77 24 a0 00"
+      },
+      {
+        "site": "57DA",
+        "bytes": "99 f5 47 d7 0f 71 f7 9a a0 48 3c b1 14 46 b0 00 1c ef c6 d8 f0 ff a2 4d 3a c2 4b 3a"
+      },
+      {
+        "site": "6303",
+        "bytes": "99 f5 47 df 07 99 f6 47 df 17 20 30 51 10 9a 00 df 0a 99 f3 47 d7 05 b1 1e 46 20 14"
+      }
+    ]
+  },
+  {
+    "g": "1.3",
+    "n": "MGE7R002",
+    "sha": "ce34e5f5d9becd7e197dffdfc6f8a72f1180b800",
+    "handler": "2FB5",
+    "table": [
+      "56AC"
+    ],
+    "mode": [
+      "5690"
+    ],
+    "dc": [
+      "2EE2"
+    ],
+    "store": [
+      "2EFA"
+    ],
+    "block": "C08B",
+    "reader": "51 08 9a 00 df 31 99 7f 47 d9 2c a0 48 3c 71 f7 9a 19 01 47 ac 47 4c b3 01 8b c0 3a 09 08 3a 64 4c 3a 89 20 00 3a d3 0f a2 3a 3a b0 3a 1c ef ce 00 91",
+    "mode_bytes": [
+      "99 1e 46 df 01 f0 3b 9a 05 a1 64 56 26 f0 a1 ac 56 3c a1 d0 56 48 e7 69 d7 ff ff 00 b5 2f dc 2e ed 2f e8"
+    ],
+    "dc_bytes": [
+      "99 dc 47 d7 0c 71 f7 9a a0 48 3c b0 46 4e b1 31 46 f0 51 08 9a 00"
+    ],
+    "store_bytes": [
+      "c7 01 8b c0 47 b0 4e 46 a0 48 3c 71 f7 9a"
+    ],
+    "cmd": [
+      {
+        "site": "30CA",
+        "bytes": "99 c4 47 df 03 e7 d0 00 71 f7 9a a0 48 3c 71 df 9a 71 bf 9a b1 00 1b ef 5c 0e 98 00"
+      },
+      {
+        "site": "31A9",
+        "bytes": "99 f5 47 d7 1f 71 f7 9a a0 48 3c b1 14 46 71 ef 9a a3 01 6a c0 7c a3 01 44 40 24 a0"
+      },
+      {
+        "site": "56E9",
+        "bytes": "99 c4 47 df 03 e7 c6 00 71 f7 9a a0 48 3c 71 df 9a 71 bf 9a b1 00 1b ef 3d e8 98 00"
+      },
+      {
+        "site": "57BB",
+        "bytes": "99 f5 47 d7 27 71 f7 9a a0 48 3c b1 14 46 71 ef 9a a3 01 6a c0 7c a1 c8 76 24 a0 00"
+      },
+      {
+        "site": "585A",
+        "bytes": "99 f5 47 d7 0f 71 f7 9a a0 48 3c b1 14 46 b0 00 1c ef 46 d8 f0 ff a2 4d 3a c2 4b 3a"
+      },
+      {
+        "site": "6394",
+        "bytes": "99 f5 47 df 07 99 f6 47 df 14 20 2d 34 9a 0a 99 f3 47 d7 05 b1 1e 46 20 14 b1 14 46"
+      }
+    ]
+  },
+  {
+    "g": "1.6 TURBO",
+    "n": "TCF7X005",
+    "sha": "e530ebd65a4b4204d4f6710a48745132c58b9321",
+    "handler": "4EC6",
+    "table": [
+      "7702"
+    ],
+    "mode": [
+      "76E6"
+    ],
+    "dc": [
+      "7093"
+    ],
+    "store": [
+      "353A"
+    ],
+    "block": "018F",
+    "reader": "32 b7 31 99 7f 47 d9 2c a0 48 3c 71 fb b7 19 01 47 ac 47 4c b3 01 8f 01 3a 09 08 3a 64 4c 3a 89 1a 00 3a d3 0f a2 3a 3a b0 3a 1c ef af ec 91 04 b8 b0",
+    "mode_bytes": [
+      "99 1e 46 df 01 f0 3a b7 05 a1 e6 76 24 f0 a1 02 77 3c a1 26 77 48 e7 4c c0 ff ff 00 c6 4e 90 70 03 3b 4c"
+    ],
+    "dc_bytes": [
+      "99 dc 47 d7 0c 71 fb b7 a0 48 3c b0 46 4e b1 31 46 f0 ff 32 b7 11"
+    ],
+    "store_bytes": [
+      "c7 01 8f 01 47 b0 4e 46 a0 48 3c 71 fb b7"
+    ],
+    "cmd": [
+      {
+        "site": "4CBA",
+        "bytes": "99 f5 47 d7 0f 71 fb b7 a0 48 3c b1 14 46 b0 00 1c ef d5 ee f0 ff a2 4d 3a c6 4b 3a"
+      },
+      {
+        "site": "6F51",
+        "bytes": "99 c4 47 df 02 20 c3 71 fb b7 a0 48 3c 71 fe bd 71 7f bc b1 00 1b ef a8 c1 98 00 1a"
+      },
+      {
+        "site": "701F",
+        "bytes": "99 f5 47 d7 27 71 fb b7 a0 48 3c b1 14 46 71 f7 b8 a3 01 7a 01 62 a1 e0 83 26 a0 00"
+      },
+      {
+        "site": "742E",
+        "bytes": "99 f5 47 df 07 99 f6 47 df 14 20 2d 33 b8 0a 99 f3 47 d7 05 b1 1e 46 20 14 b1 14 46"
+      }
+    ]
+  },
+  {
+    "g": "1.6 TURBO",
+    "n": "TCF8X005",
+    "sha": "5c425b2b67ebd7d9b303e08897ddb7eab91ac876",
+    "handler": "4EC6",
+    "table": [
+      "7702"
+    ],
+    "mode": [
+      "76E6"
+    ],
+    "dc": [
+      "7093"
+    ],
+    "store": [
+      "353A"
+    ],
+    "block": "018F",
+    "reader": "32 b7 31 99 7f 47 d9 2c a0 48 3c 71 fb b7 19 01 47 ac 47 4c b3 01 8f 01 3a 09 08 3a 64 4c 3a 89 1a 00 3a d3 0f a2 3a 3a b0 3a 1c ef af ec 91 04 b8 b0",
+    "mode_bytes": [
+      "99 1e 46 df 01 f0 3a b7 05 a1 e6 76 24 f0 a1 02 77 3c a1 26 77 48 e7 4c c0 ff ff 00 c6 4e 90 70 03 3b 4c"
+    ],
+    "dc_bytes": [
+      "99 dc 47 d7 0c 71 fb b7 a0 48 3c b0 46 4e b1 31 46 f0 ff 32 b7 11"
+    ],
+    "store_bytes": [
+      "c7 01 8f 01 47 b0 4e 46 a0 48 3c 71 fb b7"
+    ],
+    "cmd": [
+      {
+        "site": "4CBA",
+        "bytes": "99 f5 47 d7 0f 71 fb b7 a0 48 3c b1 14 46 b0 00 1c ef d5 ee f0 ff a2 4d 3a c6 4b 3a"
+      },
+      {
+        "site": "6F51",
+        "bytes": "99 c4 47 df 02 20 c3 71 fb b7 a0 48 3c 71 fe bd 71 7f bc b1 00 1b ef a8 c1 98 00 1a"
+      },
+      {
+        "site": "701F",
+        "bytes": "99 f5 47 d7 27 71 fb b7 a0 48 3c b1 14 46 71 f7 b8 a3 01 7a 01 62 a1 e0 83 26 a0 00"
+      },
+      {
+        "site": "742E",
+        "bytes": "99 f5 47 df 07 99 f6 47 df 14 20 2d 33 b8 0a 99 f3 47 d7 05 b1 1e 46 20 14 b1 14 46"
+      }
+    ]
+  },
+  {
+    "g": "1.6 TURBO",
+    "n": "TFF8X000",
+    "sha": "d57b2a9ccfc704a86ff0d01127bc1da9b41450d5",
+    "handler": "4EC2",
+    "table": [
+      "8922"
+    ],
+    "mode": [
+      "7A5A"
+    ],
+    "dc": [
+      "73D3"
+    ],
+    "store": [
+      "353C"
+    ],
+    "block": "018F",
+    "reader": "32 b7 31 99 7f 47 d9 2c a0 48 3c 71 fb b7 19 01 47 ac 47 4c b3 01 8f 01 3a 09 08 3a 64 4c 3a 89 1a 00 3a d3 0f a2 3a 3a b0 3a 1c ef b5 ec 91 04 b8 b0",
+    "mode_bytes": [
+      "99 1e 46 df 01 f0 3a b7 05 a1 5a 7a 24 f0 a1 22 89 3c a1 46 89 48 e7 da bc ff 99 50 46 df 01 f0 a1 46 89"
+    ],
+    "dc_bytes": [
+      "99 dc 47 d7 0c 71 fb b7 a0 48 3c b0 46 4e b1 31 46 f0 ff 32 b7 11"
+    ],
+    "store_bytes": [
+      "c7 01 8f 01 47 b0 4e 46 a0 48 3c 71 fb b7"
+    ],
+    "cmd": [
+      {
+        "site": "4CB6",
+        "bytes": "99 f5 47 d7 0f 71 fb b7 a0 48 3c b1 14 46 b0 00 1c ef db ee f0 ff a2 4d 3a c6 4b 3a"
+      },
+      {
+        "site": "7290",
+        "bytes": "99 c4 47 df 02 20 c3 71 fb b7 a0 48 3c 71 fe bd 71 7f bc b1 00 1b ef 6b be 98 00 1a"
+      },
+      {
+        "site": "735E",
+        "bytes": "99 f5 47 d7 27 71 fb b7 a0 48 3c b1 14 46 71 f7 b8 a3 01 7a 01 62 a1 e0 89 26 a0 00"
+      },
+      {
+        "site": "7758",
+        "bytes": "99 f5 47 df 07 99 f6 47 df 14 20 2d 33 b8 0a 99 f3 47 d7 05 b1 1e 46 20 14 b1 14 46"
+      }
+    ]
+  },
+  {
+    "g": "1.6 TURBO",
+    "n": "TFFSX000",
+    "sha": "c3d4c298bb974060b96c21632a01d7da32b81e4d",
+    "handler": "4EC2",
+    "table": [
+      "8922"
+    ],
+    "mode": [
+      "7A5E"
+    ],
+    "dc": [
+      "73D3"
+    ],
+    "store": [
+      "353C"
+    ],
+    "block": "018F",
+    "reader": "32 b7 31 99 7f 47 d9 2c a0 48 3c 71 fb b7 19 01 47 ac 47 4c b3 01 8f 01 3a 09 08 3a 64 4c 3a 89 1a 00 3a d3 0f a2 3a 3a b0 3a 1c ef b5 ec 91 04 b8 b0",
+    "mode_bytes": [
+      "99 1e 46 df 01 f0 3a b7 05 a1 5e 7a 24 f0 a1 22 89 3c a1 46 89 48 e7 d6 bc ff 99 50 46 df 01 f0 a1 46 89"
+    ],
+    "dc_bytes": [
+      "99 dc 47 d7 0c 71 fb b7 a0 48 3c b0 46 4e b1 31 46 f0 ff 32 b7 11"
+    ],
+    "store_bytes": [
+      "c7 01 8f 01 47 b0 4e 46 a0 48 3c 71 fb b7"
+    ],
+    "cmd": [
+      {
+        "site": "4CB6",
+        "bytes": "99 f5 47 d7 0f 71 fb b7 a0 48 3c b1 14 46 b0 00 1c ef db ee f0 ff a2 4d 3a c6 4b 3a"
+      },
+      {
+        "site": "7290",
+        "bytes": "99 c4 47 df 02 20 c3 71 fb b7 a0 48 3c 71 fe bd 71 7f bc b1 00 1b ef 6b be 98 00 1a"
+      },
+      {
+        "site": "735E",
+        "bytes": "99 f5 47 d7 27 71 fb b7 a0 48 3c b1 14 46 71 f7 b8 a3 01 7a 01 62 a1 e0 89 26 a0 00"
+      },
+      {
+        "site": "7758",
+        "bytes": "99 f5 47 df 07 99 f6 47 df 14 20 2d 33 b8 0a 99 f3 47 d7 05 b1 1e 46 20 14 b1 14 46"
+      }
+    ]
+  }
+]
