@@ -25,6 +25,24 @@ int main(){
     assert(std::abs(legacyThrottleDeg(13)-7.8)<1e-9);
     assert(Mems217::injectionUs(127)==-8&&Mems217::injectionUs(129)==8);
     Mems16Na::SessionEvidence s;assert(!injectionAvailable(s)&&!lambdaQualified(s));
+    assert(correctionReading(s,false).kind==CorrectionKind::Missing);
+    for(unsigned v=0;v<256;++v){
+        std::vector<std::uint8_t> b(14);b[0]=14;b[11]=static_cast<std::uint8_t>(v);b[12]=static_cast<std::uint8_t>(v);
+        s.setExtended7d(b);
+        auto longRaw=correctionReading(s,false),shortRaw=correctionReading(s,true);
+        assert(longRaw.kind==CorrectionKind::Historical&&longRaw.value==int(v)-128);
+        assert(shortRaw.kind==CorrectionKind::Historical&&shortRaw.value==int(v)-100);
+        assert(!injectionAvailable(s)&&!lambdaQualified(s));
+        b.resize(11);b[0]=11;s.setExtended7d(b);
+        assert(correctionReading(s,false).kind==CorrectionKind::Missing&&correctionReading(s,true).kind==CorrectionKind::Missing);
+    }
+    s.discardPair();
+    s.tx({0xd0});s.rx({0xd0,0x90,0,9,1});s.finish();
+    s.tx({0xd1});s.rx({0xd1,'K','B','H','B','G','0','0','9',0x90,0,9,1});s.finish();
+    std::vector<std::uint8_t> proven(33);proven[0]=33;proven[11]=129;proven[12]=103;s.setExtended7d(proven);
+    assert(correctionReading(s,false).kind==CorrectionKind::Qualified&&correctionReading(s,false).value==8);
+    assert(correctionReading(s,true).kind==CorrectionKind::Qualified&&correctionReading(s,true).value==3);
+    s.discardPair();assert(correctionReading(s,false).kind==CorrectionKind::Missing);
     GaugeSimulation g;
     assert(g.request(GaugeIntent::Minimum,false)==-1);
     assert(g.request(GaugeIntent::Minimum,true)==0x00);

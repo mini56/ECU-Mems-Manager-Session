@@ -244,6 +244,17 @@ int main(int argc,char **argv) {
                 &&dtc->toolTip().contains(I18n::text(29013))&&dtc->toolTip().contains(I18n::text(29015));
         };
         CHECK(checkOffline());
+        auto historical=evidence("UNKNOWN0",0x90,0,1,0,0,false);
+        auto rawHistorical=b19;rawHistorical[11]=129;rawHistorical[12]=103;
+        historical.setExtended80(a19);historical.setExtended7d(rawHistorical);
+        summary.updateData(&d,&historical);
+        CHECK(value(2971701,2)==QStringLiteral("129"));
+        CHECK(value(2971701,3).contains(QStringLiteral("1"))&&value(2971701,3).contains(I18n::text(2973901)));
+        CHECK(value(6637,2)==QStringLiteral("103"));
+        CHECK(value(6637,3).contains(QStringLiteral("3"))&&value(6637,3).contains(I18n::text(2973901)));
+        CHECK(!value(6637,3).contains(QStringLiteral("%")));
+        historical.discardPair();summary.updateData(&d,&historical);
+        CHECK(value(2971701,2)==QStringLiteral("--")&&value(2971701,3)==I18n::text(29048));
         auto lost19=extended;lost19.discardPair();
         summary.updateData(&d,&lost19);
         CHECK(value(6630,2)==QStringLiteral("--"));

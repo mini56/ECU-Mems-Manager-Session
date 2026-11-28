@@ -91,5 +91,11 @@ int main(){
     require(session.extendedDtc(3).status==Status::Missing);
     session.discardPair();require(session.extendedDtc(2).status==Status::Missing);
     require(!Mems16Na::consumeExtendedPair(session,trace,false,101,4,0,0,0));
+    session.reset();
+    require(Mems16Na::consumeExtendedPair(session,trace,false,100,4,0,0,0));
+    require(session.firmwareName().empty()&&!session.identifiedProfile());
+    require(session.extendedDtc(2).status==Status::Unverified&&session.extendedDtc(2).faults==0);
+    require(!Mems16Na::consumeExtendedPair(session,trace,false,101,4,0,0,0));
+    require(session.extended7d().empty());
     return 0;
 }

@@ -24,6 +24,7 @@
 #include "i18n.h"
 #include "mems16na_presentation.h"
 #include "mems219_units.h"
+#include "memscorrection_presentation.h"
 #include "mems220_presentation.h"
 #include "memsextendeddtc_presentation.h"
 #define tr I18n::text
@@ -333,15 +334,17 @@ void DiagnosticPanel::rebuild(const mems_data &d)
                                           : I18n::text(6844) /* EN: Closed loop is currently inactive; interpret together with temperature and engine conditions. */));
     if (lambdaFault) ++issues;
 
-    const int shortFuelTrim = int(d.short_term_fuel_trim) - 100;
-    const bool shortQualified=Mems219::lambdaQualified(m_naEvidence);
-    const bool longQualified=Mems219::injectionAvailable(m_naEvidence);
+    const auto shortReading=Mems219::correctionReading(m_naEvidence,true);
+    const auto longReading=Mems219::correctionReading(m_naEvidence,false);
+    const int shortFuelTrim=shortReading.value;
+    const bool shortQualified=shortReading.kind==Mems219::CorrectionKind::Qualified;
+    const bool longQualified=longReading.kind==Mems219::CorrectionKind::Qualified;
     if(!shortQualified||!longQualified)incomplete=true;
     const bool trimWatch=shortQualified&&qAbs(shortFuelTrim)>20;
     addCheck(I18n::text(6845) /* EN: Corrections fuel */,
              I18n::text(6846) /* EN: short-term=%1  long-term=%2 */
-                 .arg(shortQualified?QString::number(shortFuelTrim)+QStringLiteral(" %"):I18n::text(29002))
-                 .arg(longQualified?QString::number(Mems217::injectionUs(Mems217::frame7d(m_naEvidence).bytes[11]))+QStringLiteral(" µs"):I18n::text(29002)),
+                 .arg(MemsCorrection::detail(shortReading,true))
+                 .arg(MemsCorrection::detail(longReading,false)),
              shortQualified?stateFor(!trimWatch,true):I18n::text(6849),
              trimWatch ? I18n::text(6847) /* EN: Large correction: check for air leaks, fuel pressure/supply, injection or lambda measurement before changing settings. */
                        : shortQualified?I18n::text(6848):I18n::text(29002));

@@ -104,5 +104,8 @@
   "2972903": "Sensor de temperatura del refrigerante",
   "2972904": "Fallo ya memorizado en la primera lectura",
   "2972905": "Se desconoce cuándo comenzó el fallo.",
-  "2973301": "COMPROBACIONES PARCIALES"
+  "2973301": "COMPROBACIONES PARCIALES",
+  "2973901": "desv. bruta",
+  "2973902": "Corrección de inyección: microsegundos solo en perfiles cualificados. En los demás, desviación bruta histórica sin unidad física confirmada. Una trama ausente no es una medida.",
+  "2973903": "Corrección lambda instantánea: porcentaje solo en perfiles cualificados. En los demás, desviación bruta histórica sin diagnóstico automático."
 }

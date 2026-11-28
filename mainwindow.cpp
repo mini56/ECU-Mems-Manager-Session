@@ -37,6 +37,7 @@
 #include "ecucommunicationlog.h"
 #include "mems217_passive.h"
 #include "mems219_units.h"
+#include "memscorrection_presentation.h"
 #include "mems220_presentation.h"
 #include "ecupages.h"
 #include "summarytab.h"
@@ -1523,21 +1524,22 @@ void MainWindow::onDataReady()
  const bool injectionProfile=Mems217::injectionProfile(naEvidence);
  const auto frame7d=Mems217::frame7d(naEvidence);
  const auto frame80=Mems217::frame80(naEvidence);
+ const auto injectionReading=Mems219::correctionReading(naEvidence,false);
  m_ui->emi_shorttermftrim->setText(I18n::text(2971701));
  if(auto *unit=findChild<QLabel*>(QStringLiteral("session217InjectionUnit")))
-     unit->setText(injectionProfile?QStringLiteral("µs"):QStringLiteral("--"));
+     unit->setText(MemsCorrection::unit(injectionReading,false));
  m_ui->e_short_term_fuel_trim->setProperty("session217LambdaCorrection",
      injectionProfile && (!naIdentified || !naEvidence.identifiedProfile()->alternateTransmission));
  m_ui->e_short_term_fuel_trim->setProperty("session217LambdaUnavailable",!Mems219::lambdaQualified(naEvidence));
  if(injectionProfile) {
-     m_ui->e_FuelTrim_lcd->display(Mems217::present(frame7d,11)?QString::number(Mems217::injectionUs(frame7d.bytes[11])):QStringLiteral("--"));
+     m_ui->e_FuelTrim_lcd->display(MemsCorrection::number(injectionReading));
      m_ui->emi_idledecay->setText(I18n::text(2971704));
      m_ui->e_IdleDecay_lcd->display(Mems217::present(frame80,16)?QString::number(frame80.bytes[16]):QStringLiteral("--"));
      const bool signedIdleOk=!naIdentified||Mems16Na::qualifiedIdleSigned(naEvidence.measurements()).availability==Mems16Na::Availability::Available;
      m_ui->e_IdleSpeed_lcd->display(signedIdleOk&&Mems217::present(frame7d,19)?QString::number(Mems217::idleRpm(frame7d.bytes[19])):QStringLiteral("--"));
  } else {
      m_ui->emi_idledecay->setText(I18n::text(2022));
-     m_ui->e_FuelTrim_lcd->display(QStringLiteral("--"));
+     m_ui->e_FuelTrim_lcd->display(MemsCorrection::number(injectionReading));
      m_ui->e_IdleDecay_lcd->display(data->idle_hot - 35);
      m_ui->e_IdleSpeed_lcd->display((data->idle_speed_offset - 128) * 25);
  }
@@ -1546,7 +1548,7 @@ void MainWindow::onDataReady()
  // m_ui->shorttimefueltrim_lcd->display(data->short_term_fuel_trim);
 
  m_ui->m_long_trim_label->setText(I18n::text(2971701));
- m_ui->m_long_trim->setText(Mems219::injectionAvailable(naEvidence)?QString::number(Mems217::injectionUs(frame7d.bytes[11]))+QStringLiteral(" µs"):QStringLiteral("--"));
+ m_ui->m_long_trim->setText(MemsCorrection::compact(injectionReading,false));
  m_ui->m_lambda_voltage->setValue(data->lambda_voltage * 5);
  // m_ui->m_idlehot_2->setText(QString::number(data->idle_hot));
 
@@ -1587,10 +1589,10 @@ void MainWindow::onDataReady()
     {m_ui->r_7D_0A->setText(I18n::text(7025) /* EN: Closed loop */);}
     else
     {m_ui->r_7D_0A->setText(I18n::text(7026) /* EN: Open loop */);} 
- m_ui->m_7D_0B->setText(QString::number(data->long_term_fuel_trim));
- m_ui->r_7D_0B->setText(Mems219::injectionAvailable(naEvidence)?QString::number(Mems217::injectionUs(frame7d.bytes[11]))+QStringLiteral(" µs"):I18n::text(29002));
- m_ui->m_7D_0C->setText(QString::number(data->short_term_fuel_trim));
- m_ui->r_7D_0C->setText(Mems219::lambdaQualified(naEvidence)?QString::number(int(frame7d.bytes[12])-100)+QStringLiteral(" %"):I18n::text(29002));
+ m_ui->m_7D_0B->setText(Mems217::present(frame7d,11)?QString::number(frame7d.bytes[11]):QStringLiteral("--"));
+ m_ui->r_7D_0B->setText(MemsCorrection::detail(injectionReading,false));
+ m_ui->m_7D_0C->setText(Mems217::present(frame7d,12)?QString::number(frame7d.bytes[12]):QStringLiteral("--"));
+ m_ui->r_7D_0C->setText(MemsCorrection::detail(Mems219::correctionReading(naEvidence,true),true));
  m_ui->m_7D_0D->setText(QString::number(data->carbon_canister_dutycycle));
  m_ui->r_7D_0D->setText(QString::number(data->carbon_canister_dutycycle) + "%");
  m_ui->m_7D_0E->setText(MemsExtendedDtc::raw(&naEvidence,3,data->dtc3));

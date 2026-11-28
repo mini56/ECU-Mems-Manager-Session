@@ -17,6 +17,22 @@ inline bool lambdaQualified(const Mems16Na::SessionEvidence &s){
 inline bool injectionAvailable(const Mems16Na::SessionEvidence &s){
     return Mems217::injectionProfile(s)&&Mems217::present(Mems217::frame7d(s),11);
 }
+// Historic offsets are information only: do not use as physical units or diagnostic thresholds.
+enum class CorrectionKind { Missing, Unqualified, Historical, Qualified };
+struct CorrectionReading {
+    CorrectionKind kind;
+    int value;
+};
+inline CorrectionReading correctionReading(const Mems16Na::SessionEvidence &s,bool lambda){
+    const auto b=Mems217::frame7d(s);
+    if(!Mems217::present(b,lambda?12:11))return {CorrectionKind::Missing,0};
+    if(lambda&&s.identifiedProfile()&&s.identifiedProfile()->alternateTransmission)
+        return {CorrectionKind::Unqualified,0};
+    const unsigned raw=b.bytes[lambda?12:11];
+    if(lambda?lambdaQualified(s):injectionAvailable(s))
+        return {CorrectionKind::Qualified,lambda?int(raw)-100:Mems217::injectionUs(raw)};
+    return {CorrectionKind::Historical,int(raw)-(lambda?100:128)};
+}
 // Offline test plan only: no serial transport or physical qualification.
 enum class GaugeIntent { Minimum, Maximum, Stop, MotorStarted, LostLink };
 enum class GaugePhase { Idle, Forcing, RestorePending, ReturnUnconfirmed };

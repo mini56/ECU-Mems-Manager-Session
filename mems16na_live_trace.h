@@ -48,7 +48,9 @@ namespace Mems16Na {
 inline bool consumeExtendedPair(SessionEvidence &s,const std::string &trace,bool localEcho,
                                 unsigned rpm,unsigned dtc2,unsigned dtc3,unsigned dtc4,unsigned dtc5) {
     s.setExtended7d({}); s.setExtended80({});
-    if(s.firmwareName().empty()||trace.empty()||trace.size()>8192||trace.back()!='\n')return false;
+    // A complete ordinary frame may be observed even when D1 is unavailable.
+    // Its raw bytes do not establish a firmware profile or a physical conversion.
+    if(s.identifiedProfile()||trace.empty()||trace.size()>8192||trace.back()!='\n')return false;
     std::istringstream in(trace);std::string line;
     std::vector<std::uint8_t> rx[2];unsigned phase=0;
     while(std::getline(in,line)){

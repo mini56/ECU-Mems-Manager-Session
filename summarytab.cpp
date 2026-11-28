@@ -11,6 +11,7 @@
 #include "i18n.h"
 #include "mems16na_presentation.h"
 #include "mems219_units.h"
+#include "memscorrection_presentation.h"
 #include "mems220_presentation.h"
 #include "memsextendeddtc_presentation.h"
 #include "tooltipbubblemanager.h"
@@ -196,9 +197,9 @@ SummaryTab::SummaryTab(QWidget *parent) : QWidget(parent)
   setTooltip(m_rowClosedLoop,
     I18n::text(6704) /* EN: Shows whether fuelling is controlled by oxygen-sensor feedback. With the vehicle fully warm, loop status should indicate closed loop under most driving and idle conditions. */);
   setTooltip(m_rowLongTermFuelTrim,
-    I18n::text(6705) /* EN: Displays current feedback fuel correction as a percentage of the mapped value. High values (e.g. 120%) indicate compensation for a mixture that is too lean; low values (e.g. 80%) indicate compensation for a mixture that is too rich. */);
+    I18n::text(2973902));
   setTooltip(m_rowShortTermFuelTrim,
-    I18n::text(6706) /* EN: Short-term fuel trim is active only in closed loop. Values up to 10% are normal and occasionally up to 15%. Values above 15% are abnormal. */);
+    I18n::text(2973903));
   setTooltip(m_rowIgnitionAdvance2,
     I18n::text(6707) /* EN: MEMS ECU function intended to compensate for certain conditions over the vehicle's life (low-octane fuel, engine wear) by slightly advancing ignition at idle. */);
 
@@ -468,13 +469,13 @@ void SummaryTab::updateData(mems_data *data,const Mems16Na::SessionEvidence *na)
            QString::number(data->closed_loop),
            data->closed_loop ? I18n::text(6673) /* EN: Closed loop */ : I18n::text(6674) /* EN: Open loop */);
 
-  const bool knownInjection=na&&Mems219::injectionAvailable(*na);
-  const auto correctionFrame=na?Mems217::frame7d(*na):Mems16Na::Frame{nullptr,0};
-  setValue(m_rowLongTermFuelTrim,QString::number(data->long_term_fuel_trim),knownInjection?QString::number(Mems217::injectionUs(correctionFrame.bytes[11]))+QStringLiteral(" µs"):I18n::text(29002));
-
-  setValue(m_rowShortTermFuelTrim,
-           QString::number(data->short_term_fuel_trim),
-           na&&Mems219::lambdaQualified(*na)?QString::number(int(correctionFrame.bytes[12])-100)+QStringLiteral(" %"):I18n::text(29002));
+  const Mems16Na::SessionEvidence emptyCorrection;
+  const auto &correctionEvidence=na?*na:emptyCorrection;
+  const auto correctionFrame=Mems217::frame7d(correctionEvidence);
+  setValue(m_rowLongTermFuelTrim,Mems217::present(correctionFrame,11)?QString::number(correctionFrame.bytes[11]):QStringLiteral("--"),
+           MemsCorrection::detail(Mems219::correctionReading(correctionEvidence,false),false));
+  setValue(m_rowShortTermFuelTrim,Mems217::present(correctionFrame,12)?QString::number(correctionFrame.bytes[12]):QStringLiteral("--"),
+           MemsCorrection::detail(Mems219::correctionReading(correctionEvidence,true),true));
 
   setValue(m_rowCarbonCanisterDutycycle,
            QString::number(data->carbon_canister_dutycycle),

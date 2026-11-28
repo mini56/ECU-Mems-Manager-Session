@@ -396,7 +396,7 @@ void MEMSInterface::runServiceLoop()
     qint64 naTraceStart=-1;
     m_naSession.discardPair();
 #ifdef WIN32
-    if ((family==MemsEcuFamily::Rosco13_16 || family==MemsEcuFamily::Mems19) && !m_naSession.firmwareName().empty()) {
+    if (family==MemsEcuFamily::Rosco13_16 || family==MemsEcuFamily::Mems19) {
       wchar_t path[4096];
       const DWORD n=GetEnvironmentVariableW(L"ECU_MEMS_COMM_TRACE_FILE",path,4096);
       if(n && n<4096) {

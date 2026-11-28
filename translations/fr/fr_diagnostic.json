@@ -104,5 +104,8 @@
   "2972903": "Sonde de température moteur",
   "2972904": "Défaut déjà mémorisé à la première lecture",
   "2972905": "Le début du défaut est inconnu.",
-  "2973301": "CONTRÔLES PARTIELS"
+  "2973301": "CONTRÔLES PARTIELS",
+  "2973901": "écart brut",
+  "2973902": "Correction d’injection : valeur en microsecondes uniquement sur les profils qualifiés. Sinon, écart brut historique sans unité physique confirmée. Une trame manquante n’est pas une mesure.",
+  "2973903": "Correction instantanée lambda : pourcentage uniquement sur les profils qualifiés. Sinon, écart brut historique, sans diagnostic automatique."
 }

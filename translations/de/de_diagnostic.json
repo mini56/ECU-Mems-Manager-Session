@@ -104,5 +104,8 @@
   "2972903": "Kühlmitteltemperatursensor",
   "2972904": "Fehler bei der ersten Abfrage bereits gespeichert",
   "2972905": "Der Beginn des Fehlers ist unbekannt.",
-  "2973301": "UNVOLLSTÄNDIGE PRÜFUNGEN"
+  "2973301": "UNVOLLSTÄNDIGE PRÜFUNGEN",
+  "2973901": "Rohabweichung",
+  "2973902": "Einspritzkorrektur: Mikrosekunden nur bei qualifizierten Profilen. Sonst historische Rohabweichung ohne bestätigte physikalische Einheit. Ein fehlender Datenrahmen ist kein Messwert.",
+  "2973903": "Momentane Lambdakorrektur: Prozent nur bei qualifizierten Profilen. Sonst historische Rohabweichung ohne automatische Diagnose."
 }

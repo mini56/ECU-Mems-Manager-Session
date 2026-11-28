@@ -104,5 +104,8 @@
   "2972903": "Sensor de temperatura do líquido de refrigeração",
   "2972904": "Falha já memorizada na primeira leitura",
   "2972905": "Desconhece-se quando a falha começou.",
-  "2973301": "VERIFICAÇÕES PARCIAIS"
+  "2973301": "VERIFICAÇÕES PARCIAIS",
+  "2973901": "desvio bruto",
+  "2973902": "Correção de injeção: microssegundos apenas nos perfis qualificados. Nos restantes, desvio bruto histórico sem unidade física confirmada. Uma trama em falta não é uma medição.",
+  "2973903": "Correção lambda instantânea: percentagem apenas nos perfis qualificados. Nos restantes, desvio bruto histórico sem diagnóstico automático."
 }
