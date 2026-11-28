@@ -1,0 +1,11 @@
+# EKDMF005 — MEMS 1.6 NA — analyse directe du 28/11/2026
+Sources : ROM EKDMF005.hex (27902 octets, SHA256 2260da9b49fbf488a2f161d3099e679bcb3f7dd16c4cfb3be662661a1cd2c131), ASM blob 82d5d60e28a2b8ca23febad0262838f49af27ac1, XF1, branche recherche au commit bc92f04ff036ceaa08baabbc78184ff4371dd5f1. Comparaison avec EKDMF009.
+## Jauge
+XF1 : flagbyte10 = 00AD ; bits 0 d_tpg_force et 1 d_tpg_onoff. Aucun m_tmp_gauge_dr (cartographie), m_tmpgauge_dr (variable) ni m_tempg_pwm_cnt (accumulateur). Sur 005, A6 = fault_mask, contrairement au 009.
+Table réelle lue en ROM : 40FE -> 00/00 -> 3DA2 ; 4102 -> 10/10 -> 3D9D. 3D9D ORB AD,02 ; 3DA2 ANDB AD,FD ; convergence 3DA5 ORB AD,01 ; 3DA8 saut vers 39EF. Annulation : 40C2 F4/F4 -> 3B87 -> 3BA6 -> 39D5, 39EB ANDB AD,FE.
+Recherche directe dans tout l'ASM : les seules instructions explicitement adressées à AD concernant les bits 0/1 sont ces écritures et l'effacement. Aucune JBC/JBS sur AD bits 0/1, aucune lecture directe de AD comme octet dans les instructions relevées. Ne permet pas d'exclure absolument un accès indirect.
+Sortie : io_strat_req A4, 2840 lecture et combinaison avec autres masques, 2853 écriture 0401. Le 005 passe de 27CD (masque 08) à 27D0 ; il n'a pas le bloc PWM du 009 (283C efface A4 bit 6, 283F addition de 01AC à A6, 2846 positionne A4 bit 6). Aucun ORB A4,40 ni AND B A4,BF dans les références directes relevées du 005. Le chemin matériel connu du 009 est donc absent dans le 005 ; aucun autre chemin de jauge commandable n'est établi. Les flags Rover sont présents sans consommateur direct retrouvé.
+## Compte-tours
+Table normale parcourue intégralement jusqu'au terminateur 418E. Pas de 63/6B, ni plage qui les couvre dans cette table. XF1 : m_engine_speed 005E et m_eng_spd_8bit 01AB sont présents, mais aucun symbole tacho/rev counter retrouvé. Pas de simulation de régime pour le compte-tours démontrée. Les autres commandes ne sont pas déclarées toutes invalides pour cette fonction : recherche d'une sortie alternative non exhaustive.
+## Décision
+Ne pas ajouter EKDMF005 aux tests actifs de jauge ou de compte-tours. Forte indication d'absence de pilotage direct de jauge selon l'architecture 009, et non simple absence de signature de commande. Pas de test physique, pas de preuve exhaustive d'absence de tout autre chemin indirect. Manager et DLL inchangés.
