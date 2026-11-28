@@ -48,9 +48,22 @@ def scan(name,b,depth=0):
         else:
             scan_raw(name,"bytes",b)
         if suffix.endswith(".qz64"):
-            d=base64.b64decode(b)
-            scan(name+"!qUncompress",zlib.decompress(d[4:]),depth+1)
+            if "/mems_reference_seed_" in name:
+                return # combined below, as Manager does
+            try:
+                payload=zlib.decompress(b[4:])
+            except zlib.error:
+                payload=zlib.decompress(base64.b64decode(b)[4:])
+            scan(name+"!qUncompress",payload,depth+1)
         elif suffix.endswith(".b64"):
+            if "rave_fr_wmxn980f_ocr_part" in name:
+                return # combined below
+            if "fr_rave_addon_20261115/part_" in name:
+                # This tracked file is only one part of an external archive.
+                raw=base64.b64decode(b)
+                scan_raw(name+"!base64","partial archive",raw)
+                errors.append([name,"Archive part only; remaining blobs referenced by external manifest"])
+                return
             scan(name+"!base64",base64.b64decode(b),depth+1)
         elif b.startswith(b"PK\x03\x04"):
             with zipfile.ZipFile(io.BytesIO(b)) as z:
@@ -85,6 +98,18 @@ for index,name in enumerate(paths):
         b=(src/name).read_bytes();scan(name,b)
         coverage.append([name,len(b),len(hits)-before,"error" if len(errors)>error_before else "scanned"])
     except Exception as exc: errors.append([name,str(exc)]);coverage.append([name,0,0,"error"])
+seed=sorted(src.glob("database/reference/mems_reference_seed_*.qz64"))
+if seed:
+    try:
+        encoded=b"".join(p.read_bytes().strip() for p in seed)
+        scan("database/reference/REASSEMBLED_SEED",zlib.decompress(base64.b64decode(encoded)[4:]))
+    except Exception as exc: errors.append(["database/reference/REASSEMBLED_SEED",str(exc)])
+ocr=sorted(src.glob("tools/private_sources/rave_fr_wmxn980f_ocr_part*.b64"))
+if ocr:
+    try:
+        encoded=b"".join(p.read_bytes().strip() for p in ocr)
+        scan("tools/private_sources/REASSEMBLED_OCR",base64.b64decode(encoded))
+    except Exception as exc: errors.append(["tools/private_sources/REASSEMBLED_OCR",str(exc)])
 parts=sorted(src.glob("database/documentary/parts/*.gz.part"))
 if parts:
     try:
@@ -99,7 +124,12 @@ write_csv("coverage.csv",["path","bytes","hits","status"],coverage)
 write_csv("errors.csv",["path","error"],errors)
 counts={}
 for h in hits: counts[h[0]]=counts.get(h[0],0)+1
-summary={"source_commit":sha,"tracked_files":len(paths),"scanned_files":sum(x[3]=="scanned" for x in coverage),"errors":len(errors),"hits":len(hits),"matched_paths":len(counts),"counts":counts,"limitations":["No OCR of pixels or disassembly of executable binaries; exact byte strings searched.","No external update packs not in the tracked snapshot; encrypted or unsupported nested formats may hide text.","Numeric references and MNE101150 are candidates, not proof of a firmware-specific condition."]}
+# Preserve both exact-name totals and broad candidate counts.
+from collections import Counter
+pattern_counts=Counter(h[3] for h in hits)
+exact_paths=sorted({h[0] for h in hits if h[3]=="AANMP002"})
+write_csv("exact_AANMP002.csv",["path","layer","line_or_offset","pattern","context"],[h for h in hits if h[3]=="AANMP002"])
+summary={"pattern_counts":dict(pattern_counts),"exact_name_paths":exact_paths,"source_commit":sha,"tracked_files":len(paths),"scanned_files":sum(x[3]=="scanned" for x in coverage),"errors":len(errors),"hits":len(hits),"matched_paths":len(counts),"counts":counts,"limitations":["No OCR of pixels or disassembly of executable binaries; exact byte strings searched.","No external update packs not in the tracked snapshot; encrypted or unsupported nested formats may hide text.","Numeric references and MNE101150 are candidates, not proof of a firmware-specific condition."]}
 (out/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf-8")
 lines=["# Audit intégral des occurrences — SESSION 231",f"Commit : {sha}",f"Fichiers suivis : {len(paths)} ; traités sans erreur : {summary['scanned_files']} ; erreurs : {len(errors)}.",f"Occurrences : {len(hits)} dans {len(counts)} chemins (y compris données décompressées).","Inventaire sans sélection fonctionnelle : occurrences.csv ; couverture exhaustive des chemins : coverage.csv ; erreurs : errors.csv.","Les occurrences binaires et numériques sont des pistes, non des restrictions prouvées.","Limites : "+" ; ".join(summary["limitations"]),"","| Fichier / contenu | Occurrences |","|---|---:|"]+[f"| {p} | {n} |" for p,n in sorted(counts.items())]
 (out/"README.md").write_text("\n".join(lines)+"\n",encoding="utf-8")

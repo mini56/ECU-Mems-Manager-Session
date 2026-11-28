@@ -1,8 +1,5 @@
 name: Audit AANMP002 SESSION 231 - scan corrige
 on:
-  push:
-    branches: [research/mems-firmwares-20261126]
-    paths: ['research/audit-occurrences-aanmp002-20261128/audit.py','.github/workflows/audit-aanmp002-session231-v2.yml']
   workflow_dispatch:
 permissions:
   contents: write
