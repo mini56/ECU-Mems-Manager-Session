@@ -1,0 +1,103 @@
+{
+  "version": "V1.70",
+  "results": [
+    {
+      "firmware": "ABEMR002",
+      "tables": [
+        {
+          "load": "5B36",
+          "lo": "5B44",
+          "hi": "5B4E",
+          "dispatcher": "2E12",
+          "mode": [
+            {
+              "site": "5B30",
+              "value": "C8",
+              "bytes": "99 C8 46 DF 01 F0 A1 44 5B 3C A1 4E 5B 48 E7 D1 D2"
+            }
+          ],
+          "matches": [
+            {
+              "selector": "F5",
+              "site": "572A",
+              "slot": "5B4A",
+              "handler": "5727",
+              "prefix": "33 9A 14 99 F5 47 D7 0F"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "firmware": "KBE6R003",
+      "tables": [
+        {
+          "load": "5BF6",
+          "lo": "5C04",
+          "hi": "5C0E",
+          "dispatcher": "2E12",
+          "mode": [
+            {
+              "site": "5BF0",
+              "value": "C8",
+              "bytes": "99 C8 46 DF 01 F0 A1 04 5C 3C A1 0E 5C 48 E7 11 D2"
+            }
+          ],
+          "matches": [
+            {
+              "selector": "F5",
+              "site": "57DA",
+              "slot": "5C0A",
+              "handler": "57D4",
+              "prefix": "51 08 9A 00 DF 14 99 F5 47 D7 0F"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "firmware": "MGE7R002",
+      "tables": [
+        {
+          "load": "5C66",
+          "lo": "5C74",
+          "hi": "5C7E",
+          "dispatcher": "2E12",
+          "mode": [
+            {
+              "site": "5C60",
+              "value": "C8",
+              "bytes": "99 C8 46 DF 01 F0 A1 74 5C 3C A1 7E 5C 48 E7 A1 D1"
+            }
+          ],
+          "matches": [
+            {
+              "selector": "F5",
+              "site": "585A",
+              "slot": "5C7A",
+              "handler": "5857",
+              "prefix": "33 9A 14 99 F5 47 D7 0F"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "firmware": "TCF7X005",
+      "tables": []
+    },
+    {
+      "firmware": "TCF8X005",
+      "tables": []
+    },
+    {
+      "firmware": "TFF8X000",
+      "tables": []
+    },
+    {
+      "firmware": "TFFSX000",
+      "tables": []
+    }
+  ],
+  "limitation": "Table bounds and dispatcher signature confirmed; preceding mode comparisons are candidates until path checked."
+}
