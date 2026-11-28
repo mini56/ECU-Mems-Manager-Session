@@ -183,6 +183,22 @@ int main(int argc,char **argv) {
     panel.update2JData(structured,QStringList(),QStringLiteral("MEMS 3"));
     CHECK(!report->toPlainText().contains(QStringLiteral("Référence enregistrée le")));
     panel.endNaSession();
+    // Non-NA unknown DTC2 must not be presented as a proven TPS or lambda fault.
+    auto unknown=evidence("KBHBV001",0xc2,0,1,0,0,false);
+    auto rawUnknown=b19;rawUnknown[5]=255;unknown.setExtended80(a19);unknown.setExtended7d(rawUnknown);
+    d.dtc0=0;d.dtc1=0;d.dtc2=255;
+    panel.updateData(&d,&unknown);
+    auto stateOf=[&](int id)->QString{
+        for(int row=0;row<table->rowCount();++row)
+            if(table->item(row,0)->text()==I18n::text(id))return table->item(row,2)->text();
+        return QString();
+    };
+    CHECK(stateOf(6835)==I18n::text(6849)&&stateOf(6838)==I18n::text(6849));
+    CHECK(report->toPlainText().contains(I18n::text(2972310))&&report->toPlainText().contains(QStringLiteral("0xFF")));
+    auto known=generic19;auto rawKnown=b19;rawKnown[5]=4;known.setExtended80(a19);known.setExtended7d(rawKnown);
+    d.dtc2=4;panel.updateData(&d,&known);CHECK(stateOf(6838)==I18n::text(6840));
+    known.discardPair();panel.updateData(&d,&known);CHECK(stateOf(6838)!=I18n::text(6840));
+    d.dtc2=0;panel.endNaSession();
     // Real SummaryTab widget: both themes, all six languages, target widths.
     for(const char *lang:{"fr","en","de","es","it","pt"}) {
         CHECK(I18n::load(QString::fromLatin1(lang)));

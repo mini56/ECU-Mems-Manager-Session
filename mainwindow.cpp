@@ -1224,7 +1224,12 @@ void MainWindow::onDataReady()
   const quint8 fault0=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc0).faultBits:data->dtc0;
   const quint8 fault1=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc1).faultBits:data->dtc1;
   const bool knownDtc2=!naIdentified&&MemsExtendedDtc::dtc2Known(naEvidence.firmwareName().c_str());
-  quint8 fault2=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc2).faultBits:knownDtc2?naEvidence.extendedDtc(2).faults:data->dtc2;
+  const auto genericDtc2=MemsExtendedDtc::diagnosticDtc2(&naEvidence,data->dtc2);
+  const bool short13Dtc2=!naIdentified&&MemsExtendedDtc::short13(naEvidence.firmwareName().c_str());
+  // Keep raw-bit alerts on previously unqualified profiles, with neutral labels.
+  // Confirmed profiles retain their existing fault mask and raw data display.
+  quint8 fault2=naIdentified?naEvidence.dtc(Mems16Na::Group::Dtc2).faultBits:
+      knownDtc2?genericDtc2.faults:genericDtc2.raw;
   const auto d3=naEvidence.extendedDtc(3);
   const bool syncProfile=MemsExtendedDtc::sync19(naEvidence.firmwareName().c_str());
   // DTC3 synchronization shares existing row 21: no duplicate warning.
@@ -1248,6 +1253,16 @@ void MainWindow::onDataReady()
     m_ui->m_faultCode18Label->setText(QStringLiteral("18 - ")+I18n::text(2972402));
     m_ui->m_faultCode17Label->setToolTip(I18n::text(short13?2972403:knownDtc2?2972201:2972310));
     m_ui->m_faultCode18Label->setToolTip(I18n::text(short13?2972313:knownDtc2?2972201:2972310));
+  }
+  if(!naIdentified&&!knownDtc2){
+    QLabel *labels[]={m_ui->m_faultCode17Label,m_ui->m_faultCode18Label,m_ui->m_faultCode19Label,
+        m_ui->m_faultCode20Label,m_ui->m_faultCode21Label,m_ui->m_faultCode22Label,m_ui->m_faultCode23Label,m_ui->m_faultCode24Label};
+    for(int i=0;i<8;++i){
+      if(short13Dtc2&&i<2&&genericDtc2.faults&(1u<<i))continue;
+      rememberNaLabel(labels[i]);
+      labels[i]->setText(QString::number(17+i)+QStringLiteral(" - ")+I18n::text(2972310));
+      labels[i]->setToolTip(MemsExtendedDtc::diagnosticDtc2Text(&naEvidence,data->dtc2));
+    }
   }
   if(syncProfile){rememberNaLabel(m_ui->m_faultCode21Label);m_ui->m_faultCode21Label->setText(QStringLiteral("21 - ")+I18n::text(29018));}
   if(knownDtc2){
@@ -1556,7 +1571,7 @@ void MainWindow::onDataReady()
     {m_ui->r_7D_05->setText(I18n::text(7021) /* EN: FAULTS */);}
     else
     {m_ui->r_7D_05->setText(I18n::text(7022) /* EN: no fault */);} 
- if(knownDtc2){m_ui->m_7D_05->setText(MemsExtendedDtc::raw(&naEvidence,2,data->dtc2));m_ui->r_7D_05->setText(MemsExtendedDtc::text(&naEvidence,2));}
+ if(!naIdentified){m_ui->m_7D_05->setText(QString::number(genericDtc2.raw));m_ui->r_7D_05->setText(MemsExtendedDtc::diagnosticDtc2Text(&naEvidence,data->dtc2));}
  m_ui->m_7D_06->setText(QString::number(data->lambda_voltage));
  m_ui->r_7D_06->setText(QString::number(data->lambda_voltage * 5) + " mV" );
  m_ui->m_7D_07->setText(QString::number(data->lambda_sensor_frequency));

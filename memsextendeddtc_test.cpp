@@ -44,6 +44,18 @@ int main(){
         }
     }
     std::uint8_t shortFrame[14]={14};
+    for(unsigned r=0;r<256;++r){
+        shortFrame[5]=static_cast<std::uint8_t>(r);
+        for(const char *f:{"ABEMR002","KBE6R003","MGE7R002"}){
+            const auto d=diagnosticDtc2(f,shortFrame,14,r);
+            require(d.raw==r&&d.faults==(r==255?0:r&3)&&d.status==Status::Unverified);
+        }
+        const auto unknown=diagnosticDtc2("UNKNOWN",shortFrame,14,r);
+        require(unknown.raw==r&&unknown.faults==0&&unknown.indicators==r);
+        const auto fallback=diagnosticDtc2("KBHBG009",nullptr,0,r);
+        require(fallback.raw==r&&fallback.faults==0&&fallback.indicators==r);
+    }
+    shortFrame[5]=0;
     for(const char *f:{"ABEMR002","KBE6R003","MGE7R002"}){
         for(unsigned value=0;value<256;++value){
             shortFrame[3]=static_cast<std::uint8_t>(value);

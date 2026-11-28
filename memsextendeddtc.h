@@ -56,6 +56,8 @@ inline Result decode(const char *f,int group,const std::uint8_t *b,std::size_t n
     unsigned faults=0,states=0,technical=0,possible=0;
     bool complete=false;
     if(group==2&&dtc2Known(f)){faults=0xB4;possible=0xF4;}
+    // Existing SESSION 224 qualification: supply and analogue input on the three short-frame 1.3 profiles.
+    if(group==2&&short13(f)&&n==14){faults=3;possible=3;}
     if(group==3&&sync19(f)){faults=1;states=4;possible=5;complete=true;}
     if(group==3&&turbo(f)){technical=3;possible=3;}
     if(group==4&&turbo(f)){faults=3;possible=3;complete=true;}
@@ -67,5 +69,11 @@ inline Result decode(const char *f,int group,const std::uint8_t *b,std::size_t n
     if(!possible || (r==255 && possible!=255))return {Status::Unverified,r,0,0,r};
     const unsigned unknown=r&~(faults|states);
     return {complete&&!(r&~possible)?Status::Decoded:Status::Unverified,r,r&faults,r&states,unknown|(r&technical)};
+}
+// Retain the historical DLL octet when no independently captured frame exists,
+// but never turn an unqualified fallback into a confirmed component fault.
+inline Result diagnosticDtc2(const char *f,const std::uint8_t *b,std::size_t n,unsigned legacy) {
+    const auto r=decode(f,2,b,n);
+    return r.status==Status::Missing ? Result{Status::Unverified,legacy&255u,0,0,legacy&255u}:r;
 }
 }
